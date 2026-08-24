@@ -13,13 +13,13 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.41.0
-world.json: 29
+Application: 0.42.0
+world.json: 30
 roster.json: 14
-savegame.json: 28
+savegame.json: 29
 ```
 
-Campaign saves are compatible only with the same application version, save version, and mod ID.
+Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
 ## Development
 
@@ -243,13 +243,24 @@ Orders are stored in `savegame.json`:
 
 Behavior:
 
-- the order is rendered as an animated faction-colored arrow;
+- the order is rendered as a solid faction-colored arrow with an arrowhead, drawn above the fog-of-war overlay so orders into unexplored hexes stay visible;
+- after an order is placed the map returns from the tactical view to the cinematic view while the arrow remains on screen;
 - assigning another destination replaces the previous order;
 - right-clicking the arrow or army cancels it;
 - canceling costs no movement points;
 - paths longer than the current movement allowance stop at the furthest reachable intermediate hex;
 - the player may continue the route on the next turn;
 - orders are validated again when executed.
+
+Allied AI armies pre-compute their marches at the start of the planning phase. During planning these plans are rendered as muted dashed arrows with arrowheads:
+
+- only plans that start from a hex visible to the player are shown, so the fog of war is not leaked;
+- allied arrows are view-only; hovering shows the faction, commander, destination, and distance;
+- plans are executed during the movement phase and discarded afterwards; a plan that becomes invalid (blocked path, intercepted hex) falls back to fresh AI targeting, and the preview refreshes on the next round.
+
+After **End Turn**, the turn summary lists the movements of every faction — the player, allies, and enemies — regardless of fog: `Faction: commander — march/siege/retreat/stay (distance)`.
+
+Economic settlement pins use dedicated silhouette SVG icons (village, city, capital, port, mine, farm, wilderness, swamp, forest, mountains, ruins, crossroads, ford, pass, signal tower, camp) styled like the army banner and the fortress keep.
 
 ## Heroes
 

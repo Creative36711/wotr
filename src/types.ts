@@ -364,6 +364,30 @@ export interface PendingArmyOrder {
   locationId: string | null
 }
 
+/** Pre-computed march of an allied AI army, shown as a dashed preview arrow during planning. */
+export interface AlliedMovementPlan {
+  armyId: string
+  factionId: FactionId
+  path: string[]
+  destinationHexId: string
+  locationId: string | null
+  cost: number
+}
+
+export type TurnMovementAction = 'moved' | 'stayed' | 'retreated' | 'besieged'
+
+/** One line of the post-turn movement report, collected for every faction regardless of fog. */
+export interface TurnMovementRecord {
+  id: string
+  round: number
+  factionId: FactionId
+  armyName: string
+  commanderName: string | null
+  action: TurnMovementAction
+  targetLabel: string | null
+  distance: number
+}
+
 export interface CampaignState {
   round: number
   /** UI/default-faction cursor; only playerFactionId accepts manual orders. */
@@ -384,6 +408,8 @@ export interface CampaignState {
   locationStates: Record<string, LocationCampaignState>
   heroStates: Record<string, HeroCampaignState>
   pendingOrders: PendingArmyOrder[]
+  alliedPlans: AlliedMovementPlan[]
+  turnMovements: TurnMovementRecord[]
   conflicts: CampaignConflict[]
   currentConflictId: string | null
   log: CampaignLogEntry[]
@@ -494,7 +520,7 @@ export interface RosterData {
 }
 
 export interface WorldData {
-  version: 29
+  version: 30
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]
@@ -508,7 +534,7 @@ export interface WorldData {
 }
 
 export interface SaveGameData {
-  version: 28
+  version: 29
   gameVersion: string
   modId: string
   name: string

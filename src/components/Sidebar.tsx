@@ -5,6 +5,7 @@ import { armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/a
 import { activeSide, factionSide, phaseIcon, phaseLabel } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import { useMapStore } from '../store/useMapStore'
+import { translateText } from '../i18n'
 import { sortByText } from '../utils/sort'
 import type { FactionId, StructuralType } from '../types'
 
@@ -50,6 +51,7 @@ function CampaignSidebar({onFocus}:SidebarProps) {
       : campaign.phase === 'conflicts' ? `Разрешите оставшиеся бои: ${pendingConflicts}`
         : 'Продолжить →'
   const phaseTitle = campaign.phase.startsWith('planning_') ? `Ход ${campaign.round} · ${playerFaction.label}` : campaign.phase==='aftermath'?`Итоги хода ${campaign.round}`:`${phaseIcon(campaign.phase)} ${phaseLabel(campaign)}`
+  const roundLogEntries = campaign.log.filter((entry) => entry.round === campaign.round && ['battle', 'capture', 'retreat', 'hero', 'army_destroyed'].includes(entry.kind)).slice(0, 6)
 
   const armyPower = (army: typeof armies[number]) => {
     const commander = commanderDefinition(army, heroes, captains)
@@ -79,7 +81,35 @@ function CampaignSidebar({onFocus}:SidebarProps) {
     <div className="active-turn-card" style={{ '--faction-color': playerFaction.color } as CSSProperties}><span>Фракция игрока</span><b>{playerFaction.label}</b><small>{campaign.phase.startsWith('planning_') ? 'Нанимайте войска, управляйте резервом и перемещайте армии в любом порядке. После завершения хода ИИ выполнит свои действия.' : campaign.phase.startsWith('movement_') ? `Завершение приказов движения. Сейчас действует сторона «${sideName}».` : campaign.phase === 'conflicts' ? `Ваших нерешённых сражений: ${pendingConflicts}` : 'Все сражения, захваты, ранения и экономические изменения этого хода применены.'}</small><button type="button" onClick={advancePhase} disabled={campaign.phase === 'conflicts'}>{actionLabel}</button><label className="fog-sidebar-toggle"><input type="checkbox" checked={campaign.fogOfWar.overlayVisible} disabled={!campaign.fogOfWar.enabled} onChange={(event) => setFogOverlayVisible(event.target.checked)} /><span>{campaign.fogOfWar.enabled ? 'Показывать затемнение' : 'Туман войны отключён'}</span><b>{campaign.fogOfWar.enabled ? campaign.fogOfWar.overlayVisible ? 'Видно' : 'Скрыто' : 'Нет'}</b></label></div>
     <div className="campaign-economy"><div><span>Золото</span><b>{treasury?.gold ?? 0}</b></div><div><span>Материалы</span><b>{treasury?.materials ?? 0}</b></div><div><span>Доход</span><b>+{treasury?.lastIncome.gold ?? 0}</b></div><div><span>Содержание</span><b>−{treasury?.lastUpkeep ?? 0}</b></div><strong className={balance >= 0 ? 'positive' : 'negative'}>{balance >= 0 ? '+' : ''}{balance}</strong></div>
     {woundedHeroes.length>0&&<section className="wounded-heroes-panel"><header><span>✚</span><div><b>Раненые герои</b><small>Недоступны до полного восстановления</small></div><strong>{woundedHeroes.length}</strong></header>{woundedHeroes.map((hero)=>{const state=campaign.heroStates[hero.id];const recovery=locations.find((location)=>location.id===state?.recoveryLocationId);return <article key={hero.id} onClick={()=>recovery&&onFocus(recovery.id)}><span className="wounded-hero-portrait" style={hero.portrait?{backgroundImage:`url(${hero.portrait})`}:undefined}/><div><b>{hero.name}</b><small>Ранен · осталось ходов: {state?.healTurnsLeft??0}</small>{recovery&&<i>Восстановление: {recovery.name}</i>}</div></article>})}</section>}
-    {campaign.phase==='aftermath'&&<section className="turn-summary-panel"><header><b>Итоги хода {campaign.round}</b><small>Последние события</small></header>{campaign.log.filter((entry)=>entry.round===campaign.round).slice(0,8).map((entry)=><p key={entry.id}><span>{entry.kind==='battle'?'⚔':entry.kind==='capture'?'◆':entry.kind==='hero'?'★':'·'}</span>{entry.text}</p>)}</section>}
+    {campaign.phase==='aftermath'&&<section className="turn-summary-panel"><header><b>{translateText('Итоги хода')} {campaign.round}</b><small>{translateText('Передвижения всех фракций')}</small></header>
+      {(() => {
+        const hexWord=(count:number)=>count===1?'гекс':count<5?'гекса':'гексов'
+        const roundEntries=campaign.turnMovements.filter((entry)=>entry.round===campaign.round)
+        const groups=[
+          {title:translateText('Ваши армии'),entries:roundEntries.filter((entry)=>entry.factionId===campaign.playerFactionId)},
+          {title:translateText('Союзники'),entries:roundEntries.filter((entry)=>entry.factionId!==campaign.playerFactionId&&factionSide(factions,entry.factionId)===campaign.playerSide)},
+          {title:translateText('Враги'),entries:roundEntries.filter((entry)=>factionSide(factions,entry.factionId)!==campaign.playerSide&&factionSide(factions,entry.factionId)!==null)},
+        ]
+        const actionGlyph:Record<typeof campaign.turnMovements[number]['action'],string>={moved:'➜',stayed:'⌂',retreated:'↩',besieged:'⚔'}
+        return groups.filter((group)=>group.entries.length>0).map((group)=>(
+          <div key={group.title}>
+            <h4 className="summary-group">{group.title}</h4>
+            {group.entries.map((entry)=>{
+              const faction=getFaction(factions,entry.factionId)
+              const subject=translateText(entry.commanderName??entry.armyName)
+              const target=entry.targetLabel?`«${translateText(entry.targetLabel)}»`:null
+              const distance=entry.distance>0?` (${entry.distance} ${hexWord(entry.distance)})`:''
+              const text=entry.action==='moved'?`переход к ${target??'новой позиции'}${distance}`
+                :entry.action==='retreated'?`отход к ${target??'своим землям'}${distance}`
+                :entry.action==='besieged'?`осада ${target??'позиций противника'}`
+                :`остается ${target?`в ${target}`:'на месте'}`
+              return <p key={entry.id}><span style={{color:faction.color}}>{actionGlyph[entry.action]}</span><span><b className="summary-faction" style={{color:faction.color}}>{translateText(faction.label)}</b>{`: ${subject} — ${text}`}</span></p>
+            })}
+          </div>
+        ))
+      })()}
+      {roundLogEntries.length>0&&<><h4 className="summary-group">{translateText('Прочие события')}</h4>{roundLogEntries.map((entry)=><p key={entry.id}><span>{entry.kind==='battle'?'⚔':entry.kind==='capture'?'◆':entry.kind==='retreat'?'↩':entry.kind==='hero'?'★':entry.kind==='army_destroyed'?'×':'·'}</span><span>{entry.text}</span></p>)}</>}
+    </section>}
     <div className="campaign-tabs"><button type="button" className={tab === 'armies' ? 'active' : ''} onClick={() => setTab('armies')}>Армии</button><button type="button" className={tab === 'chronicle' ? 'active' : ''} onClick={() => setTab('chronicle')}>Хроника</button></div>
     {tab === 'armies' ? <div className="campaign-army-list">
       {campaign.phase === 'conflicts' && <div className="conflict-sidebar-list"><div className="campaign-list-title"><span>Ваши сражения</span><b>{visibleConflicts.length}</b></div>{visibleConflicts.map((conflict) => { const location = conflict.locationId ? locations.find((candidate) => candidate.id === conflict.locationId) : null; return <button type="button" key={conflict.id} className={`${conflict.status} ${campaign.currentConflictId === conflict.id ? 'active' : ''}`} onClick={() => selectConflict(conflict.id)}><span>{conflict.status === 'resolved' ? '✓' : '⚔'}</span><b>{location?.name ?? 'Полевое сражение'}</b><small>{conflict.battleType === 'siege' ? 'Осада' : conflict.battleType === 'settlement' ? 'Бой за поселение' : 'Полевой бой'}</small></button> })}</div>}

@@ -1,0 +1,18 @@
+/* Collision-free strategic markers: location anchors stay centered, armies occupy visual slots around them. */
+.pins { z-index:7; }
+.armies-layer { z-index:6; }
+.armies-layer:has(.army-marker:hover) { z-index:80; }
+.pins:has(.pin:hover) { z-index:90; }
+.pin-label,.army-label { z-index:1000; }
+.army-marker { transform:translate(-50%,-50%) scale(var(--army-scale)); transform-origin:center; transition:left .16s ease,top .16s ease,filter .14s; }
+.army-marker.at-location { width:32px; height:38px; }
+.army-marker.friendly-location .army-banner { left:6px; top:5px; width:20px; height:27px; border-radius:3px 3px 0 0; }
+.army-marker.friendly-location .army-banner i { font-size:12px; }
+.army-marker.friendly-location > b { right:-1px; bottom:0; min-width:15px; height:15px; font-size:10px; }
+.army-marker.besieging .army-banner { outline:2px solid rgba(167,62,48,.82); outline-offset:2px; box-shadow:0 0 10px rgba(164,55,44,.62); }
+.army-marker.besieging::before { content:""; position:absolute; left:50%; top:50%; width:39px; height:39px; border:1px dashed rgba(196,91,70,.72); border-radius:50%; transform:translate(-50%,-50%); pointer-events:none; }
+.army-marker.in-stack .army-banner { filter:drop-shadow(2px 2px 0 rgba(9,13,15,.9)); }
+.army-marker.at-location .army-label { bottom:calc(100% + 7px); }
+.pin { z-index:2; }
+.pin:hover,.pin.selected { z-index:30; }
+@media (prefers-reduced-motion:reduce){.army-marker{transition:none}}

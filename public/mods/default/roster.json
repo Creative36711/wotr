@@ -1,0 +1,2972 @@
+{
+  "version": 14,
+  "unitTypes": [
+    {
+      "id": "gondor-soldiers",
+      "objectId": "GondorFighterHorde",
+      "factionId": "men-of-the-west",
+      "name": "Gondor Soldiers",
+      "nameTranslations": {
+        "ru": "Воины Гондора"
+      },
+      "category": "infantry",
+      "battlePower": 105,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 101,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 10,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "gondor-archers",
+      "objectId": "GondorArcherHorde",
+      "factionId": "men-of-the-west",
+      "name": "Gondor Archers",
+      "nameTranslations": {
+        "ru": "Лучники Гондора"
+      },
+      "category": "archers",
+      "battlePower": 90,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 110,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "ithilien-rangers",
+      "objectId": "GondorRangerHorde",
+      "factionId": "men-of-the-west",
+      "name": "Ithilien Rangers",
+      "nameTranslations": {
+        "ru": "Следопыты Итилиэна"
+      },
+      "category": "archers",
+      "battlePower": 125,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 118,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "gondor-knights",
+      "objectId": "GondorKnightHorde",
+      "factionId": "men-of-the-west",
+      "name": "Gondor Knights",
+      "nameTranslations": {
+        "ru": "Рыцари Гондора"
+      },
+      "category": "cavalry",
+      "battlePower": 140,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 183,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "rohirrim",
+      "objectId": "RohanRohirrimHorde",
+      "factionId": "men-of-the-west",
+      "name": "Rohirrim",
+      "nameTranslations": {
+        "ru": "Рохиррим"
+      },
+      "category": "cavalry",
+      "battlePower": 150,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 186,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 19,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "knights-of-dol-amroth",
+      "objectId": "GondorKnightsofDolHorde",
+      "factionId": "men-of-the-west",
+      "name": "Knights of Dol Amroth",
+      "nameTranslations": {
+        "ru": "Рыцари Дол Амрота"
+      },
+      "category": "cavalry",
+      "battlePower": 195,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 300,
+        "materials": 40
+      },
+      "recruitTime": 2,
+      "upkeep": 28,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "tower-guards",
+      "objectId": "GondorTowerShieldGuardHorde",
+      "factionId": "men-of-the-west",
+      "name": "Tower Guards",
+      "nameTranslations": {
+        "ru": "Стражи Цитадели"
+      },
+      "category": "infantry",
+      "battlePower": 150,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 116,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "gondor-trebuchet",
+      "objectId": "GondorTrebuchet",
+      "factionId": "men-of-the-west",
+      "name": "Trebuchet",
+      "nameTranslations": {
+        "ru": "Требушет"
+      },
+      "category": "siege",
+      "battlePower": 70,
+      "movementPoints": 3,
+      "siegePower": 130,
+      "recruitCost": {
+        "gold": 180,
+        "materials": 65
+      },
+      "recruitTime": 2,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "rohan-spearmen",
+      "objectId": "RohanSpearmenHorde",
+      "factionId": "men-of-the-west",
+      "name": "Rohan Spearmen",
+      "nameTranslations": {
+        "ru": "Копейщики Рохана"
+      },
+      "category": "infantry",
+      "battlePower": 95,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 100,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 10,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "lorien-warriors",
+      "objectId": "ElvenLorienWarriorHorde",
+      "factionId": "elves",
+      "name": "Lorien Warriors",
+      "nameTranslations": {
+        "ru": "Воины Лориэна"
+      },
+      "category": "infantry",
+      "battlePower": 120,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 106,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "lorien-archers",
+      "objectId": "ElvenLorienArcherHorde",
+      "factionId": "elves",
+      "name": "Lorien Archers",
+      "nameTranslations": {
+        "ru": "Лучники Лориэна"
+      },
+      "category": "archers",
+      "battlePower": 130,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 120,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mirkwood-archers",
+      "objectId": "ElvenMirkwoodArcherHorde",
+      "factionId": "elves",
+      "name": "Mirkwood Archers",
+      "nameTranslations": {
+        "ru": "Лучники Лихолесья"
+      },
+      "category": "archers",
+      "battlePower": 155,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 128,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 13,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "noldor-warriors",
+      "objectId": "NoldorWarriorHorde",
+      "factionId": "elves",
+      "name": "Noldor Warriors",
+      "nameTranslations": {
+        "ru": "Воины-нолдор"
+      },
+      "category": "infantry",
+      "battlePower": 190,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 300,
+        "materials": 35
+      },
+      "recruitTime": 2,
+      "upkeep": 28,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "rivendell-lancers",
+      "objectId": "ElvenRivendellLancerHorde",
+      "factionId": "elves",
+      "name": "Rivendell Lancers",
+      "nameTranslations": {
+        "ru": "Всадники Ривенделла"
+      },
+      "category": "cavalry",
+      "battlePower": 150,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 186,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 19,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "lindon-horse-archers",
+      "objectId": "ElvenRivendellArcherHorde",
+      "factionId": "elves",
+      "name": "Lindon Horse Archers",
+      "nameTranslations": {
+        "ru": "Конные лучники Линдона"
+      },
+      "category": "cavalry",
+      "battlePower": 145,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 185,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mithlond-sentries",
+      "objectId": "ElvenMithlondSentryHorde",
+      "factionId": "elves",
+      "name": "Mithlond Sentries",
+      "nameTranslations": {
+        "ru": "Стражи Митлонда"
+      },
+      "category": "infantry",
+      "battlePower": 140,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 113,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "ents",
+      "objectId": "RohanEntFir",
+      "factionId": "elves",
+      "name": "Ents",
+      "nameTranslations": {
+        "ru": "Энты"
+      },
+      "category": "monsters",
+      "battlePower": 250,
+      "movementPoints": 3,
+      "siegePower": 110,
+      "recruitCost": {
+        "gold": 330,
+        "materials": 55
+      },
+      "recruitTime": 3,
+      "upkeep": 30,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "dwarven-guardians",
+      "objectId": "DwarvenGuardianHorde",
+      "factionId": "dwarves",
+      "name": "Guardians",
+      "nameTranslations": {
+        "ru": "Стражники"
+      },
+      "category": "infantry",
+      "battlePower": 135,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 111,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "dwarven-axe-throwers",
+      "objectId": "DwarvenAxeThrowerHorde",
+      "factionId": "dwarves",
+      "name": "Axe Throwers",
+      "nameTranslations": {
+        "ru": "Метатели топоров"
+      },
+      "category": "archers",
+      "battlePower": 110,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 113,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "men-of-dale",
+      "objectId": "DwarvenMenOfDaleHorde",
+      "factionId": "dwarves",
+      "name": "Men of Dale",
+      "nameTranslations": {
+        "ru": "Люди Дейла"
+      },
+      "category": "archers",
+      "battlePower": 125,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 118,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "battle-wagon",
+      "objectId": "DwarvenBattleWagon",
+      "factionId": "dwarves",
+      "name": "Battlewagon",
+      "nameTranslations": {
+        "ru": "Боевая повозка"
+      },
+      "category": "cavalry",
+      "battlePower": 135,
+      "movementPoints": 7,
+      "siegePower": 25,
+      "recruitCost": {
+        "gold": 230,
+        "materials": 40
+      },
+      "recruitTime": 2,
+      "upkeep": 22,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "dwarven-phalanx",
+      "objectId": "DwarvenPhalanxHorde",
+      "factionId": "dwarves",
+      "name": "Dwarven Phalanx",
+      "nameTranslations": {
+        "ru": "Фаланга гномов"
+      },
+      "category": "infantry",
+      "battlePower": 145,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 115,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "dwarven-zealots",
+      "objectId": "DwarvenZerkerHorde",
+      "factionId": "dwarves",
+      "name": "Dwarven Slayers",
+      "nameTranslations": {
+        "ru": "Гномы-убийцы"
+      },
+      "category": "infantry",
+      "battlePower": 185,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 280,
+        "materials": 35
+      },
+      "recruitTime": 2,
+      "upkeep": 26,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "dwarven-catapult",
+      "objectId": "DwarvenCatapult",
+      "factionId": "dwarves",
+      "name": "Dwarven Catapult",
+      "nameTranslations": {
+        "ru": "Катапульта гномов"
+      },
+      "category": "siege",
+      "battlePower": 75,
+      "movementPoints": 3,
+      "siegePower": 135,
+      "recruitCost": {
+        "gold": 180,
+        "materials": 65
+      },
+      "recruitTime": 2,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "uruk-fighters",
+      "objectId": "IsengardFighterHorde",
+      "factionId": "isengard",
+      "name": "Uruk-hai Swordsmen",
+      "nameTranslations": {
+        "ru": "Урук-хай с мечами"
+      },
+      "category": "infantry",
+      "battlePower": 120,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 106,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "uruk-berserker",
+      "objectId": "IsengardBeserker",
+      "factionId": "isengard",
+      "name": "Berserker",
+      "nameTranslations": {
+        "ru": "Берсерк"
+      },
+      "category": "infantry",
+      "battlePower": 155,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 210,
+        "materials": 20
+      },
+      "recruitTime": 2,
+      "upkeep": 20,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "uruk-deathbringers",
+      "objectId": "IsengardBerserkerHorde",
+      "factionId": "isengard",
+      "name": "Uruk Punishers",
+      "nameTranslations": {
+        "ru": "Уруки-каратели"
+      },
+      "category": "infantry",
+      "battlePower": 190,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 290,
+        "materials": 35
+      },
+      "recruitTime": 2,
+      "upkeep": 27,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "wildmen-of-dunland",
+      "objectId": "IsengardWildmanHorde",
+      "factionId": "isengard",
+      "name": "Dunland Wildmen",
+      "nameTranslations": {
+        "ru": "Дикари Дунланда"
+      },
+      "category": "infantry",
+      "battlePower": 75,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 100,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 10,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "wildmen-axe-throwers",
+      "objectId": "IsengardWildmanAxeHorde",
+      "factionId": "isengard",
+      "name": "Dunland Axe Throwers",
+      "nameTranslations": {
+        "ru": "Метатели топоров Дунланда"
+      },
+      "category": "archers",
+      "battlePower": 80,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 110,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "uruk-crossbows",
+      "objectId": "IsengardUrukCrossbowHorde",
+      "factionId": "isengard",
+      "name": "Uruk-hai Crossbowmen",
+      "nameTranslations": {
+        "ru": "Арбалетчики урук-хай"
+      },
+      "category": "archers",
+      "battlePower": 115,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 115,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "warg-pack",
+      "objectId": "IsengardWargPackHorde",
+      "factionId": "isengard",
+      "name": "Warg Pack",
+      "nameTranslations": {
+        "ru": "Стая варгов"
+      },
+      "category": "cavalry",
+      "battlePower": 80,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 170,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 17,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "warg-riders",
+      "objectId": "IsengardWargRiderHorde",
+      "factionId": "isengard",
+      "name": "Warg Riders",
+      "nameTranslations": {
+        "ru": "Всадники на варгах"
+      },
+      "category": "cavalry",
+      "battlePower": 130,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 180,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "uruk-pikes",
+      "objectId": "IsengardPikemanHorde",
+      "factionId": "isengard",
+      "name": "Uruk-hai Pikemen",
+      "nameTranslations": {
+        "ru": "Пикинёры урук-хай"
+      },
+      "category": "infantry",
+      "battlePower": 125,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 108,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "isengard-ballista",
+      "objectId": "IsengardBallista",
+      "factionId": "isengard",
+      "name": "Isengard Ballista",
+      "nameTranslations": {
+        "ru": "Баллиста Изенгарда"
+      },
+      "category": "siege",
+      "battlePower": 75,
+      "movementPoints": 3,
+      "siegePower": 120,
+      "recruitCost": {
+        "gold": 180,
+        "materials": 65
+      },
+      "recruitTime": 2,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mordor-orcs",
+      "objectId": "MordorFighterHorde",
+      "factionId": "mordor",
+      "name": "Mordor Orcs",
+      "nameTranslations": {
+        "ru": "Орки Мордора"
+      },
+      "category": "infantry",
+      "battlePower": 65,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 55,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 5,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "black-orcs",
+      "objectId": "MordorBlackOrcHorde",
+      "factionId": "mordor",
+      "name": "Black Orcs",
+      "nameTranslations": {
+        "ru": "Чёрные орки"
+      },
+      "category": "infantry",
+      "battlePower": 130,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 110,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "corsairs-of-umbar",
+      "objectId": "MordorCorsairsOfUmbarHorde",
+      "factionId": "mordor",
+      "name": "Corsairs of Umbar",
+      "nameTranslations": {
+        "ru": "Корсары Умбара"
+      },
+      "category": "infantry",
+      "battlePower": 110,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 103,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 10,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mordor-archers",
+      "objectId": "MordorArcherHorde",
+      "factionId": "mordor",
+      "name": "Orc Archers",
+      "nameTranslations": {
+        "ru": "Орки-лучники"
+      },
+      "category": "archers",
+      "battlePower": 60,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 55,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 5,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "haradrim-archers",
+      "objectId": "MordorHaradrimArcherHorde",
+      "factionId": "mordor",
+      "name": "Haradrim Archers",
+      "nameTranslations": {
+        "ru": "Лучники Харада"
+      },
+      "category": "archers",
+      "battlePower": 110,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 113,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "haradrim-lancers",
+      "objectId": "MordorHaradrimRiderHorde",
+      "factionId": "mordor",
+      "name": "Haradrim Lancers",
+      "nameTranslations": {
+        "ru": "Харадримские всадники"
+      },
+      "category": "cavalry",
+      "battlePower": 125,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 178,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mountain-troll",
+      "objectId": "MordorMountainTroll",
+      "factionId": "mordor",
+      "name": "Mountain Troll",
+      "nameTranslations": {
+        "ru": "Горный тролль"
+      },
+      "category": "monsters",
+      "battlePower": 180,
+      "movementPoints": 4,
+      "siegePower": 45,
+      "recruitCost": {
+        "gold": 266,
+        "materials": 45
+      },
+      "recruitTime": 2,
+      "upkeep": 27,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "drummer-troll",
+      "objectId": "MordorDrummerTroll",
+      "factionId": "mordor",
+      "name": "Drummer Troll",
+      "nameTranslations": {
+        "ru": "Тролль-барабанщик"
+      },
+      "category": "monsters",
+      "battlePower": 130,
+      "movementPoints": 4,
+      "siegePower": 20,
+      "recruitCost": {
+        "gold": 250,
+        "materials": 45
+      },
+      "recruitTime": 2,
+      "upkeep": 25,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "attack-troll",
+      "objectId": "MordorAttackTroll",
+      "factionId": "mordor",
+      "name": "Attack Troll",
+      "nameTranslations": {
+        "ru": "Боевой тролль"
+      },
+      "category": "monsters",
+      "battlePower": 230,
+      "movementPoints": 4,
+      "siegePower": 65,
+      "recruitCost": {
+        "gold": 283,
+        "materials": 45
+      },
+      "recruitTime": 2,
+      "upkeep": 28,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mumakil",
+      "objectId": "MordorMumakil",
+      "factionId": "mordor",
+      "name": "Mumakil",
+      "nameTranslations": {
+        "ru": "Мумакил"
+      },
+      "category": "monsters",
+      "battlePower": 285,
+      "movementPoints": 3,
+      "siegePower": 90,
+      "recruitCost": {
+        "gold": 400,
+        "materials": 80
+      },
+      "recruitTime": 3,
+      "upkeep": 36,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "easterlings",
+      "objectId": "MordorEasterlingHorde",
+      "factionId": "mordor",
+      "name": "Easterlings",
+      "nameTranslations": {
+        "ru": "Истерлинги"
+      },
+      "category": "infantry",
+      "battlePower": 125,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 108,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 11,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mordor-catapult",
+      "objectId": "MordorCatapult",
+      "factionId": "mordor",
+      "name": "Mordor Catapult",
+      "nameTranslations": {
+        "ru": "Катапульта Мордора"
+      },
+      "category": "siege",
+      "battlePower": 75,
+      "movementPoints": 3,
+      "siegePower": 125,
+      "recruitCost": {
+        "gold": 180,
+        "materials": 65
+      },
+      "recruitTime": 2,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "black-riders",
+      "objectId": "MordorBlackRiderHorde",
+      "factionId": "mordor",
+      "name": "Black Riders",
+      "nameTranslations": {
+        "ru": "Чёрные всадники"
+      },
+      "category": "cavalry",
+      "battlePower": 225,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 340,
+        "materials": 45
+      },
+      "recruitTime": 3,
+      "upkeep": 32,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "goblin-fighters",
+      "objectId": "GoblinFighterHorde",
+      "factionId": "goblins",
+      "name": "Goblin Warriors",
+      "nameTranslations": {
+        "ru": "Гоблины-воины"
+      },
+      "category": "infantry",
+      "battlePower": 55,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 45,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 4,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "spiderlings",
+      "objectId": "WildSpiderlingHorde",
+      "factionId": "goblins",
+      "name": "Spiderlings",
+      "nameTranslations": {
+        "ru": "Паучата"
+      },
+      "category": "cavalry",
+      "battlePower": 70,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 75,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 7,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "goblin-archers",
+      "objectId": "GoblinArcherHorde",
+      "factionId": "goblins",
+      "name": "Goblin Archers",
+      "nameTranslations": {
+        "ru": "Гоблины-лучники"
+      },
+      "category": "archers",
+      "battlePower": 50,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 45,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 4,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "cave-troll",
+      "objectId": "GoblinCaveTroll",
+      "factionId": "goblins",
+      "name": "Cave Troll",
+      "nameTranslations": {
+        "ru": "Пещерный тролль"
+      },
+      "category": "monsters",
+      "battlePower": 190,
+      "movementPoints": 4,
+      "siegePower": 55,
+      "recruitCost": {
+        "gold": 270,
+        "materials": 45
+      },
+      "recruitTime": 2,
+      "upkeep": 27,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "spider-riders",
+      "objectId": "GoblinSpiderRiderHorde",
+      "factionId": "goblins",
+      "name": "Spider Riders",
+      "nameTranslations": {
+        "ru": "Всадники на пауках"
+      },
+      "category": "cavalry",
+      "battlePower": 125,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 178,
+        "materials": 20
+      },
+      "recruitTime": 1,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "half-troll-marauders",
+      "objectId": "WildMarauderHorde",
+      "factionId": "goblins",
+      "name": "Half-Troll Marauders",
+      "nameTranslations": {
+        "ru": "Полутролли-мародёры"
+      },
+      "category": "infantry",
+      "battlePower": 155,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 118,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "half-troll-swordsmen",
+      "objectId": "WildMarauderSwordHorde",
+      "factionId": "goblins",
+      "name": "Half-Troll Swordsmen",
+      "nameTranslations": {
+        "ru": "Полутролли-мечники"
+      },
+      "category": "infantry",
+      "battlePower": 160,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 120,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "mountain-giant",
+      "objectId": "WildMountainGiant",
+      "factionId": "goblins",
+      "name": "Mountain Giant",
+      "nameTranslations": {
+        "ru": "Горный великан"
+      },
+      "category": "monsters",
+      "battlePower": 270,
+      "movementPoints": 3,
+      "siegePower": 125,
+      "recruitCost": {
+        "gold": 360,
+        "materials": 65
+      },
+      "recruitTime": 3,
+      "upkeep": 33,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "fire-drake-brood",
+      "objectId": "WildBabyDrakeHorde",
+      "factionId": "goblins",
+      "name": "Fire Drake Brood",
+      "nameTranslations": {
+        "ru": "Выводок огненных драконов"
+      },
+      "category": "monsters",
+      "battlePower": 240,
+      "movementPoints": 4,
+      "siegePower": 40,
+      "recruitCost": {
+        "gold": 330,
+        "materials": 70
+      },
+      "recruitTime": 3,
+      "upkeep": 31,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "black-numenoreans",
+      "objectId": "AngmarDarkDunedainHorde",
+      "factionId": "angmar",
+      "name": "Black Numenoreans",
+      "nameTranslations": {
+        "ru": "Чёрные нуменорцы"
+      },
+      "category": "infantry",
+      "battlePower": 150,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 116,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "dark-rangers",
+      "objectId": "AngmarDarkRangerHorde",
+      "factionId": "angmar",
+      "name": "Dark Rangers",
+      "nameTranslations": {
+        "ru": "Тёмные следопыты"
+      },
+      "category": "archers",
+      "battlePower": 140,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 123,
+        "materials": 8
+      },
+      "recruitTime": 1,
+      "upkeep": 12,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "dire-wolves",
+      "objectId": "AngmarDireWolfHorde",
+      "factionId": "angmar",
+      "name": "Dire Wolves",
+      "nameTranslations": {
+        "ru": "Волки-мстители"
+      },
+      "category": "cavalry",
+      "battlePower": 75,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 85,
+        "materials": 5
+      },
+      "recruitTime": 1,
+      "upkeep": 8,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "snow-trolls",
+      "objectId": "AngmarSnowTrollHorde",
+      "factionId": "angmar",
+      "name": "Snow Trolls",
+      "nameTranslations": {
+        "ru": "Снежные тролли"
+      },
+      "category": "cavalry",
+      "battlePower": 185,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 260,
+        "materials": 40
+      },
+      "recruitTime": 2,
+      "upkeep": 25,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "hill-trolls",
+      "objectId": "AngmarHillTrollHorde",
+      "factionId": "angmar",
+      "name": "Hill Trolls",
+      "nameTranslations": {
+        "ru": "Холмовые тролли"
+      },
+      "category": "infantry",
+      "battlePower": 175,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 240,
+        "materials": 35
+      },
+      "recruitTime": 2,
+      "upkeep": 23,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "angmar-sorcerers",
+      "objectId": "AngmarNecromancerHorde",
+      "factionId": "angmar",
+      "name": "Angmar Sorcerers",
+      "nameTranslations": {
+        "ru": "Колдуны Ангмара"
+      },
+      "category": "archers",
+      "battlePower": 135,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 220,
+        "materials": 30
+      },
+      "recruitTime": 2,
+      "upkeep": 21,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "thrall-masters",
+      "objectId": "AngmarThrallMaster",
+      "factionId": "angmar",
+      "name": "Thrall Master",
+      "nameTranslations": {
+        "ru": "Заклинатель"
+      },
+      "category": "infantry",
+      "battlePower": 35,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 200,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 8,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    },
+    {
+      "id": "gundabad-orcs",
+      "objectId": "AngmarOrcWarriors",
+      "factionId": "angmar",
+      "name": "Gundabad Orcs",
+      "nameTranslations": {
+        "ru": "Орки Гундабада"
+      },
+      "category": "infantry",
+      "battlePower": 65,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 0,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 6,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": "thrall-masters"
+    },
+    {
+      "id": "gundabad-wolf-riders",
+      "objectId": "AngmarWolfRiders",
+      "factionId": "angmar",
+      "name": "Gundabad Wolf Riders",
+      "nameTranslations": {
+        "ru": "Волчьи всадники Гундабада"
+      },
+      "category": "cavalry",
+      "battlePower": 110,
+      "movementPoints": 7,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 350,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 14,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "farm",
+        "city",
+        "fortress",
+        "capital"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": "thrall-masters"
+    },
+    {
+      "id": "rhudaur-spearmen",
+      "objectId": "AngmarRhudaurSpearmen",
+      "factionId": "angmar",
+      "name": "Rhudaur Spearmen",
+      "nameTranslations": {
+        "ru": "Рудаурские пикинёры"
+      },
+      "category": "infantry",
+      "battlePower": 90,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 100,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 10,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": false,
+      "transformationSourceUnitId": "thrall-masters"
+    },
+    {
+      "id": "rhudaur-axe-throwers",
+      "objectId": "AngmarRhudaurSlingers",
+      "factionId": "angmar",
+      "name": "Rhudaur Axe Throwers",
+      "nameTranslations": {
+        "ru": "Метатели топоров Рудаура"
+      },
+      "category": "archers",
+      "battlePower": 75,
+      "movementPoints": 5,
+      "siegePower": 0,
+      "recruitCost": {
+        "gold": 0,
+        "materials": 0
+      },
+      "recruitTime": 1,
+      "upkeep": 7,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "village",
+        "city",
+        "fortress",
+        "capital",
+        "port",
+        "farm"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": "thrall-masters"
+    },
+    {
+      "id": "troll-stone-thrower",
+      "objectId": "AngmarTrollSling",
+      "factionId": "angmar",
+      "name": "Troll Stone Thrower",
+      "nameTranslations": {
+        "ru": "Тролль-камнемёт"
+      },
+      "category": "siege",
+      "battlePower": 80,
+      "movementPoints": 3,
+      "siegePower": 135,
+      "recruitCost": {
+        "gold": 180,
+        "materials": 65
+      },
+      "recruitTime": 2,
+      "upkeep": 18,
+      "portrait": "",
+      "requiredLocationTypes": [
+        "fortress",
+        "capital",
+        "mine"
+      ],
+      "requiredLocationTags": [],
+      "recruitDuringOccupation": true,
+      "transformationSourceUnitId": null
+    }
+  ],
+  "heroes": [
+    {
+      "id": "aragorn",
+      "objectId": "GondorAragornMP",
+      "factionId": "men-of-the-west",
+      "name": "Aragorn",
+      "nameTranslations": {
+        "ru": "Арагорн"
+      },
+      "title": "Heir of Isildur",
+      "titleTranslations": {
+        "ru": "Наследник Исилдура"
+      },
+      "battlePower": 700,
+      "command": 10,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "minas-tirith",
+      "summonCostGold": 0
+    },
+    {
+      "id": "boromir",
+      "objectId": "GondorBoromir",
+      "factionId": "men-of-the-west",
+      "name": "Boromir",
+      "nameTranslations": {
+        "ru": "Боромир"
+      },
+      "title": "Captain of the White Tower",
+      "titleTranslations": {
+        "ru": "Капитан Белой Башни"
+      },
+      "battlePower": 520,
+      "command": 8,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "minas-tirith",
+      "summonCostGold": 0
+    },
+    {
+      "id": "theoden",
+      "objectId": "RohanTheoden",
+      "factionId": "men-of-the-west",
+      "name": "Theoden",
+      "nameTranslations": {
+        "ru": "Теоден"
+      },
+      "title": "King of Rohan",
+      "titleTranslations": {
+        "ru": "Король Рохана"
+      },
+      "battlePower": 500,
+      "command": 9,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "edoras",
+      "summonCostGold": 0
+    },
+    {
+      "id": "eomer",
+      "objectId": "RohanEomer",
+      "factionId": "men-of-the-west",
+      "name": "Eomer",
+      "nameTranslations": {
+        "ru": "Эомер"
+      },
+      "title": "Marshal of the Riddermark",
+      "titleTranslations": {
+        "ru": "Маршал Риддермарка"
+      },
+      "battlePower": 480,
+      "command": 8,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "edoras",
+      "summonCostGold": 0
+    },
+    {
+      "id": "gandalf",
+      "objectId": "GondorGandalf",
+      "factionId": "men-of-the-west",
+      "name": "Gandalf",
+      "nameTranslations": {
+        "ru": "Гэндальф"
+      },
+      "title": "The White Rider",
+      "titleTranslations": {
+        "ru": "Белый всадник"
+      },
+      "battlePower": 760,
+      "command": 10,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 3,
+      "requiredLocationId": "minas-tirith",
+      "summonCostGold": 300
+    },
+    {
+      "id": "faramir",
+      "objectId": "GondorFaramir",
+      "factionId": "men-of-the-west",
+      "name": "Faramir",
+      "nameTranslations": {
+        "ru": "Фарамир"
+      },
+      "title": "Captain of Gondor",
+      "titleTranslations": {
+        "ru": "Капитан Гондора"
+      },
+      "battlePower": 460,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "minas-tirith",
+      "summonCostGold": 180
+    },
+    {
+      "id": "eowyn",
+      "objectId": "RohanEowyn",
+      "factionId": "men-of-the-west",
+      "name": "Eowyn",
+      "nameTranslations": {
+        "ru": "Эовин"
+      },
+      "title": "Shieldmaiden of Rohan",
+      "titleTranslations": {
+        "ru": "Щитовая дева Рохана"
+      },
+      "battlePower": 410,
+      "command": 5,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 3,
+      "requiredLocationId": "edoras",
+      "summonCostGold": 180
+    },
+    {
+      "id": "elrond",
+      "objectId": "ElvenElrond",
+      "factionId": "elves",
+      "name": "Elrond",
+      "nameTranslations": {
+        "ru": "Элронд"
+      },
+      "title": "Lord of Rivendell",
+      "titleTranslations": {
+        "ru": "Владыка Ривенделла"
+      },
+      "battlePower": 650,
+      "command": 10,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "rivendell",
+      "summonCostGold": 0
+    },
+    {
+      "id": "glorfindel",
+      "objectId": "ElvenGlorfindel",
+      "factionId": "elves",
+      "name": "Glorfindel",
+      "nameTranslations": {
+        "ru": "Глорфиндел"
+      },
+      "title": "Lord of Imladris",
+      "titleTranslations": {
+        "ru": "Лорд Имладриса"
+      },
+      "battlePower": 620,
+      "command": 8,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "rivendell",
+      "summonCostGold": 0
+    },
+    {
+      "id": "thranduil",
+      "objectId": "ElvenThranduil",
+      "factionId": "elves",
+      "name": "Thranduil",
+      "nameTranslations": {
+        "ru": "Трандуил"
+      },
+      "title": "King of the Woodland Realm",
+      "titleTranslations": {
+        "ru": "Король Лесного королевства"
+      },
+      "battlePower": 570,
+      "command": 8,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "mirkwood",
+      "summonCostGold": 0
+    },
+    {
+      "id": "haldir",
+      "objectId": "ElvenHaldir",
+      "factionId": "elves",
+      "name": "Haldir",
+      "nameTranslations": {
+        "ru": "Халдир"
+      },
+      "title": "Guardian of Lorien",
+      "titleTranslations": {
+        "ru": "Страж Лориэна"
+      },
+      "battlePower": 450,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "lorien",
+      "summonCostGold": 0
+    },
+    {
+      "id": "arwen",
+      "objectId": "ElvenArwen",
+      "factionId": "elves",
+      "name": "Arwen",
+      "nameTranslations": {
+        "ru": "Арвен"
+      },
+      "title": "Evenstar",
+      "titleTranslations": {
+        "ru": "Вечерняя звезда"
+      },
+      "battlePower": 400,
+      "command": 5,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "rivendell",
+      "summonCostGold": 170
+    },
+    {
+      "id": "legolas",
+      "objectId": "ElvenLegolas",
+      "factionId": "elves",
+      "name": "Legolas",
+      "nameTranslations": {
+        "ru": "Леголас"
+      },
+      "title": "Prince of Mirkwood",
+      "titleTranslations": {
+        "ru": "Принц Лихолесья"
+      },
+      "battlePower": 540,
+      "command": 6,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 3,
+      "requiredLocationId": "mirkwood",
+      "summonCostGold": 230
+    },
+    {
+      "id": "gimli",
+      "objectId": "DwarvenGimli",
+      "factionId": "dwarves",
+      "name": "Gimli",
+      "nameTranslations": {
+        "ru": "Гимли"
+      },
+      "title": "Son of Gloin",
+      "titleTranslations": {
+        "ru": "Сын Глоина"
+      },
+      "battlePower": 620,
+      "command": 8,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "erebor",
+      "summonCostGold": 0
+    },
+    {
+      "id": "gloin",
+      "objectId": "DwarvenGloin",
+      "factionId": "dwarves",
+      "name": "Gloin",
+      "nameTranslations": {
+        "ru": "Глоин"
+      },
+      "title": "Lord of Ered Luin",
+      "titleTranslations": {
+        "ru": "Владыка Эред Луина"
+      },
+      "battlePower": 480,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "erebor",
+      "summonCostGold": 0
+    },
+    {
+      "id": "dain",
+      "objectId": "DwarvenDain",
+      "factionId": "dwarves",
+      "name": "King Dain",
+      "nameTranslations": {
+        "ru": "Король Даин"
+      },
+      "title": "King under the Mountain",
+      "titleTranslations": {
+        "ru": "Король-под-Горой"
+      },
+      "battlePower": 580,
+      "command": 10,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "erebor",
+      "summonCostGold": 0
+    },
+    {
+      "id": "prince-brand",
+      "objectId": "DwarvenCaptainofDale",
+      "factionId": "dwarves",
+      "name": "Prince Brand",
+      "nameTranslations": {
+        "ru": "Принц Бранд"
+      },
+      "title": "Captain of Dale",
+      "titleTranslations": {
+        "ru": "Капитан Дейла"
+      },
+      "battlePower": 470,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "dale",
+      "summonCostGold": 190
+    },
+    {
+      "id": "saruman",
+      "objectId": "IsengardSaruman",
+      "factionId": "isengard",
+      "name": "Saruman",
+      "nameTranslations": {
+        "ru": "Саруман"
+      },
+      "title": "Lord of Isengard",
+      "titleTranslations": {
+        "ru": "Владыка Изенгарда"
+      },
+      "battlePower": 760,
+      "command": 11,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "isengard",
+      "summonCostGold": 0
+    },
+    {
+      "id": "lurtz",
+      "objectId": "IsengardLurtz",
+      "factionId": "isengard",
+      "name": "Lurtz",
+      "nameTranslations": {
+        "ru": "Лурц"
+      },
+      "title": "Uruk-hai Chieftain",
+      "titleTranslations": {
+        "ru": "Предводитель урук-хай"
+      },
+      "battlePower": 500,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "isengard",
+      "summonCostGold": 0
+    },
+    {
+      "id": "sharku",
+      "objectId": "IsengardSharku",
+      "factionId": "isengard",
+      "name": "Sharku",
+      "nameTranslations": {
+        "ru": "Шарку"
+      },
+      "title": "Warg Chieftain",
+      "titleTranslations": {
+        "ru": "Вожак варгов"
+      },
+      "battlePower": 410,
+      "command": 6,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "isengard",
+      "summonCostGold": 180
+    },
+    {
+      "id": "wormtongue",
+      "objectId": "IsengardWormTongue",
+      "factionId": "isengard",
+      "name": "Grima Wormtongue",
+      "nameTranslations": {
+        "ru": "Грима Гнилоуст"
+      },
+      "title": "The Treacherous Counsellor",
+      "titleTranslations": {
+        "ru": "Советник-предатель"
+      },
+      "battlePower": 180,
+      "command": 3,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "isengard",
+      "summonCostGold": 100
+    },
+    {
+      "id": "mordor-witch-king",
+      "objectId": "MordorWitchKingOnFellBeast",
+      "factionId": "mordor",
+      "name": "Witch-king",
+      "nameTranslations": {
+        "ru": "Король-чародей"
+      },
+      "title": "Lord of the Nazgul",
+      "titleTranslations": {
+        "ru": "Повелитель назгулов"
+      },
+      "battlePower": 820,
+      "command": 11,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "minas-morgul",
+      "summonCostGold": 0
+    },
+    {
+      "id": "mouth-of-sauron",
+      "objectId": "MordorMouthOfSauron",
+      "factionId": "mordor",
+      "name": "Mouth of Sauron",
+      "nameTranslations": {
+        "ru": "Уста Саурона"
+      },
+      "title": "Lieutenant of Barad-dur",
+      "titleTranslations": {
+        "ru": "Наместник Барад-дура"
+      },
+      "battlePower": 520,
+      "command": 8,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "barad-dur",
+      "summonCostGold": 0
+    },
+    {
+      "id": "gothmog",
+      "objectId": "MordorGothmog",
+      "factionId": "mordor",
+      "name": "Gothmog",
+      "nameTranslations": {
+        "ru": "Готмог"
+      },
+      "title": "Lieutenant of Minas Morgul",
+      "titleTranslations": {
+        "ru": "Наместник Минас Моргула"
+      },
+      "battlePower": 540,
+      "command": 8,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "minas-morgul",
+      "summonCostGold": 170
+    },
+    {
+      "id": "khamul",
+      "objectId": "KhamulFellBeast",
+      "factionId": "mordor",
+      "name": "Khamul",
+      "nameTranslations": {
+        "ru": "Кхамул"
+      },
+      "title": "Shadow of the East",
+      "titleTranslations": {
+        "ru": "Тень Востока"
+      },
+      "battlePower": 650,
+      "command": 7,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 3,
+      "requiredLocationId": "barad-dur",
+      "summonCostGold": 280
+    },
+    {
+      "id": "mordor-morgomir",
+      "objectId": "MorgomirFellBeast",
+      "factionId": "mordor",
+      "name": "Morgomir",
+      "nameTranslations": {
+        "ru": "Моргомир"
+      },
+      "title": "Black Rider",
+      "titleTranslations": {
+        "ru": "Чёрный всадник"
+      },
+      "battlePower": 640,
+      "command": 7,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 4,
+      "requiredLocationId": "barad-dur",
+      "summonCostGold": 300
+    },
+    {
+      "id": "gorkil",
+      "objectId": "WildGoblinKing",
+      "factionId": "goblins",
+      "name": "Gorkil",
+      "nameTranslations": {
+        "ru": "Горкил"
+      },
+      "title": "Goblin King",
+      "titleTranslations": {
+        "ru": "Король гоблинов"
+      },
+      "battlePower": 460,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "gundabad",
+      "summonCostGold": 0
+    },
+    {
+      "id": "azog",
+      "objectId": "WildAzog",
+      "factionId": "goblins",
+      "name": "Azog",
+      "nameTranslations": {
+        "ru": "Азог"
+      },
+      "title": "The Defiler",
+      "titleTranslations": {
+        "ru": "Осквернитель"
+      },
+      "battlePower": 500,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "gundabad",
+      "summonCostGold": 0
+    },
+    {
+      "id": "shelob",
+      "objectId": "WildShelob",
+      "factionId": "goblins",
+      "name": "Shelob",
+      "nameTranslations": {
+        "ru": "Шелоб"
+      },
+      "title": "Great Spider",
+      "titleTranslations": {
+        "ru": "Великая паучиха"
+      },
+      "battlePower": 470,
+      "command": 3,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "moria",
+      "summonCostGold": 200
+    },
+    {
+      "id": "drogoth",
+      "objectId": "Drogoth",
+      "factionId": "goblins",
+      "name": "Drogoth",
+      "nameTranslations": {
+        "ru": "Дрогот"
+      },
+      "title": "Dragon Lord",
+      "titleTranslations": {
+        "ru": "Повелитель драконов"
+      },
+      "battlePower": 680,
+      "command": 6,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 4,
+      "requiredLocationId": "gundabad",
+      "summonCostGold": 350
+    },
+    {
+      "id": "angmar-witch-king",
+      "objectId": "AngmarWitchking",
+      "factionId": "angmar",
+      "name": "Witch-king",
+      "nameTranslations": {
+        "ru": "Король-чародей"
+      },
+      "title": "Lord of Angmar",
+      "titleTranslations": {
+        "ru": "Владыка Ангмара"
+      },
+      "battlePower": 820,
+      "command": 11,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "angmar",
+      "summonCostGold": 0
+    },
+    {
+      "id": "morgomir",
+      "objectId": "AngmarMorgramir",
+      "factionId": "angmar",
+      "name": "Morgomir",
+      "nameTranslations": {
+        "ru": "Моргомир"
+      },
+      "title": "Lieutenant of Carn Dum",
+      "titleTranslations": {
+        "ru": "Наместник Карн Дума"
+      },
+      "battlePower": 570,
+      "command": 8,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "angmar",
+      "summonCostGold": 0
+    },
+    {
+      "id": "hwaldar",
+      "objectId": "AngmarHwaldar",
+      "factionId": "angmar",
+      "name": "Haldar",
+      "nameTranslations": {
+        "ru": "Халдар"
+      },
+      "title": "Chieftain of Rhudaur",
+      "titleTranslations": {
+        "ru": "Вождь Рудаура"
+      },
+      "battlePower": 380,
+      "command": 7,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "starting",
+      "requiredTurn": 1,
+      "requiredLocationId": "rhudaur",
+      "summonCostGold": 0
+    },
+    {
+      "id": "rogash",
+      "objectId": "AngmarRogash",
+      "factionId": "angmar",
+      "name": "Rogash",
+      "nameTranslations": {
+        "ru": "Рогаш"
+      },
+      "title": "Troll of the North",
+      "titleTranslations": {
+        "ru": "Тролль Севера"
+      },
+      "battlePower": 620,
+      "command": 5,
+      "movementBonus": 0,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 2,
+      "requiredLocationId": "angmar",
+      "summonCostGold": 220
+    },
+    {
+      "id": "karsh",
+      "objectId": "AngmarKarsh",
+      "factionId": "angmar",
+      "name": "Karsh",
+      "nameTranslations": {
+        "ru": "Карш"
+      },
+      "title": "Whispering Wraith",
+      "titleTranslations": {
+        "ru": "Шепчущий призрак"
+      },
+      "battlePower": 500,
+      "command": 6,
+      "movementBonus": 1,
+      "alive": true,
+      "portrait": "",
+      "unlockType": "turn_location",
+      "requiredTurn": 3,
+      "requiredLocationId": "angmar",
+      "summonCostGold": 250
+    }
+  ],
+  "captains": [
+    {
+      "id": "men-of-the-west-captain",
+      "factionId": "men-of-the-west",
+      "name": "Captain: Men of the West",
+      "nameTranslations": {
+        "ru": "Капитан: Люди Запада"
+      },
+      "battlePower": 40,
+      "command": 5,
+      "movementBonus": 0,
+      "portrait": "",
+      "namePool": [
+        "Beren",
+        "Mardil",
+        "Hurin",
+        "Grimbold",
+        "Hama"
+      ],
+      "namePoolTranslations": {
+        "ru": [
+          "Берен",
+          "Мардил",
+          "Хурин",
+          "Гримбольд",
+          "Хама"
+        ]
+      }
+    },
+    {
+      "id": "elves-captain",
+      "factionId": "elves",
+      "name": "Captain: Elves",
+      "nameTranslations": {
+        "ru": "Капитан: Эльфы"
+      },
+      "battlePower": 40,
+      "command": 5,
+      "movementBonus": 0,
+      "portrait": "",
+      "namePool": [
+        "Erestor",
+        "Lindir",
+        "Rumil",
+        "Orophin",
+        "Galador"
+      ],
+      "namePoolTranslations": {
+        "ru": [
+          "Эрестор",
+          "Линдир",
+          "Румиль",
+          "Орофин",
+          "Галадор"
+        ]
+      }
+    },
+    {
+      "id": "dwarves-captain",
+      "factionId": "dwarves",
+      "name": "Captain: Dwarves",
+      "nameTranslations": {
+        "ru": "Капитан: Гномы"
+      },
+      "battlePower": 40,
+      "command": 5,
+      "movementBonus": 0,
+      "portrait": "",
+      "namePool": [
+        "Dori",
+        "Nori",
+        "Borin",
+        "Narvi",
+        "Frar"
+      ],
+      "namePoolTranslations": {
+        "ru": [
+          "Дори",
+          "Нори",
+          "Борин",
+          "Нарви",
+          "Фрар"
+        ]
+      }
+    },
+    {
+      "id": "isengard-captain",
+      "factionId": "isengard",
+      "name": "Captain: Isengard",
+      "nameTranslations": {
+        "ru": "Капитан: Изенгард"
+      },
+      "battlePower": 35,
+      "command": 5,
+      "movementBonus": 0,
+      "portrait": "",
+      "namePool": [
+        "Ugluk",
+        "Mauhur",
+        "Vargul",
+        "Radbug",
+        "Gorbag"
+      ],
+      "namePoolTranslations": {
+        "ru": [
+          "Углук",
+          "Маухур",
+          "Варгул",
+          "Радбуг",
+          "Горбаг"
+        ]
+      }
+    },
+    {
+      "id": "mordor-captain",
+      "factionId": "mordor",
+      "name": "Captain: Mordor",
+      "nameTranslations": {
+        "ru": "Капитан: Мордор"
+      },
+      "battlePower": 35,
+      "command": 5,
+      "movementBonus": 0,
+      "portrait": "",
+      "namePool": [
+        "Shagrat",
+        "Gorbag",
+        "Grishnakh",
+        "Muzgash",
+        "Radbug"
+      ],
+      "namePoolTranslations": {
+        "ru": [
+          "Шаграт",
+          "Горбаг",
+          "Гришнах",
+          "Музгаш",
+          "Радбуг"
+        ]
+      }
+    },
+    {
+      "id": "goblins-captain",
+      "factionId": "goblins",
+      "name": "Captain: Goblins",
+      "nameTranslations": {
+        "ru": "Капитан: Гоблины"
+      },
+      "battlePower": 35,
+      "command": 5,
+      "movementBonus": 0,
+      "portrait": "",
+      "namePool": [
+        "Boldur",
+        "Grishak",
+        "Muzgar",
+        "Snagur",
+        "Ragash"
+      ],
+      "namePoolTranslations": {
+        "ru": [
+          "Больдур",
+          "Гришак",
+          "Музгар",
+          "Снагур",
+          "Рагаш"
+        ]
+      }
+    },
+    {
+      "id": "angmar-captain",
+      "factionId": "angmar",
+      "name": "Captain: Angmar",
+      "nameTranslations": {
+        "ru": "Капитан: Ангмар"
+      },
+      "battlePower": 35,
+      "command": 5,
+      "movementBonus": 0,
+      "portrait": "",
+      "namePool": [
+        "Morkant",
+        "Vargrim",
+        "Guldar",
+        "Karn",
+        "Targon"
+      ],
+      "namePoolTranslations": {
+        "ru": [
+          "Моркант",
+          "Варгрим",
+          "Гулдар",
+          "Карн",
+          "Таргон"
+        ]
+      }
+    }
+  ]
+}

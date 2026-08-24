@@ -1,0 +1,49 @@
+/* Captain hierarchy and consistently centered compact action buttons */
+.recruitment-queue-list button,
+.recruitable-unit-list button,
+.reserve-unit-list button,
+.army-slot-row > button,
+.data-row > button,
+.unit-portrait-editor button {
+  display:grid;
+  place-items:center;
+  padding:0;
+  line-height:1;
+  text-align:center;
+}
+.recruitment-queue-list > div { grid-template-columns:34px minmax(0,1fr) 27px; }
+.recruitment-item-copy { min-width:0; }
+.recruitment-item-copy b,.recruitment-item-copy small { display:block; }
+.recruitment-item-copy small { margin-top:3px; }
+.recruitment-queue-list button,.recruitable-unit-list button { font-size:16px; }
+.recruitment-queue-list button { font-size:18px; }
+.captain-limit-note { margin:7px 0 0; padding:6px 7px; border:1px solid #35433b; border-radius:4px; background:#0d1612; color:#78867c; font-size:10px; line-height:1.4; }
+.captain-limit-note.reached { border-color:#654039; background:#211513; color:#be776c; }
+.captain-editor-grid { grid-template-columns:repeat(2,minmax(420px,1fr)); gap:12px; }
+.captain-editor-card { grid-template-columns:82px minmax(0,1fr); gap:12px; padding:12px; }
+.captain-editor-card .hero-portrait-editor .fake-portrait { width:80px; height:104px; background-size:cover; background-position:center top; }
+.captain-editor-card .hero-main-fields { grid-template-columns:1fr; }
+.captain-editor-card .hero-main-fields select:disabled { opacity:.72; }
+.captain-name-pool { grid-column:1 / -1; display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+.captain-name-pool span { color:#788488; font-size:10px; }
+.captain-name-pool textarea { width:100%; min-height:76px; resize:vertical; padding:7px 8px; border:1px solid #344147; border-radius:4px; background:#080e12; color:#bdc4c0; font-size:11px; line-height:1.45; }
+.captain-name-pool small { color:#5f6c71; font-size:9px; }
+.captain-rules-card { margin:0 0 10px; padding:10px 12px; border:1px solid #4a4835; border-radius:5px; background:#191a13; color:#8f907d; font-size:10px; line-height:1.5; }
+.captain-rules-card b { color:#d0bd87; }
+.army-leader-card.missing { border-color:#713a35; background:#251311; }
+.army-leader-card.missing small,.army-leader-card.missing b { color:#db8074; }
+.demoralized-warning { display:flex; flex-direction:column; gap:3px; margin:9px 0; padding:9px 10px; border:1px solid #76503a; border-left:3px solid #c37a54; border-radius:5px; background:#241913; }
+.demoralized-warning b { color:#dfa277; font-size:11px; }
+.demoralized-warning span { color:#95776a; font-size:10px; line-height:1.4; }
+@media(max-width:1050px){.captain-editor-grid{grid-template-columns:1fr}}
+
+.mod-create-dialog.starting-army-dialog { width:min(560px,94vw); }
+.starting-army-dialog > header > div small { display:block; margin-bottom:3px; color:#867a58; font-size:8px; text-transform:uppercase; letter-spacing:.12em; }
+.starting-army-dialog label > small { color:#687579; line-height:1.35; }
+.starting-army-limit-summary { display:grid; grid-template-columns:1fr auto; gap:3px 10px; margin-top:11px; padding:9px 10px; border:1px solid #3e4a40; border-radius:5px; background:#101915; }
+.starting-army-limit-summary span { color:#85918a; font-size:9px; }
+.starting-army-limit-summary b { color:#bdcbb8; font-size:14px; }
+.starting-army-limit-summary small { grid-column:1 / -1; color:#657169; font-size:8px; line-height:1.4; }
+.starting-army-limit-summary.reached { border-color:#685344; background:#201812; }
+.starting-army-limit-summary.reached b { color:#d0a477; }
+.army-limit-overflow { display:block; margin-top:3px; color:#b77d6f; font-size:8px; }

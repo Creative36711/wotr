@@ -1,0 +1,3 @@
+# Produce a more self-contained Windows executable without a separate MSVC runtime DLL.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

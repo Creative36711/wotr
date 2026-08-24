@@ -1,0 +1,31 @@
+{
+  "name": "wotr-map-editor",
+  "private": true,
+  "version": "0.41.0",
+  "type": "module",
+  "description": "Война за Кольцо — глобальная карта и редактор для BFME2",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 8080",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "desktop:portable": "tauri build --no-bundle && node scripts/copy-portable.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^6.0.5",
+    "typescript": "^5.5.3",
+    "vite": "^8.2.1"
+  }
+}

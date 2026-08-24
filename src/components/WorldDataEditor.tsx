@@ -1,0 +1,229 @@
+import { useState } from 'react'
+import type { CSSProperties } from 'react'
+import { getFaction } from '../constants'
+import { armyUnitSlotCap, factionArmyLimit } from '../game/army'
+import { ALL_SETTLEMENT_TYPES, SETTLEMENT_RECRUITMENT_LABELS } from '../game/recruitment'
+import { locationHexId } from '../hex/hexGrid'
+import { useMapStore } from '../store/useMapStore'
+import { imageFileToDataUrl } from '../utils/image'
+import { sortByText } from '../utils/sort'
+import { localizedTranslationsPatch, localizedValue, useI18n } from '../i18n'
+import { createAssetId, RTS_COLORS, validBigFileName } from '../rts'
+import { deleteRtsAsset, pickAndImportRtsAsset, uploadRtsAsset } from '../dataService'
+import type { HeroUnlockType, ModDefinition, RtsStoredFile, SettlementType, UnitCategory } from '../types'
+
+type Tab = 'factions' | 'units' | 'heroes' | 'captains' | 'armies' | 'regions' | 'rts'
+const TABS: Array<{ id: Tab; label: string; icon: string }> = [
+  { id: 'factions', label: 'Фракции', icon: '⚑' }, { id: 'units', label: 'Юниты', icon: '⚔' }, { id: 'heroes', label: 'Герои', icon: '♛' }, { id: 'captains', label: 'Капитаны', icon: '◆' }, { id: 'armies', label: 'Стартовые армии', icon: '♜' }, { id: 'regions', label: 'Регионы', icon: '⬡' }, { id: 'rts', label: 'BFME', icon: '◈' },
+]
+const CATEGORIES: Array<[UnitCategory, string]> = [['infantry', 'Пехота'], ['archers', 'Стрелки'], ['cavalry', 'Кавалерия'], ['monsters', 'Монстры'], ['siege', 'Осада']]
+
+interface WorldDataEditorProps { onClose:()=>void; activeMod:ModDefinition; onModChange:(definition:ModDefinition)=>void }
+export default function WorldDataEditor({ onClose, activeMod, onModChange }: WorldDataEditorProps) {
+  const {language}=useI18n()
+  const [tab, setTab] = useState<Tab>('factions')
+  const [factionFilter, setFactionFilter] = useState('all')
+  const [armyCreating, setArmyCreating] = useState(false)
+  const [armyFactionId, setArmyFactionId] = useState('')
+  const [armyLocationId, setArmyLocationId] = useState('')
+  const [armyCommanderChoice, setArmyCommanderChoice] = useState('captain')
+  const [armyInitialUnitId, setArmyInitialUnitId] = useState('')
+  const [rtsBusy, setRtsBusy] = useState(false)
+  const [rtsError, setRtsError] = useState<string|null>(null)
+  const factions = useMapStore((state) => state.factions)
+  const unitTypes = useMapStore((state) => state.unitTypes)
+  const heroes = useMapStore((state) => state.heroes)
+  const captains = useMapStore((state) => state.captains)
+  const armies = useMapStore((state) => state.armies)
+  const regions = useMapStore((state) => state.regions)
+  const locations = useMapStore((state) => state.locations)
+  const grid = useMapStore((state) => state.grid)
+  const updateFaction = useMapStore((state) => state.updateFaction)
+  const addFaction = useMapStore((state) => state.addFaction)
+  const removeFaction = useMapStore((state) => state.removeFaction)
+  const updateUnitType = useMapStore((state) => state.updateUnitType)
+  const addUnitType = useMapStore((state) => state.addUnitType)
+  const removeUnitType = useMapStore((state) => state.removeUnitType)
+  const updateHero = useMapStore((state) => state.updateHero)
+  const addHero = useMapStore((state) => state.addHero)
+  const removeHero = useMapStore((state) => state.removeHero)
+  const updateCaptain = useMapStore((state) => state.updateCaptain)
+  const updateArmy = useMapStore((state) => state.updateArmy)
+  const addArmy = useMapStore((state) => state.addArmy)
+  const removeArmy = useMapStore((state) => state.removeArmy)
+  const selectArmy = useMapStore((state) => state.selectArmy)
+  const updateRegion = useMapStore((state) => state.updateRegion)
+
+  const orderedFactions = sortByText(factions, (item) => item.label)
+  const orderedUnits = sortByText(unitTypes, (item) => item.name)
+  const orderedHeroes = sortByText(heroes, (item) => item.name)
+  const orderedCaptains = sortByText(captains, (item) => item.name)
+  const orderedArmies = sortByText(armies, (item) => item.name)
+  const orderedRegions = sortByText(regions, (item) => item.name)
+  const orderedLocations = sortByText(locations, (item) => item.name)
+  const playableFactions = orderedFactions.filter((item) => item.playable)
+  const usedStartingHeroIds = new Set(armies.flatMap((army) => [...(army.commander?.kind === 'hero' ? [army.commander.entityId] : []), ...army.heroSlots.map((slot) => slot.entityId)]))
+  const selectedArmyFaction = playableFactions.find((faction) => faction.id === armyFactionId) ?? playableFactions[0] ?? null
+  const armyCreationLocations = selectedArmyFaction ? orderedLocations.filter((location) => location.side === selectedArmyFaction.id) : []
+  const armyCreationHeroes = selectedArmyFaction ? orderedHeroes.filter((hero) => hero.factionId === selectedArmyFaction.id && hero.alive && hero.unlockType === 'starting' && !usedStartingHeroIds.has(hero.id)) : []
+  const armyCreationUnits = selectedArmyFaction ? orderedUnits.filter((unit) => unit.factionId === selectedArmyFaction.id) : []
+  const armyCreationCaptain = selectedArmyFaction ? captains.find((captain) => captain.factionId === selectedArmyFaction.id) ?? null : null
+  const armyCreationCount = selectedArmyFaction ? armies.filter((army) => army.factionId === selectedArmyFaction.id).length : 0
+  const armyCreationLimit = selectedArmyFaction ? factionArmyLimit(selectedArmyFaction, locations) : 0
+  const effectiveArmyLocationId = armyCreationLocations.some((location) => location.id === armyLocationId) ? armyLocationId : armyCreationLocations[0]?.id ?? ''
+  const effectiveArmyCommanderChoice = armyCommanderChoice === 'captain' || armyCreationHeroes.some((hero) => `hero:${hero.id}` === armyCommanderChoice) ? armyCommanderChoice : 'captain'
+  const effectiveArmyUnitId = armyCreationUnits.some((unit) => unit.id === armyInitialUnitId) ? armyInitialUnitId : armyCreationUnits[0]?.id ?? ''
+  const openArmyCreator = () => {
+    const faction = playableFactions.find((item) => item.id === factionFilter) ?? playableFactions[0]
+    if (!faction) return
+    const factionLocations = orderedLocations.filter((location) => location.side === faction.id)
+    const factionUnits = orderedUnits.filter((unit) => unit.factionId === faction.id)
+    setArmyFactionId(faction.id)
+    setArmyLocationId(factionLocations[0]?.id ?? '')
+    setArmyCommanderChoice('captain')
+    setArmyInitialUnitId(factionUnits[0]?.id ?? '')
+    setArmyCreating(true)
+  }
+  const changeArmyCreationFaction = (id: string) => {
+    setArmyFactionId(id)
+    setArmyLocationId(orderedLocations.find((location) => location.side === id)?.id ?? '')
+    setArmyInitialUnitId(orderedUnits.find((unit) => unit.factionId === id)?.id ?? '')
+    setArmyCommanderChoice('captain')
+  }
+
+  const updateRts = (patch: Partial<ModDefinition['rts']>) => onModChange({ ...activeMod, updatedAt: new Date().toISOString(), rts: { ...activeMod.rts, ...patch } })
+  const importSystemAsset = async (scope:'module'|'maps', file?:File) => {
+    setRtsBusy(true);setRtsError(null)
+    try {
+      const id=scope==='module'?createAssetId('module'):'maps'
+      const imported=file?await uploadRtsAsset(activeMod.id,scope,id,file,file.name):await pickAndImportRtsAsset(activeMod.id,scope,id)
+      if(!imported)return
+      const stored:RtsStoredFile={id,originalFileName:imported.originalFileName,targetFileName:imported.targetFileName,storageName:imported.storageName,size:imported.size}
+      if(scope==='module')updateRts({moduleFiles:[...activeMod.rts.moduleFiles,stored]});else updateRts({mapsFile:stored})
+    } catch(error){setRtsError(error instanceof Error?error.message:String(error))} finally {setRtsBusy(false)}
+  }
+  const removeSystemAsset = async (scope:'module'|'maps',id:string) => {
+    setRtsBusy(true);setRtsError(null)
+    try {await deleteRtsAsset(activeMod.id,scope,id);if(scope==='module')updateRts({moduleFiles:activeMod.rts.moduleFiles.filter((file)=>file.id!==id)});else updateRts({mapsFile:null})} catch(error){setRtsError(error instanceof Error?error.message:String(error))} finally {setRtsBusy(false)}
+  }
+  const moveRtsFaction = (id:string,direction:-1|1) => {const order=[...activeMod.rts.factionOrder];const index=order.indexOf(id);const target=index+direction;if(index<0||target<0||target>=order.length)return;[order[index],order[target]]=[order[target],order[index]];updateRts({factionOrder:order})}
+
+  const filterBar = (count: number, add: () => void, label: string) => <div className="database-toolbar"><select value={factionFilter} onChange={(event) => setFactionFilter(event.target.value)}><option value="all">Все фракции</option>{orderedFactions.filter((item) => item.id !== 'civilian').map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select><span>Объектов: {count}</span><button type="button" onClick={add}>＋ {label}</button></div>
+
+  return (
+    <div className="database-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+      <section className="database-drawer">
+        <header><div><span className="eyebrow">Редактор игровых данных</span><h2>Мир и кампания</h2></div><button type="button" className="database-close" onClick={onClose} aria-label="Закрыть редактор данных"></button></header>
+        <nav>{TABS.map((item) => <button type="button" key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => { setTab(item.id); setFactionFilter('all') }}><span>{item.icon}</span>{item.label}</button>)}</nav>
+        <main>
+          {tab === 'factions' && <>
+            <div className="database-toolbar"><span>Игровых фракций: {orderedFactions.filter((item) => item.playable).length}</span><button type="button" onClick={addFaction}>＋ Добавить фракцию</button></div><p className="database-help">«Лимит полевых армий» ограничивает количество отдельных армий фракции на глобальной карте, чтобы не было спама мелких стеков. К этому числу добавляются бонусы контролируемых крупных городов. Например: база 2 + столица 1 = максимум 3 армии.</p>
+            <div className="faction-editor-grid">{orderedFactions.map((faction) => {
+              const dependencies = { locations: locations.filter((item) => item.side === faction.id).length, armies: armies.filter((item) => item.factionId === faction.id).length, units: unitTypes.filter((item) => item.factionId === faction.id).length, heroes: heroes.filter((item) => item.factionId === faction.id).length, captains: captains.filter((item) => item.factionId === faction.id).length }
+              const removeWithConfirmation = () => {
+                const details = [`локаций станет нейтральными: ${dependencies.locations}`, `армий будет удалено: ${dependencies.armies}`, `типов отрядов: ${dependencies.units}`, `героев: ${dependencies.heroes}`, `типов капитанов: ${dependencies.captains}`].join('\n')
+                if (window.confirm(`Удалить фракцию «${faction.label}»?\n\n${details}\n\nВсе связи будут очищены автоматически. Это действие можно отменить через Ctrl+Z.`)) { removeFaction(faction.id); updateRts({ factionOrder: activeMod.rts.factionOrder.filter((id) => id !== faction.id) }) }
+              }
+              return <article key={faction.id} className="faction-editor-card" style={{ '--faction-color': faction.color } as CSSProperties}><div className="faction-identity-editor"><span className="faction-emblem-preview" style={faction.emblem ? { backgroundImage: `url(${faction.emblem})` } : undefined}></span><label title="Загрузить эмблему">✎<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={async (event) => { const file = event.target.files?.[0]; if (file) updateFaction(faction.id, { emblem: await imageFileToDataUrl(file) }); event.target.value = '' }} /></label>{faction.emblem && <button type="button" title="Сбросить эмблему" onClick={() => updateFaction(faction.id, { emblem: '' })}>×</button>}<select className="rts-color-select" title="Цвет BFME" value={faction.rtsColor} onChange={(event) => { const selected=RTS_COLORS.find((color)=>color.id===event.target.value)!;updateFaction(faction.id,{rtsColor:selected.id,color:selected.hex}) }}>{RTS_COLORS.map((color)=><option key={color.id} value={color.id}>{color.label}</option>)}</select></div><label><span>Название</span><input value={localizedValue(faction.label,faction.labelTranslations,language)} onChange={(event) => {const localized=localizedTranslationsPatch(language,faction.label,faction.labelTranslations,event.target.value);updateFaction(faction.id,{label:localized.canonical,labelTranslations:localized.translations})}} /></label><div className="faction-card-row"><select value={faction.alignment} onChange={(event) => updateFaction(faction.id, { alignment: event.target.value as typeof faction.alignment })}><option value="good">Свет</option><option value="evil">Тьма</option><option value="neutral">Нейтральная</option></select><label className="army-limit-field"><span>Лимит полевых армий</span><input type="number" min="0" max="20" value={faction.baseArmyLimit} onChange={(event) => updateFaction(faction.id, { baseArmyLimit: Number(event.target.value) })} /></label><label className="inline-check"><input type="checkbox" checked={faction.playable} onChange={(event) => updateFaction(faction.id, { playable: event.target.checked })} />Участвует в ходах</label></div><div className="faction-treasury-row"><label><span>Стартовое золото</span><input type="number" min="0" value={faction.startingTreasury.gold} onChange={(event) => updateFaction(faction.id, { startingTreasury: { ...faction.startingTreasury, gold: Number(event.target.value) } })} /></label><label><span>Стартовые материалы</span><input type="number" min="0" value={faction.startingTreasury.materials} onChange={(event) => updateFaction(faction.id, { startingTreasury: { ...faction.startingTreasury, materials: Number(event.target.value) } })} /></label></div><footer><code>{faction.id}</code><span>{dependencies.locations + dependencies.armies + dependencies.units + dependencies.heroes + dependencies.captains} связанных объектов</span><button type="button" disabled={faction.id === 'civilian'} title={faction.id === 'civilian' ? 'Системную нейтральную фракцию удалить нельзя' : 'Связанные данные будут очищены автоматически'} onClick={removeWithConfirmation}>Удалить фракцию</button></footer></article>
+            })}</div>
+          </>}
+
+          {tab === 'units' && <>
+            {filterBar(unitTypes.length, addUnitType, 'Добавить отряд')}
+            <div className="data-table unit-table-v2">
+              <div className="data-head"><span>Портрет</span><span>Название</span><span>BFME Object ID</span><span>Фракция</span><span>Класс</span><span>Сила</span><span>ОД</span><span>Золото</span><span>Мат.</span><span>Время</span><span>Содержание</span><span>Осадная сила</span><span /></div>
+              {orderedUnits.filter((item) => factionFilter === 'all' || item.factionId === factionFilter).map((unit) => <div key={unit.id} className="unit-data-entry"><div className="data-row">
+                <div className="unit-portrait-editor"><span style={unit.portrait ? { backgroundImage: `url(${unit.portrait})` } : undefined}></span><label title="Изменить портрет">✎<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => { const file = event.target.files?.[0]; if (file) updateUnitType(unit.id, { portrait: await imageFileToDataUrl(file) }); event.target.value = '' }} /></label>{unit.portrait && <button type="button" onClick={() => updateUnitType(unit.id, { portrait: '' })}>×</button>}</div>
+                <label><input value={localizedValue(unit.name,unit.nameTranslations,language)} onChange={(event) => {const localized=localizedTranslationsPatch(language,unit.name,unit.nameTranslations,event.target.value);updateUnitType(unit.id,{name:localized.canonical,nameTranslations:localized.translations})}} /></label>
+                <label><input className="object-id-input" value={unit.objectId} onChange={(event) => updateUnitType(unit.id, { objectId: event.target.value })} /><small>Unit_ID для BFME</small></label>
+                <select value={unit.factionId} onChange={(event) => updateUnitType(unit.id, { factionId: event.target.value, transformationSourceUnitId: null })}>{orderedFactions.filter((item) => item.playable).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+                <select value={unit.category} onChange={(event) => updateUnitType(unit.id, { category: event.target.value as UnitCategory })}>{CATEGORIES.map(([id,label]) => <option key={id} value={id}>{label}</option>)}</select>
+                <input type="number" min="1" max="9999" value={unit.battlePower} title="Влияет на автоматический бой" onChange={(event) => updateUnitType(unit.id, { battlePower: Number(event.target.value) })} />
+                <input type="number" min="1" max="12" value={unit.movementPoints} title="Стратегические очки движения. Скорость армии равна скорости самого медленного отряда." onChange={(event) => updateUnitType(unit.id, { movementPoints: Number(event.target.value) })} />
+                <input type="number" min="0" value={unit.recruitCost.gold} title="Цена найма в золоте" onChange={(event) => updateUnitType(unit.id, { recruitCost: { ...unit.recruitCost, gold: Number(event.target.value) } })} />
+                <input type="number" min="0" value={unit.recruitCost.materials} title="Цена найма в материалах" onChange={(event) => updateUnitType(unit.id, { recruitCost: { ...unit.recruitCost, materials: Number(event.target.value) } })} />
+                <input type="number" min="1" max="10" value={unit.recruitTime} title="Количество ходов найма" onChange={(event) => updateUnitType(unit.id, { recruitTime: Number(event.target.value) })} />
+                <input type="number" min="0" value={unit.upkeep} title="Содержание в золоте за ход" onChange={(event) => updateUnitType(unit.id, { upkeep: Number(event.target.value) })} />
+                <input type="number" min="0" max="999" value={unit.siegePower} title="Помогает атакующей армии преодолеть штраф при осаде крепости. Для обычных войск обычно 0." onChange={(event) => updateUnitType(unit.id, { siegePower: Number(event.target.value) })} />
+                <button type="button" onClick={() => removeUnitType(unit.id)}>×</button>
+              </div><div className="unit-recruitment-rules"><fieldset><legend>Допустимые типы локаций</legend>{ALL_SETTLEMENT_TYPES.map((type) => <label key={type}><input type="checkbox" checked={unit.requiredLocationTypes.includes(type)} onChange={(event) => updateUnitType(unit.id, { requiredLocationTypes: event.target.checked ? [...unit.requiredLocationTypes, type] : unit.requiredLocationTypes.filter((item) => item !== type) })} />{SETTLEMENT_RECRUITMENT_LABELS[type]}</label>)}</fieldset><label className="unit-transformation-source"><span>Способ получения</span><select value={unit.transformationSourceUnitId ?? ''} onChange={(event) => updateUnitType(unit.id, { transformationSourceUnitId: event.target.value || null })}><option value="">Прямой найм</option>{orderedUnits.filter((candidate) => candidate.factionId === unit.factionId && candidate.id !== unit.id && !candidate.transformationSourceUnitId).map((candidate) => <option key={candidate.id} value={candidate.id}>Преобразование: {candidate.name}</option>)}</select><small>{unit.transformationSourceUnitId ? 'Цена выше считается доплатой за преобразование исходного объекта.' : 'Отряд доступен в обычном списке найма.'}</small></label><label className="unit-required-tags"><span>Обязательные теги локации</span><input value={unit.requiredLocationTags.join(', ')} placeholder="коневодческий регион, промышленный центр…" onChange={(event) => updateUnitType(unit.id, { requiredLocationTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} /></label><label className="unit-occupation-toggle"><input type="checkbox" checked={unit.recruitDuringOccupation} onChange={(event) => updateUnitType(unit.id, { recruitDuringOccupation: event.target.checked })} /><span><b>Найм во время оккупации</b><small>Разрешить этот отряд до полного подчинения локации</small></span></label></div></div>)}
+            </div>
+            <p className="database-help">Object ID можно заменить точным идентификатором из вашего мода BFME. «Сила» используется в автоматическом бою. «ОД» задаёт стратегическую скорость отряда; армия движется со скоростью самого медленного. «Осадная сила» уменьшает штраф атакующей армии при штурме крепости; для обычных отрядов можно оставить 0. В RTS объект будет создан по Object ID.</p>
+          </>}
+          {tab === 'heroes' && <>
+            {filterBar(heroes.length, addHero, 'Добавить героя')}
+            <p className="database-help">Стартовые герои участвуют с первого раунда. Остальные открываются по раунду, контролю локации или обоим условиям и затем призываются за золото. Тип «Особое событие» подготовлен для будущих сюжетных правил.</p>
+            <div className="hero-editor-grid hero-catalog-grid">{orderedHeroes.filter((item) => factionFilter === 'all' || item.factionId === factionFilter).map((hero) => {
+              const faction = getFaction(factions, hero.factionId)
+              return <article key={hero.id} className="hero-editor-card hero-editor-v3 hero-catalog-card">
+                <div className="hero-portrait-editor"><span className="fake-portrait" style={{ '--portrait-color': faction.color, ...(hero.portrait ? { backgroundImage: `url(${hero.portrait})` } : {}) } as CSSProperties}></span><label>Изменить<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => { const file = event.target.files?.[0]; if (file) updateHero(hero.id, { portrait: await imageFileToDataUrl(file) }); event.target.value = '' }} /></label>{hero.portrait && <button type="button" onClick={() => updateHero(hero.id, { portrait: '' })}>Сбросить</button>}</div>
+                <div className="hero-main-fields">
+                  <label className="hero-name-field"><span>Имя</span><input className="hero-name-input" value={localizedValue(hero.name,hero.nameTranslations,language)} onChange={(event) => {const localized=localizedTranslationsPatch(language,hero.name,hero.nameTranslations,event.target.value);updateHero(hero.id,{name:localized.canonical,nameTranslations:localized.translations})}} /></label>
+                  <label className="hero-faction-field"><span>Фракция</span><select value={hero.factionId} onChange={(event) => updateHero(hero.id, { factionId: event.target.value })}>{orderedFactions.filter((item) => item.playable).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+                  <label className="hero-wide-field"><span>Титул</span><input value={localizedValue(hero.title,hero.titleTranslations,language)} onChange={(event) => {const localized=localizedTranslationsPatch(language,hero.title,hero.titleTranslations,event.target.value);updateHero(hero.id,{title:localized.canonical,titleTranslations:localized.translations})}} /></label>
+                  <label className="hero-wide-field"><span>BFME Object ID</span><input className="object-id-input" value={hero.objectId} placeholder="GondorAragorn" onChange={(event) => updateHero(hero.id, { objectId: event.target.value })} /></label>
+                </div>
+                <div className="hero-used-stats">
+                  <label><span>Базовая сила</span><input type="number" min="1" max="9999" value={hero.battlePower} onChange={(event) => updateHero(hero.id, { battlePower: Number(event.target.value) })} /><small>Личная сила в автобое</small></label>
+                  <label><span>Командование, %</span><input type="number" min="0" max="30" value={hero.command} onChange={(event) => updateHero(hero.id, { command: Number(event.target.value) })} /><small>Бонус ко всей армии</small></label>
+                  <label><span>Бонус движения, ОД</span><input type="number" min="0" max="3" value={hero.movementBonus} onChange={(event) => updateHero(hero.id, { movementBonus: Number(event.target.value) })} /><small>Добавляется к максимуму ОД</small></label>
+                </div>
+                <div className="hero-unlock-editor">
+                  <label className="hero-unlock-type"><span>Способ появления</span><select value={hero.unlockType} onChange={(event) => updateHero(hero.id, { unlockType: event.target.value as HeroUnlockType })}><option value="starting">Доступен со старта</option><option value="turn">После указанного раунда</option><option value="location">При контроле локации</option><option value="turn_location">Раунд и контроль локации</option><option value="special">Особое событие — в будущем</option></select></label>
+                  <label><span>Минимальный раунд</span><input type="number" min="1" max="999" value={hero.requiredTurn} disabled={!['turn','turn_location'].includes(hero.unlockType)} onChange={(event) => updateHero(hero.id, { requiredTurn: Math.max(1, Number(event.target.value)) })} /></label>
+                  <label className="hero-unlock-location"><span>{['location','turn_location'].includes(hero.unlockType) ? 'Обязательная локация' : 'Локация появления'}</span><select value={hero.requiredLocationId ?? ''} onChange={(event) => updateHero(hero.id, { requiredLocationId: event.target.value || null })}><option value="">Не выбрана — использовать столицу фракции</option>{orderedLocations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select><small>{hero.unlockType === 'starting' ? 'Стартовый герой появится здесь, если он не добавлен в стартовую армию.' : 'Для типов с контролем эта локация также является условием разблокировки.'}</small></label>
+                  <label><span>Стоимость призыва, золото</span><input type="number" min="0" max="99999" value={hero.summonCostGold} disabled={hero.unlockType === 'starting'} onChange={(event) => updateHero(hero.id, { summonCostGold: Math.max(0, Number(event.target.value)) })} /></label>
+                </div>
+                <footer className="hero-card-footer"><button type="button" onClick={() => { if (window.confirm(`Удалить героя «${hero.name}»? Он также будет удалён из всех армий.`)) removeHero(hero.id) }}>Удалить героя</button></footer>
+              </article>
+            })}</div>
+          </>}
+          {tab === 'captains' && <>
+            <div className="database-toolbar"><select value={factionFilter} onChange={(event) => setFactionFilter(event.target.value)}><option value="all">Все фракции</option>{orderedFactions.filter((item) => item.playable).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select><span>Типов капитанов: {captains.length}</span></div>
+            <div className="captain-rules-card"><b>Для каждой фракции существует один неизменяемый тип капитана.</b> Новые типы вручную не создаются. Здесь настраиваются общий портрет, параметры командования и список случайных имён всех капитанов этой фракции.</div>
+            <div className="hero-editor-grid captain-editor-grid">{orderedCaptains.filter((item) => factionFilter === 'all' || item.factionId === factionFilter).map((captain) => {
+              const faction = getFaction(factions, captain.factionId)
+              return <article key={captain.id} className="hero-editor-card hero-editor-v3 captain-editor-card"><div className="hero-portrait-editor"><span className="fake-portrait" style={{ '--portrait-color': faction.color, ...(captain.portrait ? { backgroundImage: `url(${captain.portrait})` } : {}) } as CSSProperties}></span><label>Изменить<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => { const file = event.target.files?.[0]; if (file) updateCaptain(captain.id, { portrait: await imageFileToDataUrl(file) }); event.target.value = '' }} /></label>{captain.portrait && <button type="button" onClick={() => updateCaptain(captain.id, { portrait: '' })}>Сбросить</button>}</div><div className="hero-main-fields"><label className="hero-wide-field"><span>Название типа</span><input value={localizedValue(captain.name,captain.nameTranslations,language)} onChange={(event) => {const localized=localizedTranslationsPatch(language,captain.name,captain.nameTranslations,event.target.value);updateCaptain(captain.id,{name:localized.canonical,nameTranslations:localized.translations})}} /></label><label className="hero-wide-field"><span>Фракция</span><select value={captain.factionId} disabled><option value={captain.factionId}>{faction.label}</option></select></label></div><div className="hero-used-stats"><label><span>Символическая сила</span><input type="number" min="1" max="50" value={captain.battlePower} onChange={(event) => updateCaptain(captain.id, { battlePower: Math.max(1, Math.min(50, Number(event.target.value))) })} /><small>Рекомендуется 30–50</small></label><label><span>Командование, %</span><input type="number" min="0" max="5" value={captain.command} onChange={(event) => updateCaptain(captain.id, { command: Math.max(0, Math.min(5, Number(event.target.value))) })} /><small>Рекомендуется 3–5%</small></label><label><span>Бонус движения</span><input type="number" min="0" max="1" value={captain.movementBonus} onChange={(event) => updateCaptain(captain.id, { movementBonus: Math.max(0, Math.min(1, Number(event.target.value))) })} /><small>Обычно 0 ОД</small></label></div><label className="captain-name-pool"><span>Список случайных имён капитанов</span><textarea value={(language==='en'?captain.namePool:captain.namePoolTranslations[language]??captain.namePool).join('\n')} placeholder="Одно имя на строку" onChange={(event) => {const names=event.target.value.split(/[\n,]+/).map((name)=>name.trim()).filter(Boolean);if(language==='en')updateCaptain(captain.id,{namePool:names});else updateCaptain(captain.id,{namePoolTranslations:{...captain.namePoolTranslations,[language]:names}})}} /><small>Все новые капитаны фракции используют этот портрет и получают случайное имя из списка.</small></label></article>
+            })}</div>
+          </>}
+          {tab === 'armies' && <>
+            <div className="database-toolbar"><select value={factionFilter} onChange={(event) => setFactionFilter(event.target.value)}><option value="all">Все фракции</option>{orderedFactions.filter((item) => item.playable).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select><span>Стартовых армий: {armies.length}</span><button type="button" onClick={openArmyCreator}>＋ Стартовая армия</button></div><p className="database-help">При создании заранее выбираются фракция, собственная стартовая локация, уникальный командир и первый боевой отряд. Число стартовых армий можно задавать независимо от полевого лимита; если оно выше лимита, новые армии во время кампании нельзя будет формировать до его увеличения.</p>
+            <div className="army-editor-list">{orderedArmies.filter((item) => factionFilter === 'all' || item.factionId === factionFilter).map((army) => {
+              const faction = getFaction(factions, army.factionId)
+              const used = orderedArmies.filter((item) => item.factionId === army.factionId).length
+              const limit = factionArmyLimit(faction, locations)
+              const unitCap = armyUnitSlotCap(army)
+              const factionLocations = orderedLocations.filter((location) => location.side === army.factionId)
+              const armyLocation = factionLocations.find((location) => locationHexId(location, grid.config) === army.hexId) ?? null
+              return <article key={army.id} style={{ '--faction-color': faction.color } as CSSProperties}>
+                <span className="army-editor-flag">⚔</span>
+                <div className="army-template-name"><b>{army.name}</b></div>
+                <label><span>Фракция · старт {used}, полевой лимит {limit}</span><select value={army.factionId} onChange={(event) => { const factionId = event.target.value; const location = orderedLocations.find((item) => item.side === factionId); updateArmy(army.id, { factionId, ...(location ? { hexId: locationHexId(location, grid.config) } : {}) }) }}>{playableFactions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>{used > limit && <small className="army-limit-overflow">Стартовых армий больше полевого лимита</small>}</label>
+                <label><span>Стартовая локация</span><select value={armyLocation?.id ?? ''} onChange={(event) => { const location = locations.find((item) => item.id === event.target.value); if (location) updateArmy(army.id, { hexId: locationHexId(location, grid.config) }) }}><option value="" disabled>Выберите свою локацию</option>{factionLocations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select>{!armyLocation && <small className="army-limit-overflow">Армия находится вне своей локации</small>}</label>
+                <div className={`army-template-commander ${army.commander ? 'ready' : 'missing'}`}><span>{army.commander ? 'Командир назначен' : 'Нет командира'}</span><small>Отряды {army.unitSlots.length}/{unitCap} · Герои {army.heroSlots.length}/{army.heroSlotLimit}</small></div>
+                <div className="army-editor-actions"><button type="button" onClick={() => { selectArmy(army.id); onClose() }}>Настроить состав</button><button type="button" onClick={() => removeArmy(army.id)}>Удалить</button></div>
+              </article>
+            })}</div>
+          </>}
+          {tab === 'regions' && <>
+            <div className="database-toolbar"><span>Автоматических регионов: {regions.length}</span></div>
+            <p className="database-help">Регион создаётся автоматически вместе с опорной локацией, всегда получает её название и удаляется вместе с ней. По умолчанию гекс относится к ближайшей опорной локации: в плотных областях регионы меньше, в удалённых — больше. Ручное назначение гексов в редакторе карты имеет приоритет.</p>
+            <div className="region-editor-list">{orderedRegions.map((region) => {
+              const owner = region.ownerFactionId ? getFaction(factions, region.ownerFactionId) : null
+              const capital = locations.find((location) => location.id === region.locationId)
+              return <article key={region.id} style={{ '--region-color': owner?.color ?? '#69747a' } as CSSProperties}>
+                <span className="region-editor-symbol">⬡</span>
+                <div className="region-readonly-field"><span>Регион</span><b>{region.name}</b></div>
+                <div className="region-readonly-field"><span>Опорная локация</span><b>{capital?.name ?? 'Не найдена'}</b></div>
+                <label><span>Стартовый владелец</span><select value={region.ownerFactionId ?? ''} onChange={(event) => updateRegion(region.id, { ownerFactionId: event.target.value || null })}><option value="">Нейтральный</option>{orderedFactions.filter((item) => item.playable).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+<label className="region-description"><span>Подробное описание региона</span><textarea value={localizedValue(region.description,region.descriptionTranslations,language)} onChange={(event) => {const localized=localizedTranslationsPatch(language,region.description,region.descriptionTranslations,event.target.value);updateRegion(region.id,{description:localized.canonical,descriptionTranslations:localized.translations})}} /></label>
+              </article>
+            })}</div>
+          </>}
+          {tab === 'rts' && <div className="rts-settings-page">{rtsError&&<div className="mod-manager-error">{rtsError}</div>}<section className="rts-settings-card"><header><div><small>Системные настройки мода</small><h3>Порядок фракций BFME</h3></div><label className="inline-check"><input type="checkbox" checked={activeMod.rts.enabled} onChange={(event)=>updateRts({enabled:event.target.checked})}/>Интеграция включена</label><b>{activeMod.rts.factionOrder.length} фракций</b></header><p>Порядок должен полностью совпадать со списком фракций в комнате BFME. Индекс используется автоматизацией при выборе фракции.</p><div className="rts-faction-order">{activeMod.rts.factionOrder.map((id,index)=>{const faction=factions.find((item)=>item.id===id);if(!faction)return null;return <article key={id}><strong>{index+1}</strong><span style={{background:faction.color}}/><b>{faction.label}</b><small>{RTS_COLORS.find((color)=>color.id===faction.rtsColor)?.label}</small><button disabled={index===0} onClick={()=>moveRtsFaction(id,-1)}>↑</button><button disabled={index===activeMod.rts.factionOrder.length-1} onClick={()=>moveRtsFaction(id,1)}>↓</button><button className="danger" onClick={()=>updateRts({factionOrder:activeMod.rts.factionOrder.filter((item)=>item!==id)})}>×</button></article>})}</div>{playableFactions.some((faction)=>!activeMod.rts.factionOrder.includes(faction.id))&&<label className="rts-add-faction"><span>Добавить в список BFME</span><select defaultValue="" onChange={(event)=>{if(event.target.value){updateRts({factionOrder:[...activeMod.rts.factionOrder,event.target.value]});event.target.value=''}}}><option value="">Выберите фракцию…</option>{playableFactions.filter((faction)=>!activeMod.rts.factionOrder.includes(faction.id)).map((faction)=><option key={faction.id} value={faction.id}>{faction.label}</option>)}</select></label>}</section><section className="rts-settings-card"><header><div><small>Копируются в папку игры перед боем</small><h3>Файлы мода</h3></div><button type="button" disabled={rtsBusy} onClick={()=>void importSystemAsset('module')}>＋ Добавить BIG</button></header><div className="rts-file-list">{activeMod.rts.moduleFiles.map((file)=><article key={file.id}><span>◫</span><div><b>{file.originalFileName}</b><small>{(file.size/1024).toFixed(1)} КБ</small></div><label><small>Имя в папке игры</small><input className={!validBigFileName(file.targetFileName)?'invalid':''} value={file.targetFileName} onChange={(event)=>updateRts({moduleFiles:activeMod.rts.moduleFiles.map((item)=>item.id===file.id?{...item,targetFileName:event.target.value}:item)})}/></label><button className="danger" onClick={()=>void removeSystemAsset('module',file.id)}>Удалить</button></article>)}{!activeMod.rts.moduleFiles.length&&<p>Дополнительные INI/данные мода ещё не добавлены.</p>}</div><label className="rts-browser-upload">Загрузить BIG в browser-dev<input type="file" accept=".big" onChange={(event)=>{const file=event.target.files?.[0];if(file)void importSystemAsset('module',file);event.target.value=''}}/></label></section><section className="rts-settings-card"><header><div><small>Единственный архив со всеми RTS-картами</small><h3>Архив карт</h3></div><button type="button" disabled={rtsBusy} onClick={()=>void importSystemAsset('maps')}>{activeMod.rts.mapsFile?'Заменить':'Выбрать BIG'}</button></header>{activeMod.rts.mapsFile?<div className="rts-single-file"><span>▧</span><div><b>{activeMod.rts.mapsFile.originalFileName}</b><small>{(activeMod.rts.mapsFile.size/1024/1024).toFixed(2)} МБ</small></div><label><small>Имя в папке игры</small><input className={!validBigFileName(activeMod.rts.mapsFile.targetFileName)?'invalid':''} value={activeMod.rts.mapsFile.targetFileName} onChange={(event)=>updateRts({mapsFile:{...activeMod.rts.mapsFile!,targetFileName:event.target.value}})}/></label><button className="danger" onClick={()=>void removeSystemAsset('maps','maps')}>Удалить</button></div>:<p>Без общего архива карт RTS-сражения запускать нельзя.</p>}<label className="rts-browser-upload">Загрузить архив карт в browser-dev<input type="file" accept=".big" onChange={(event)=>{const file=event.target.files?.[0];if(file)void importSystemAsset('maps',file);event.target.value=''}}/></label><label className="rts-wide-field"><span>Имя активного кэша карты в папке игры</span><input className={!validBigFileName(activeMod.rts.mapCacheTargetFileName)?'invalid':''} value={activeMod.rts.mapCacheTargetFileName} onChange={(event)=>updateRts({mapCacheTargetFileName:event.target.value})}/><small>Перед каждым боем файл перезаписывается кэшем выбранной локации или региона.</small></label><label className="rts-wide-field"><span>Rts:Rules для NetworkPref.ini</span><input value={activeMod.rts.networkRules} onChange={(event)=>updateRts({networkRules:event.target.value})}/></label></section><section className="rts-settings-card rts-map-cache-note"><b>Кэши отдельных карт загружаются в локациях и регионах.</b><p>Каждая опорная локация и каждый полевой регион хранит собственный небольшой BIG с Maps\MapCache.ini. Перед сражением он копируется под указанным выше именем.</p></section></div>}
+        </main>
+      </section>
+      {armyCreating && <div className="mod-create-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) setArmyCreating(false) }}><section className="mod-create-dialog starting-army-dialog"><header><div><small>Стартовый шаблон</small><h2>Новая армия</h2></div><button type="button" onClick={() => setArmyCreating(false)}>×</button></header><label><span>Фракция</span><select value={selectedArmyFaction?.id ?? ''} onChange={(event) => changeArmyCreationFaction(event.target.value)}>{playableFactions.map((faction) => <option key={faction.id} value={faction.id}>{faction.label}</option>)}</select></label><label><span>Стартовая локация</span><select value={effectiveArmyLocationId} onChange={(event) => setArmyLocationId(event.target.value)}><option value="" disabled>У фракции нет своей локации</option>{armyCreationLocations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select><small>Армия будет размещена точно на центральном гексе выбранной локации.</small></label><label><span>Командир</span><select value={effectiveArmyCommanderChoice} onChange={(event) => setArmyCommanderChoice(event.target.value)}><option value="captain" disabled={!armyCreationCaptain}>Новый капитан с уникальным именем</option>{armyCreationHeroes.map((hero) => <option key={hero.id} value={`hero:${hero.id}`}>Герой: {hero.name}</option>)}</select><small>В списке героев показываются только доступные со старта и ещё не назначенные командиры.</small></label><label><span>Первый боевой отряд</span><select value={effectiveArmyUnitId} onChange={(event) => setArmyInitialUnitId(event.target.value)}><option value="" disabled>У фракции нет отрядов</option>{armyCreationUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}{unit.transformationSourceUnitId ? ' · результат преобразования' : ''}</option>)}</select><small>Пустая стартовая армия не создаётся. Остальной состав можно добавить после создания.</small></label><div className={`starting-army-limit-summary ${armyCreationCount >= armyCreationLimit ? 'reached' : ''}`}><span>Стартовых армий после создания</span><b>{armyCreationCount + 1}</b><small>Полевой лимит: {armyCreationLimit}. Превышение допустимо для стартового сценария, но заблокирует формирование новых армий в кампании.</small></div><footer><button type="button" onClick={() => setArmyCreating(false)}>Отмена</button><button type="button" className="primary" disabled={!selectedArmyFaction || !effectiveArmyLocationId || !effectiveArmyUnitId || effectiveArmyCommanderChoice === 'captain' && !armyCreationCaptain} onClick={() => { if (!selectedArmyFaction) return; addArmy(selectedArmyFaction.id, effectiveArmyLocationId, effectiveArmyCommanderChoice, effectiveArmyUnitId); setFactionFilter(selectedArmyFaction.id); setArmyCreating(false) }}>Создать армию</button></footer></section></div>}
+    </div>
+  )
+}

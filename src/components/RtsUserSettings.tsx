@@ -1,0 +1,10 @@
+import { useState } from 'react'
+import { pickRtsExecutable } from '../dataService'
+import type { AppSettings, ModDefinition } from '../types'
+
+export default function RtsUserSettings({ settings, activeMod, onSave, onClose }: { settings:AppSettings; activeMod:ModDefinition|null; onSave:(settings:AppSettings)=>void; onClose:()=>void }) {
+  const [path,setPath]=useState(settings.rtsExecutablePath)
+  const [error,setError]=useState<string|null>(null)
+  const choose=async()=>{setError(null);try{const selected=await pickRtsExecutable();if(selected)setPath(selected);else if(!('__TAURI_INTERNALS__' in window))setError('Системный выбор EXE доступен в Tauri. В browser-dev путь можно ввести вручную.')}catch(value){setError(value instanceof Error?value.message:String(value))}}
+  return <main className="rts-user-settings-screen"><section className="rts-user-settings-card"><header><div><small>Локальные настройки компьютера</small><h1>Подключение BFME</h1><p>Этот путь выбирает игрок. Он не входит в мод и не передаётся другим пользователям.</p></div><button onClick={onClose}>×</button></header>{error&&<div className="mod-manager-error">{error}</div>}<main><section><span className="rts-settings-icon">▣</span><div><b>Исполняемый файл ROTWK</b><p>Выберите <code>lotrbfme2ep1.exe</code> в папке установленной игры.</p></div></section><div className="rts-user-path"><input value={path} placeholder="C:\RotWK\lotrbfme2ep1.exe" onChange={(event)=>setPath(event.target.value)}/><button type="button" onClick={()=>void choose()}>Обзор…</button></div><div className="rts-user-status"><span>Активный мод</span><b>{activeMod?.name??'Не выбран'}</b><small>{activeMod?.rts.mapsFile?`Архив карт: ${activeMod.rts.mapsFile.targetFileName}`:'Архив карт в моде отсутствует'} · файлов мода: {activeMod?.rts.moduleFiles.length??0}</small></div></main><footer><button onClick={onClose}>Отмена</button><button className="primary" disabled={!path.trim()} onClick={()=>{onSave({...settings,rtsExecutablePath:path.trim()});onClose()}}>Сохранить</button></footer></section></main>
+}

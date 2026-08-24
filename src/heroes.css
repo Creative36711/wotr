@@ -1,0 +1,24 @@
+/* Spacious hero catalog and campaign summoning */
+.hero-catalog-grid { grid-template-columns:repeat(2,minmax(430px,1fr)); gap:12px; }
+.hero-catalog-card { grid-template-columns:82px minmax(0,1fr); gap:12px; padding:12px; border-color:#354249; background:linear-gradient(145deg,#111a1f,#0c1317); }
+.hero-catalog-card .hero-portrait-editor .fake-portrait { width:80px; height:104px; }
+.hero-catalog-card .hero-main-fields { grid-template-columns:minmax(0,1fr) 155px; gap:8px; }
+.hero-catalog-card .hero-wide-field { grid-column:1 / -1; }
+.hero-catalog-card .hero-main-fields label > span,.hero-catalog-card .hero-used-stats label > span { margin-bottom:5px; font-size:10px; }
+.hero-catalog-card .hero-main-fields input,.hero-catalog-card .hero-main-fields select { height:36px; padding:0 9px; font-size:12px; text-overflow:clip; }
+.hero-catalog-card .hero-used-stats { gap:8px; padding-top:10px; }.hero-catalog-card .hero-used-stats label { padding:9px; }.hero-catalog-card .hero-used-stats input { height:34px; font-size:12px; }
+.hero-unlock-editor { grid-column:1 / -1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:end; gap:9px; margin-top:2px; padding:11px; border:1px solid #46513e; border-radius:6px; background:linear-gradient(145deg,#121b14,#0b1312); }
+.hero-unlock-editor label { min-width:0; }
+.hero-unlock-editor label > span { display:block; margin-bottom:5px; color:#8b988f; font-size:10px; }
+.hero-unlock-editor input,.hero-unlock-editor select { width:100%; height:36px; margin:0; padding:0 9px; border:1px solid #3b4943; border-radius:4px; background:#081014; color:#c0c7c0; font-size:11px; text-overflow:clip; }
+.hero-unlock-editor input:disabled,.hero-unlock-editor select:disabled { opacity:.42; }
+.hero-unlock-type,.hero-unlock-location { grid-column:1 / -1; }.hero-unlock-location > small { display:block; margin-top:5px; color:#68766d; font-size:9px; line-height:1.35; }
+.hero-editor-card .hero-card-footer { justify-content:flex-end; min-height:30px; align-items:center; }
+.hero-catalog-card .hero-card-footer { justify-content:flex-end; min-height:30px; align-items:center; }
+.hero-catalog-card .hero-card-footer button { padding:5px 8px; border:1px solid #573833; border-radius:4px; background:#241715; }
+.hero-summon-panel { margin:10px 0; padding:10px; border:1px solid #5c5136; border-radius:6px; background:linear-gradient(145deg,#1d1a10,#0b1214); }
+.hero-summon-panel > header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-bottom:7px; border-bottom:1px solid #403b2a; }
+.hero-summon-panel header b { color:#d1bd83; font-family:Cinzel,serif; font-size:11px; }.hero-summon-panel header small { color:#736c58; font-size:9px; }
+.summonable-hero-list { display:flex; flex-direction:column; gap:5px; margin-top:7px; }.summonable-hero-list article { min-height:55px; display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding:6px; border:1px solid #3d4438; border-radius:5px; background:#0b1311; }.summonable-hero-list .hero-summon-portrait { width:38px; height:43px; border:1px solid #545c4a; border-radius:4px; background-image:url('/assets/ui/hero-placeholder.jpg'); background-size:cover; background-position:center top; }.summonable-hero-list b { display:block; color:#c6cabb; font-size:11px; }.summonable-hero-list small { display:block; margin-top:3px; color:#707b72; font-size:9px; line-height:1.35; }.summonable-hero-list button { height:30px; padding:0 9px; border:1px solid #6a5937; border-radius:4px; background:#312719; color:#dfc582; font-size:10px; cursor:pointer; }.summonable-hero-list button:disabled { opacity:.4; cursor:not-allowed; }
+.hero-unlock-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin:7px 0 0; }.hero-unlock-summary span { padding:6px; border:1px solid #303b38; border-radius:4px; background:#0b1212; text-align:center; }.hero-unlock-summary small { display:block; color:#68746f; font-size:8px; }.hero-unlock-summary b { display:block; margin-top:2px; color:#bea96f; font-size:10px; }
+@media(max-width:1050px){.hero-catalog-grid{grid-template-columns:1fr}.hero-catalog-card{grid-template-columns:82px minmax(0,1fr)}}

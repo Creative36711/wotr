@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Vite/Tauri generated output
+.vite/
+dist/
+src-tauri/target/
+portable/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

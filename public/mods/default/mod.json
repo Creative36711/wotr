@@ -1,0 +1,31 @@
+{
+  "id": "default",
+  "name": "Vanilla 2.01",
+  "description": "Стандартная глобальная кампания по фракциям, войскам и героям The Rise of the Witch-king 2.01.",
+  "author": "WOTR Team",
+  "version": "2.01.0",
+  "createdAt": "2026-08-16T00:00:00.000Z",
+  "updatedAt": "2026-08-24T14:15:24.178Z",
+  "bfmeVersion": "The Rise of the Witch-king 2.01",
+  "mapImage": null,
+  "rts": {
+    "enabled": true,
+    "factionOrder": [
+      "men-of-the-west",
+      "elves",
+      "dwarves",
+      "isengard",
+      "mordor",
+      "goblins",
+      "angmar"
+    ],
+    "moduleFiles": [],
+    "mapsFile": null,
+    "mapCacheTargetFileName": "__wotr_maps_cache.big",
+    "networkRules": "0 0 0 400 1000 -1 -1 -1 -1 -1"
+  },
+  "dataVersions": {
+    "world": 29,
+    "roster": 14
+  }
+}

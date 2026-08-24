@@ -1,0 +1,9 @@
+.faction-editor-card { grid-template-columns:72px 1fr 1fr; }
+.faction-identity-editor { grid-row:1 / 3; position:relative; width:68px; display:grid; grid-template-columns:1fr 1fr; gap:4px; align-content:start; }
+.faction-emblem-preview { grid-column:1 / -1; width:68px; height:68px; display:block; border:1px solid #46545b; border-radius:10px; background-image:url('/assets/ui/faction-placeholder.svg'); background-size:cover; background-position:center; box-shadow:inset 0 0 18px rgba(0,0,0,.45); }
+.faction-identity-editor label,.faction-identity-editor button { height:23px; display:grid; place-items:center; margin:0; border:1px solid #3c494f; border-radius:4px; background:#121c21; color:#aab5b4; font-size:10px; cursor:pointer; }.faction-identity-editor label input { display:none; }.faction-identity-editor button { color:#c1796f; }.faction-identity-editor > input[type=color] { grid-column:1 / -1; width:100%; height:25px; padding:2px; border:1px solid #3c494f; border-radius:4px; background:#0a1115; cursor:pointer; }
+.faction-choice-columns section > div > button { grid-template-columns:42px minmax(0,1fr) auto; }
+.faction-choice-columns button .faction-choice-emblem { position:relative; width:36px; height:36px; display:block; border:1px solid color-mix(in srgb,var(--choice-color) 55%,#4b565a); border-radius:7px; background-image:url('/assets/ui/faction-placeholder.svg'); background-size:cover; background-position:center; }
+.faction-choice-columns button .faction-choice-emblem i { position:absolute; right:-4px; bottom:-4px; width:12px; height:12px; border:2px solid #11181b; border-radius:50%; background:transparent; }.faction-choice-columns button.active .faction-choice-emblem i { background:var(--choice-color); box-shadow:0 0 7px var(--choice-color); }
+
+.faction-editor-card footer > span { margin-left:auto; margin-right:10px; color:#657277; font-size:9px; }

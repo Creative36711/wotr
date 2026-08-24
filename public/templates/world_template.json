@@ -1,0 +1,79 @@
+{
+  "version": 29,
+  "grid": {
+    "config": {
+      "orientation": "pointy",
+      "size": 72,
+      "originX": 36,
+      "originY": 36,
+      "movementBudget": 6
+    },
+    "cells": {}
+  },
+  "locations": [],
+  "factions": [
+    {
+      "id": "civilian",
+      "label": "Neutral",
+      "labelTranslations": {
+        "ru": "Нейтральные"
+      },
+      "color": "#8b918d",
+      "playable": false,
+      "alignment": "neutral",
+      "baseArmyLimit": 0,
+      "startingTreasury": {
+        "gold": 0,
+        "materials": 0
+      },
+      "emblem": "",
+      "rtsColor": "white"
+    }
+  ],
+  "armies": [],
+  "regions": [],
+  "campaign": {
+    "round": 1,
+    "activeFactionId": "civilian",
+    "turnOrder": [],
+    "phase": "planning_good",
+    "firstMoverThisRound": "good",
+    "playerFactionId": null,
+    "playerSide": "good",
+    "aiEnabled": true,
+    "gameStatus": "active",
+    "gameResultDismissed": false,
+    "factionStates": {},
+    "freeCaptains": {
+      "civilian": []
+    },
+    "fogOfWar": {
+      "enabled": true,
+      "overlayVisible": true,
+      "lastSeenArmies": [],
+      "lastSeenLocations": []
+    },
+    "treasuries": {
+      "civilian": {
+        "gold": 0,
+        "materials": 0,
+        "lastIncome": {
+          "gold": 0,
+          "materials": 0
+        },
+        "lastUpkeep": 0
+      }
+    },
+    "locationStates": {},
+    "heroStates": {},
+    "conflicts": [],
+    "currentConflictId": null,
+    "log": [],
+    "aiDifficulty": {
+      "strategic": "warrior",
+      "rts": "warrior"
+    },
+    "pendingOrders": []
+  },
+  "battles": []
+}

@@ -665,11 +665,11 @@ export async function loadWorld(modId: string) {
   return world
 }
 export interface LoadedSaveGame { saveGame: SaveGameData; compatible: boolean; savedGameVersion: string | null; reason: string | null }
-export async function loadSaveGame(world: WorldData, modId: string): Promise<LoadedSaveGame> {
+export async function loadSaveGame(world: WorldData, modId: string, modDisplayName?: string): Promise<LoadedSaveGame> {
   try {
     const raw = await readModJson(modId, 'savegame') as any
     const savedGameVersion = typeof raw?.gameVersion === 'string' ? raw.gameVersion : null
-    if (raw?.version !== SAVEGAME_DATA_VERSION || savedGameVersion !== GAME_VERSION || raw?.modId !== modId) return { saveGame: createNewSaveGame(world, modId), compatible: false, savedGameVersion, reason: `Сохранение не соответствует моду «${modId}» или версии ${GAME_VERSION}.` }
+    if (raw?.version !== SAVEGAME_DATA_VERSION || savedGameVersion !== GAME_VERSION || raw?.modId !== modId) return { saveGame: createNewSaveGame(world, modId), compatible: false, savedGameVersion, reason: `Сохранение не соответствует моду «${modDisplayName ?? modId}» или версии ${GAME_VERSION}.` }
     const saveGame=normalizeSaveGame(raw,world);refreshCampaignRts(saveGame.campaign,saveGame.armies,world.locations,world.regions);return { saveGame, compatible: true, savedGameVersion, reason: null }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

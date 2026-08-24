@@ -345,8 +345,6 @@ const UI_EN: Record<string, string> = {
   'По вертикали, Y': 'Vertical, Y',
   'Координаты также меняются перетаскиванием объекта по карте.': 'Coordinates can also be changed by dragging the object on the map.',
   'Сражение': 'Battle',
-  'Поле будет выбрано из центрального и соседних гексов.': 'The battlefield will be selected from the central and neighboring hexes.',
-  'Позже': 'Later',
   'Дублировать': 'Duplicate',
   'Удалить': 'Delete',
 

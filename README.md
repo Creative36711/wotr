@@ -13,7 +13,7 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.42.0
+Application: 0.43.0
 world.json: 30
 roster.json: 14
 savegame.json: 29
@@ -381,7 +381,7 @@ The editor manages:
 - domains and strongholds;
 - economic types;
 - hex terrain and infrastructure;
-- factions and fixed BFME colors;
+- factions: a free global-map color (picker plus palette; the color must stay unique per faction — a taken shade is auto-adjusted to the nearest free one) separately from the fixed BFME RTS color, which may repeat;
 - units and BFME Object IDs;
 - heroes, titles, unlock rules, and summoning;
 - captains and localized name pools;

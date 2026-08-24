@@ -293,10 +293,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .empty-sigil { width: 50px; height: 50px; display: grid; place-items: center; margin-bottom: 14px; border: 1px solid #374047; border-radius: 50%; color: #74684d; font-family: Georgia, serif; font-size: 25px; background: radial-gradient(circle, #172026, #0b1115); box-shadow: 0 0 0 5px #0c1216; }
 .inspector-empty b { color: #a9aaa5; font-family: Cinzel, Georgia, serif; font-size: 14px; }
 .inspector-empty p { max-width: 200px; margin: 7px 0 0; color: #5f6b71; font-size: 12px; line-height: 1.55; }
-.battle-card { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 9px; margin-top: 15px; padding: 11px; border: 1px solid #4a302d; border-radius: 6px; background: linear-gradient(135deg, rgba(78,37,32,.32), rgba(32,26,24,.35)); }
-.battle-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: #c77b6e; background: #291b19; font-size: 17px; }
-.battle-card b { color: #d1b5ad; font-size: 13px; }
-.battle-card p { margin: 2px 0 0; color: #796762; font-size: 11px; line-height: 1.35; }
 .battle-card button { height: 25px; padding: 0 7px; border: 1px solid #493531; border-radius: 4px; background: #221917; color: #6f5550; font-size: 11px; }
 
 /* Loading, errors and notifications */

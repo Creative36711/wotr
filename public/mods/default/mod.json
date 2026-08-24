@@ -25,7 +25,7 @@
     "networkRules": "0 0 0 400 1000 -1 -1 -1 -1 -1"
   },
   "dataVersions": {
-    "world": 29,
+    "world": 30,
     "roster": 14
   }
 }

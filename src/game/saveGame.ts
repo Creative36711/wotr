@@ -16,6 +16,8 @@ const cloneCampaign = (campaign: WorldData['campaign']) => ({
   locationStates: Object.fromEntries(Object.entries(campaign.locationStates).map(([id, state]) => [id, { locationId: state.locationId, recruitmentQueue: state.recruitmentQueue.map((item) => ({ ...item })), reserve: state.reserve.map((slot) => ({ ...slot })), occupationTurnsLeft: state.occupationTurnsLeft }])),
   heroStates: Object.fromEntries(Object.entries(campaign.heroStates).map(([id, hero]) => [id, { ...hero }])),
   pendingOrders:campaign.pendingOrders.map((order)=>({...order,path:[...order.path]})),
+  alliedPlans:campaign.alliedPlans.map((plan)=>({...plan,path:[...plan.path]})),
+  turnMovements:campaign.turnMovements.map((entry)=>({...entry})),
   factionStates: Object.fromEntries(Object.entries(campaign.factionStates).map(([id, faction]) => [id, { ...faction, statistics: { ...faction.statistics } }])),
   freeCaptains: Object.fromEntries(Object.entries(campaign.freeCaptains).map(([id, captains]) => [id, captains.map((captain) => ({ ...captain }))])),
   fogOfWar: { ...campaign.fogOfWar, lastSeenArmies: campaign.fogOfWar.lastSeenArmies.map((intel) => ({ ...intel })), lastSeenLocations: campaign.fogOfWar.lastSeenLocations.map((intel) => ({ ...intel })) },

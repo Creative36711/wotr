@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { areFactionsHostile, DEFAULT_GRID_CONFIG, TERRAIN_BY_ID } from '../constants'
-import { runAiMovement, runAiPlanning } from '../game/ai'
+import { armyCommanderName, movementTargetLabel, planAlliedMovement, runAiMovement, runAiPlanning } from '../game/ai'
 import { armyMovementCap, armyUnitSlotCap, captainInstanceFromCommander, captainNamesForFaction, createCaptainCommander, createHeroCommander, factionArmyLimit, factionCaptainCount, factionCaptainLimit, generateArmyName, generateUniqueCaptainName } from '../game/army'
 import { canFactionPlan, canPlayerMoveArmy, factionIsActive, factionSide, firstFactionForSide, oppositeSide } from '../game/campaign'
 import { calculateConflictBattle, scanHotSpots, updateConflictRtsCompatibility } from '../game/conflicts'
@@ -139,6 +139,8 @@ const cloneCampaign = (campaign: CampaignState): CampaignState => ({
   locationStates: Object.fromEntries(Object.entries(campaign.locationStates).map(([id, state]) => [id, { locationId: state.locationId, recruitmentQueue: state.recruitmentQueue.map((item) => ({ ...item })), reserve: state.reserve.map((slot) => ({ ...slot })), occupationTurnsLeft: state.occupationTurnsLeft }])),
   heroStates: Object.fromEntries(Object.entries(campaign.heroStates).map(([id, hero]) => [id, { ...hero }])),
   pendingOrders:campaign.pendingOrders.map((order)=>({...order,path:[...order.path]})),
+  alliedPlans:campaign.alliedPlans.map((plan)=>({...plan,path:[...plan.path]})),
+  turnMovements:campaign.turnMovements.map((entry)=>({...entry})),
   factionStates: Object.fromEntries(Object.entries(campaign.factionStates).map(([id, faction]) => [id, { ...faction, statistics: { ...faction.statistics } }])),
   freeCaptains: Object.fromEntries(Object.entries(campaign.freeCaptains).map(([id, captains]) => [id, captains.map((captain) => ({ ...captain }))])),
   fogOfWar: { ...campaign.fogOfWar, lastSeenArmies: campaign.fogOfWar.lastSeenArmies.map((intel) => ({ ...intel })), lastSeenLocations: campaign.fogOfWar.lastSeenLocations.map((intel) => ({ ...intel })) },
@@ -689,6 +691,7 @@ function processAftermath(state: MapState, campaign: CampaignState, sourceArmies
           recordHeroBattleOutcome(battles, conflict, hero, outcome)
         }
         const destinationName = locations.find((location) => location.id === destination.locationId)?.name ?? 'своей локации'
+        campaign.turnMovements.push({ id: `log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, round: campaign.round, factionId: army.factionId, armyName: army.name, commanderName: armyCommanderName(army, heroes), action: 'retreated', targetLabel: destinationName === 'своей локации' ? null : destinationName, distance: destination.distance })
         campaign.log.unshift(campaignEvent(campaign, `${army.name} отступает в «${destinationName}» на ${destination.distance} гекс${destination.distance === 1 ? '' : destination.distance < 5 ? 'а' : 'ов'}${removed.length ? ` и теряет в пути: ${removed.join(', ')}` : ''}. Армия деморализована до следующего хода.`, 'retreat', army.factionId))
       }
     }
@@ -810,6 +813,8 @@ export const useMapStore = create<MapState>((set) => ({
       heroes = prepared.heroes
     }
     campaign.activeFactionId = playerFaction.id
+    campaign.turnMovements = []
+    campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, playerFaction.id) : []
     refreshFogIntel(campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, true)
     const nextWorld: WorldData = { ...gameWorld, version: WORLD_DATA_VERSION, armies, heroes, campaign, battles: [] }
     const gameSave = extractSaveGame(nextWorld, initialSave)
@@ -1009,6 +1014,8 @@ export const useMapStore = create<MapState>((set) => ({
     }
     const conflictUsesRemovedArmy = (conflict: CampaignConflict) => [...conflict.attackerArmyIds, ...conflict.defenderArmyIds, ...conflict.attackerReinforcementArmyIds, ...conflict.defenderReinforcementArmyIds, ...conflict.attackerDistantReinforcementArmyIds, ...conflict.defenderDistantReinforcementArmyIds, ...conflict.optionalPlayerReinforcements.map((option) => option.armyId)].some((armyId) => removedArmyIds.has(armyId))
     campaign.pendingOrders=campaign.pendingOrders.filter((order)=>!removedArmyIds.has(order.armyId))
+    campaign.alliedPlans=campaign.alliedPlans.filter((plan)=>plan.factionId!==id&&!removedArmyIds.has(plan.armyId))
+    campaign.turnMovements=campaign.turnMovements.filter((entry)=>entry.factionId!==id)
     campaign.conflicts = campaign.conflicts.filter((conflict) => conflict.captorFactionId !== id && !conflictUsesRemovedArmy(conflict))
     if (!campaign.conflicts.some((conflict) => conflict.id === campaign.currentConflictId)) campaign.currentConflictId = null
     campaign.fogOfWar.lastSeenArmies = campaign.fogOfWar.lastSeenArmies.filter((intel) => intel.factionId !== id && !removedArmyIds.has(intel.armyId))
@@ -1162,7 +1169,7 @@ export const useMapStore = create<MapState>((set) => ({
     return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), armies, campaign })
   }),
 
-  removeArmy:(id)=>set((state)=>{const campaign=cloneCampaign(state.campaign);campaign.pendingOrders=campaign.pendingOrders.filter((order)=>order.armyId!==id);return{...pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),armies:state.armies.filter((item)=>item.id!==id),campaign}),selectedArmyId:state.selectedArmyId===id?null:state.selectedArmyId}}),
+  removeArmy:(id)=>set((state)=>{const campaign=cloneCampaign(state.campaign);campaign.pendingOrders=campaign.pendingOrders.filter((order)=>order.armyId!==id);campaign.alliedPlans=campaign.alliedPlans.filter((plan)=>plan.armyId!==id);return{...pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),armies:state.armies.filter((item)=>item.id!==id),campaign}),selectedArmyId:state.selectedArmyId===id?null:state.selectedArmyId}}),
 
 
   updateRegion: (id, patch) => set((state) => pushHistory(state, {
@@ -1187,7 +1194,9 @@ export const useMapStore = create<MapState>((set) => ({
     }
     const runSideAiMovement = (side: StrategicSide) => {
       if (!campaign.aiEnabled) return
-      armies = runAiMovement(side, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId)
+      const sidePlans = side === campaign.playerSide ? campaign.alliedPlans : []
+      armies = runAiMovement(side, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId, heroes, sidePlans)
+      if (side === campaign.playerSide) campaign.alliedPlans = []
       campaign.log.unshift(campaignEvent(campaign, `ИИ завершил движение остальных фракций стороны «${side === 'good' ? 'Свет' : 'Тьма'}».`, 'move', null))
     }
     const finishMovement = () => {
@@ -1211,6 +1220,8 @@ export const useMapStore = create<MapState>((set) => ({
         heroes = prepared.heroes
       }
       campaign.activeFactionId = campaign.playerFactionId!
+      campaign.turnMovements = []
+      campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId) : []
     }
     const executePlayerOrders=()=>{
       const grid=resolveGrid(state.grid,locations,regions)
@@ -1218,6 +1229,7 @@ export const useMapStore = create<MapState>((set) => ({
         const interception=order.path.findIndex((hex,index)=>index>0&&armies.some((enemy)=>enemy.hexId===hex&&areFactionsHostile(state.factions,enemy.factionId,army.factionId)));const path=interception>0?order.path.slice(0,interception+1):order.path;const destination=path.at(-1)!;const cost=pathMovementCost(path,grid.byId,army.factionId);if(cost>army.movementRemaining)continue
         const enemies=armies.filter((enemy)=>enemy.hexId===destination&&areFactionsHostile(state.factions,enemy.factionId,army.factionId));const target=locations.find((location)=>location.hex===destination)??(order.locationId?locations.find((location)=>location.id===order.locationId)??null:null);const hostile=Boolean(target&&areFactionsHostile(state.factions,target.side,army.factionId));const committed=enemies.length>0||hostile;if(committed&&!army.canInitiateBattle)continue
         army.hexId=destination;army.movementRemaining=committed?0:Math.max(0,army.movementRemaining-cost);army.status=army.movementRemaining>0?'ready':'marched';army.engaged=committed;army.movedRound=campaign.round;army.movedInPhase='movement_first'
+        campaign.turnMovements.push({id:`log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`,round:campaign.round,factionId:army.factionId,armyName:army.name,commanderName:armyCommanderName(army,heroes),action:committed?'besieged':'moved',targetLabel:target?.name??movementTargetLabel(destination,locations,regions,grid),distance:path.length-1})
         if(committed){for(const enemy of enemies)enemy.engaged=true;campaign.log.unshift(campaignEvent(campaign,`${army.name} входит в зону боя и связывает противника.`,'move',army.factionId))}else if(target?.side==='civilian'){captureLocation(locations,regions,campaign,target.id,army.factionId);campaign.log.unshift(campaignEvent(campaign,`${army.name} занимает нейтральную локацию «${target.name}».`,'capture',army.factionId))}else campaign.log.unshift(campaignEvent(campaign,`${army.name} перемещается на ${cost} ОД.`,'move',army.factionId))
       }
       campaign.pendingOrders=[]
@@ -1305,6 +1317,7 @@ export const useMapStore = create<MapState>((set) => ({
     for (const candidate of armies.filter((item) => item.hexId === origin)) candidate.engaged = armies.some((enemy) => enemy.hexId === origin && areFactionsHostile(state.factions, enemy.factionId, candidate.factionId))
     const campaign = cloneCampaign(state.campaign)
     const destinationName = state.locations.find((location) => location.id === destination.locationId)?.name ?? 'свою локацию'
+    campaign.turnMovements.push({ id: `log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, round: campaign.round, factionId: army.factionId, armyName: army.name, commanderName: armyCommanderName(army, state.heroes), action: 'retreated', targetLabel: destinationName === 'свою локацию' ? null : destinationName, distance: destination.distance })
     if (army.unitSlots.length === 0 && army.heroSlots.length === 0 && army.commander?.kind !== 'hero') {
       armies = armies.filter((candidate) => candidate.id !== army.id)
       campaign.log.unshift(campaignEvent(campaign, `${army.name} рассеяно при отходе в «${destinationName}»: боевых отрядов не осталось.`, 'army_destroyed', army.factionId))
@@ -1539,6 +1552,7 @@ export const useMapStore = create<MapState>((set) => ({
     const campaign = cloneCampaign(state.campaign)
     if (army.commander?.kind === 'captain') releaseCaptain(campaign, army.factionId, army.commander)
     campaign.pendingOrders=campaign.pendingOrders.filter((order)=>order.armyId!==armyId)
+    campaign.alliedPlans=campaign.alliedPlans.filter((plan)=>plan.armyId!==armyId)
     const free = Math.max(0, location.reserveLimit - campaign.locationStates[locationId].reserve.length)
     campaign.locationStates[locationId].reserve.push(...additions.slice(0, free).map((slot) => ({ ...slot })))
     return { ...gameCommit(state, { campaign, armies: state.armies.filter((item) => item.id !== armyId) }), selectedArmyId: state.selectedArmyId === armyId ? null : state.selectedArmyId }

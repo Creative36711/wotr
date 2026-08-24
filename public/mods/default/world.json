@@ -1,5 +1,5 @@
 {
-  "version": 29,
+  "version": 30,
   "locations": [
     {
       "id": "grey-havens",
@@ -12662,6 +12662,8 @@
       }
     },
     "pendingOrders": [],
+    "alliedPlans": [],
+    "turnMovements": [],
     "conflicts": [],
     "currentConflictId": null,
     "log": [

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
 import { areFactionsHostile, getFaction, TERRAIN_BY_ID, WORLD_HEIGHT, WORLD_WIDTH } from '../constants'
 import { armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/army'
-import { canPlayerMoveArmy } from '../game/campaign'
+import { movementTargetLabel } from '../game/ai'
+import { canPlayerMoveArmy, factionSide } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import {
   findPath,
@@ -90,6 +91,18 @@ function colorWithAlpha(color: string, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`
 }
 
+/** Desaturated faction color used for allied (view-only) order previews. */
+function mutedOrderColor(color: string) {
+  const value = color.replace('#', '')
+  const mix = (channel: number, neutral: number, share: number) => Math.round(channel * share + neutral * (1 - share))
+  const red = mix(Number.parseInt(value.slice(0, 2), 16), 148, 0.62)
+  const green = mix(Number.parseInt(value.slice(2, 4), 16), 152, 0.62)
+  const blue = mix(Number.parseInt(value.slice(4, 6), 16), 146, 0.62)
+  return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`
+}
+
+const orderMarkerId = (color: string) => `arrowhead-${color.replace('#', '')}`
+
 function KeepIcon() {
   return (
     <svg viewBox="0 0 26 30" aria-hidden="true">
@@ -98,11 +111,39 @@ function KeepIcon() {
   )
 }
 
-function PlaceIcon() {
-  return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6"/><circle className="pin-core" cx="10" cy="10" r="2"/></svg>
+/** Hand-drawn silhouette icons for economic settlement types, styled like the army/fortress markers. */
+const ECONOMIC_ICON_PATHS: Record<string, { paths: string[]; evenodd?: boolean }> = {
+  village: { paths: ['M12 3 3 10v10h6v-6h6v6h6V10L12 3Z'], evenodd: true },
+  city: { paths: ['M3 21V10.5L8 6l5 4.5V21H3Zm3.2-8.4h1.7v2.1H6.2Zm3.9 0h1.7v2.1h-1.7Z', 'M14.5 21V5.5h6V21h-6Zm1.6-12.7h2.4v2.4h-2.4Zm0 5.2h2.4v2.4h-2.4Z'], evenodd: true },
+  capital: { paths: ['M11.5 2h1v4.5h-1Z', 'M12.5 2.3 16.3 3.5l-3.8 1.5Z', 'M4 21v-8l3-2.4V8h10v2.6L20 13v8H4Zm6.5 0v-4.4a1.5 1.5 0 0 1 3 0V21Zm-3.4-6.6h2v2.3h-2Zm7.8 0h2v2.3h-2Z'], evenodd: true },
+  port: { paths: ['M12 2.2a2.6 2.6 0 1 1 0 5.2 2.6 2.6 0 0 1 0-5.2Zm0 1.5a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z', 'M11.3 8h1.4v2.1h3.1v1.5h-3.1v6c2.4-.4 4.2-2 4.8-4.3l-1.9.7 3.1-3.4 1 4.6-1.8-.7c-.7 3.5-3 5.7-5.9 6.1-2.9-.4-5.2-2.6-5.9-6.1l-1.8.7 1-4.6 3.1 3.4-1.9-.7c.6 2.3 2.4 3.9 4.8 4.3v-6H8.1V10.1h3.2Z'], evenodd: true },
+  mine: { paths: ['M3 20 12 6.5 21 20Zm7.4 0v-3a1.6 1.6 0 0 1 3.2 0v3Z'], evenodd: true },
+  farm: { paths: ['M3 10.5 12 4l9 6.5V21H3Zm6.5 4.2h5V21h-5Zm1.1-6.4h2.8v2.2h-2.8Z'], evenodd: true },
+  wilderness: { paths: ['M8.6 21 9.6 5.6C9.6 4 10.4 3 11.4 3s1.8 1 1.8 2.6L14.2 21Z', 'M15.8 21l.7-6.4 2 .5-.7 5.9Z', 'M4.6 21h14.8v1.6H4.6Z'] },
+  swamp: { paths: ['M6.2 4.2h2.6v4.9H6.2Z', 'M6.9 9.1V20h1.2V9.1Z', 'M10.9 5.8h2.6v4.6h-2.6Z', 'M11.6 10.4V20h1.2v-9.6Z', 'M15.6 4.6h2.6v4.4h-2.6Z', 'M16.3 9V20h1.2V9Z', 'M3 19.8c1.5-1.1 3-1.1 4.5 0s3 1.1 4.5 0 3-1.1 4.5 0 3 1.1 4.5 0v1.9H3Z'] },
+  forest: { paths: ['M12 2 6.5 9.5h2.8L5 16h6v5h2v-5h6l-4.3-6.5h2.8L12 2Z'] },
+  mountains: { paths: ['M2 20 9 6l4.2 8.4L16 9l6 11Z'] },
+  ruins: { paths: ['M4.2 6h5.6v2H4.2Z', 'M5 8.6h4V21H5Z', 'M13.2 10.5h5.6v2h-5.6Z', 'M14 13.1h4V21h-4Z', 'M9.6 19.4l2.4-1.7 1.2 1.7Z'] },
+  crossroads: { paths: ['M11.3 4.5h1.4V21h-1.4Z', 'M7.8 6.2h8.7L19 8l-2.5 1.8H7.8Z', 'M16.2 10.8H7.5L5 12.6l2.5 1.8h8.7Z'] },
+  ford: { paths: ['M3 14.6c2.5-4.4 5.5-6.6 9-6.6s6.5 2.2 9 6.6h-2.4c-2-3.1-4.1-4.7-6.6-4.7s-4.6 1.6-6.6 4.7Z', 'M2.5 15h19v1.8h-19Z', 'M3 19.6c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0v1.7H3Z'] },
+  pass: { paths: ['M3 21V6.5L8.5 3v18Z', 'M21 21V6.5L15.5 3v18Z', 'M10.6 21h2.8v-1.8h-2.8Z'] },
+  signal_tower: { paths: ['M12 1.6c1.5 1.4 2.2 2.6 2.2 3.7A2.2 2.2 0 0 1 12 7.5a2.2 2.2 0 0 1-2.2-2.2c0-1.1.7-2.3 2.2-3.7Z', 'M9.2 8.6h5.6v2H9.2Z', 'M9.6 11 9 21h6l-.6-10Z'] },
+  camp: { paths: ['M11.4 2h1.2v3h-1.2Z', 'M12 4.5 3 20h6.2l2.8-4.8L14.8 20H21Z'] },
 }
-const ECONOMIC_ICONS:Record<string,string>={village:'●',city:'◆',capital:'♛',port:'⚓',mine:'♦',farm:'♧',wilderness:'○',swamp:'≋',forest:'♠',mountains:'▲',ruins:'⌂',crossroads:'✣',ford:'≈',pass:'⌁',signal_tower:'♜',camp:'△'}
-function EconomicLocationIcon({type}:{type:MapLocation['economicType']}){return type==='fortress'?<KeepIcon/>:<span className="economic-location-icon">{ECONOMIC_ICONS[type]??<PlaceIcon/>}</span>}
+
+function EconomicSettlementIcon({ type }: { type: string }) {
+  const definition = ECONOMIC_ICON_PATHS[type]
+  if (!definition) return <KeepIcon />
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {definition.paths.map((path, index) => <path key={index} d={path} fillRule={definition.evenodd ? 'evenodd' : undefined} />)}
+    </svg>
+  )
+}
+
+function EconomicLocationIcon({ type }: { type: MapLocation['economicType'] }) {
+  return type === 'fortress' ? <KeepIcon /> : <EconomicSettlementIcon type={type} />
+}
 
 const VIEW_MODES: Array<{ id: MapViewMode; label: string; icon: string; hint: string }> = [
   { id: 'cinematic', label: 'Карта', icon: '◉', hint: 'Кинематографический режим: сетка скрыта' },
@@ -183,6 +224,33 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
   )
   const routePath = useMemo(() => smoothRoutePath(route, logicalGrid.byId), [logicalGrid, route])
   const pendingOrderPaths=useMemo(()=>campaign.pendingOrders.map((order)=>({order,path:smoothRoutePath(order.path,logicalGrid.byId),army:armies.find((army)=>army.id===order.armyId)})).filter((item)=>item.path&&item.army),[campaign.pendingOrders,logicalGrid,armies])
+  /** Allied AI march previews: dashed arrows, fog-limited to hexes the player can actually see. */
+  const alliedPlanPaths=useMemo(()=>{
+    if(mode!=='game'||!campaign.aiEnabled||!campaign.phase.startsWith('planning_')||!campaign.playerFactionId)return[]as Array<{plan:typeof campaign.alliedPlans[number];path:string;color:string;markerId:string;tooltip:string}>
+    return campaign.alliedPlans.flatMap((plan)=>{
+      const army=armies.find((candidate)=>candidate.id===plan.armyId)
+      if(!army||army.factionId===campaign.playerFactionId||army.engaged)return[]
+      if(factionSide(factions,army.factionId)!==campaign.playerSide)return[]
+      if(fogEnabled&&!visibleHexes.has(plan.path[0]))return[]
+      const path=smoothRoutePath(plan.path,logicalGrid.byId)
+      if(!path)return[]
+      const faction=getFaction(factions,army.factionId)
+      const leader=commanderDefinition(army,heroes,captains)
+      const commanderLabel=army.commander?.kind==='captain'?army.commander.displayName??leader?.name??'Commander':leader?.name??'Commander'
+      const targetLabel=(plan.locationId?locations.find((location)=>location.id===plan.locationId)?.name:null)??movementTargetLabel(plan.destinationHexId,locations,regions,logicalGrid)??null
+      const steps=plan.path.length-1
+      const tooltip=`Союзник · ${translateText(faction.label)}: ${translateText(commanderLabel)} → ${targetLabel?translateText(targetLabel):plan.destinationHexId} (${steps} ${steps===1?'гекс':steps<5?'гекса':'гексов'})`
+      const color=mutedOrderColor(faction.color)
+      return[{plan,path,color,markerId:orderMarkerId(color),tooltip}]
+    })
+  },[mode,campaign.aiEnabled,campaign.phase,campaign.playerFactionId,campaign.alliedPlans,campaign.playerSide,armies,factions,fogEnabled,visibleHexes,logicalGrid,heroes,captains,locations,regions])
+  const orderArrowMarkers=useMemo(()=>{
+    const colors=new Map<string,string>()
+    for(const item of pendingOrderPaths){const color=getFaction(factions,item.army!.factionId).color;colors.set(orderMarkerId(color),color)}
+    for(const item of alliedPlanPaths)colors.set(item.markerId,item.color)
+    colors.set('arrowhead-route','#e3ca85')
+    return[...colors.entries()].map(([id,color])=>({id,color}))
+  },[alliedPlanPaths,factions,pendingOrderPaths])
   const hoveredHex = hoveredHexId ? logicalGrid.byId.get(hoveredHexId) ?? null : null
   const placementActive=Boolean(addKind||gestureRef.current?.type==='pin')
   const placementOccupied=Boolean(hoveredHex&&locations.some((location)=>location.hex===hoveredHex.id&&location.id!==gestureRef.current?.locationId))
@@ -485,13 +553,23 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
 
   const affordableOrder=(army:typeof armies[number],targetHexId:string)=>{const calculated=findPath(logicalGrid.byId,army.hexId,targetHexId,army.factionId);const interception=calculated.findIndex((id,index)=>index>0&&enemyHexIds.has(id));const full=interception>0?calculated.slice(0,interception+1):calculated;if(full.length<2)return null;let selected=full.slice(0,2);for(let length=2;length<=full.length;length++){const candidate=full.slice(0,length);if(pathMovementCost(candidate,logicalGrid.byId,army.factionId)>army.movementRemaining)break;selected=candidate}const cost=pathMovementCost(selected,logicalGrid.byId,army.factionId);return cost<=army.movementRemaining?{path:selected,destinationId:selected.at(-1)!,cost}:null}
 
+  /** Issues a movement order and returns the map to cinematic view so the arrow stays visible. */
+  const placeArmyOrder=(army:typeof armies[number],order:{path:string[];destinationId:string;cost:number},destinationLocationId:string|null)=>{
+    const destination=logicalGrid.byId.get(order.destinationId)
+    if(!destination)return false
+    moveArmy(army.id,order.destinationId,order.path,order.cost,destination.terrain,destinationLocationId)
+    const placed=useMapStore.getState().campaign.pendingOrders.some((item)=>item.armyId===army.id&&item.destinationHexId===order.destinationId)
+    if(placed&&mode==='game'){setViewMode('cinematic');selectHex(null)}
+    return placed
+  }
+
   const handlePinPointerDown = (event: ReactPointerEvent<HTMLButtonElement>, location: MapLocation) => {
     event.stopPropagation()
     if (hexEdit) return // Маркеры не сбрасывают массовое выделение гексов.
     if (mode === 'game' && selectedArmy && canPlayerMoveArmy(campaign, factions, selectedArmy.factionId) && !selectedArmy.engaged) {
       const order=affordableOrder(selectedArmy,location.hex)
       const destination=order?logicalGrid.byId.get(order.destinationId):null
-      if(order&&destination){moveArmy(selectedArmy.id,order.destinationId,order.path,order.cost,destination.terrain,order.destinationId===location.hex?location.id:null);return}
+      if(order&&destination){placeArmyOrder(selectedArmy,order,order.destinationId===location.hex?location.id:null);return}
     }
     select(location.id)
     if (event.button !== 0 || mode !== 'edit') return
@@ -579,7 +657,8 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
           const cell = hexAtScreenPoint(event.clientX, event.clientY)
           if (cell && mode === 'game' && selectedArmy && viewMode === 'tactical' && cell.id !== selectedArmy.hexId) {
             const order=affordableOrder(selectedArmy,cell.id)
-            if(order){const destination=logicalGrid.byId.get(order.destinationId)!;moveArmy(selectedArmy.id,order.destinationId,order.path,order.cost,destination.terrain,destination.locationIds[0]??null);selectHex(order.destinationId)}else selectHex(cell.id)
+            if(order)placeArmyOrder(selectedArmy,order,logicalGrid.byId.get(order.destinationId)!.locationIds[0]??null)
+            else selectHex(cell.id)
           } else if (cell) selectHex(cell.id)
           else clearSelection()
         } else {
@@ -660,11 +739,10 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
             <polygon className={`hovered-hex ${placementActive?(placementOccupied?'placement-invalid':'placement-valid'):''}`} points={polygonPoints(hoveredHex,grid.config.size*.93)}/>
           )}
 
-          {pendingOrderPaths.length>0&&<g className="pending-order-lines">{pendingOrderPaths.map(({order,path,army})=><path key={order.armyId} d={path} style={{'--order-color':getFaction(factions,army!.factionId).color}as CSSProperties} onContextMenu={(event)=>{event.preventDefault();event.stopPropagation();cancelArmyOrder(order.armyId)}}/>)}</g>}
-          {routePath && (
+          {routePath && !(routeTargetId !== hoveredHexId && selectedArmy && campaign.pendingOrders.some((item) => item.armyId === selectedArmy.id)) && (
             <g className={`route-line ${routeCost > movementBudget ? 'multi-turn' : ''}`}>
               <path className="route-shadow" d={routePath} />
-              <path className="route-main" d={routePath} />
+              <path className="route-main" d={routePath} markerEnd="url(#arrowhead-route)" />
               {route.map((id, index) => {
                 const cell = logicalGrid.byId.get(id)!
                 return index === 0 || index === route.length - 1 ? null : <circle key={id} cx={cell.x} cy={cell.y} r="8" />
@@ -675,6 +753,35 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
         </svg>
 
         {fogOverlayVisible && <svg className="fog-of-war-layer" viewBox={`0 0 ${WORLD_WIDTH} ${WORLD_HEIGHT}`} aria-hidden="true"><g>{logicalGrid.cells.filter((cell) => !visibleHexes.has(cell.id)).map((cell) => <polygon key={cell.id} points={polygonPoints(cell, grid.config.size * 1.04)} />)}</g></svg>}
+
+        {(pendingOrderPaths.length>0||alliedPlanPaths.length>0)&&(
+          <svg className="order-layer" viewBox={`0 0 ${WORLD_WIDTH} ${WORLD_HEIGHT}`} aria-hidden="true">
+            <defs>
+              {orderArrowMarkers.map((marker)=>(
+                <marker key={marker.id} id={marker.id} viewBox="0 0 10 10" refX="7.4" refY="5" markerWidth="3.4" markerHeight="3.4" orient="auto-start-reverse">
+                  <path d="M 0.6 0.8 L 9.4 5 L 0.6 9.2 Z" fill={marker.color} stroke="rgba(8,12,14,.9)" strokeWidth="0.7" />
+                </marker>
+              ))}
+            </defs>
+            {alliedPlanPaths.length>0&&(
+              <g className="allied-plan-lines">
+                {alliedPlanPaths.map((item)=>(
+                  <path key={item.plan.armyId} d={item.path} markerEnd={`url(#${item.markerId})`} style={{'--order-color':item.color}as CSSProperties}>
+                    <title>{item.tooltip}</title>
+                  </path>
+                ))}
+              </g>
+            )}
+            {pendingOrderPaths.length>0&&(
+              <g className="pending-order-lines">
+                {pendingOrderPaths.map(({order,path,army})=>{
+                  const color=getFaction(factions,army!.factionId).color
+                  return <path key={order.armyId} d={path} markerEnd={`url(#${orderMarkerId(color)})`} style={{'--order-color':color}as CSSProperties} onContextMenu={(event)=>{event.preventDefault();event.stopPropagation();cancelArmyOrder(order.armyId)}}><title>{`${translateText(army!.name)} → ${order.cost} ОД · ПКМ — отменить приказ`}</title></path>
+                })}
+              </g>
+            )}
+          </svg>
+        )}
 
         <div className="pins">
           {renderedLocations.map((location) => {
@@ -758,7 +865,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
                   if (hexEdit) return
                   if (mode === 'game' && selectedArmy && !selectedArmy.engaged && canPlayerMoveArmy(campaign, factions, selectedArmy.factionId) && areFactionsHostile(factions, army.factionId, selectedArmy.factionId)) {
                     const order=affordableOrder(selectedArmy,army.hexId)
-                    if(order){const destination=logicalGrid.byId.get(order.destinationId)!;moveArmy(selectedArmy.id,order.destinationId,order.path,order.cost,destination.terrain,destination.locationIds[0]??null)}
+                    if(order)placeArmyOrder(selectedArmy,order,logicalGrid.byId.get(order.destinationId)!.locationIds[0]??null)
                   } else selectArmy(army.id)
                 }}
                 onContextMenu={(event)=>{if(campaign.pendingOrders.some((order)=>order.armyId===army.id)){event.preventDefault();event.stopPropagation();cancelArmyOrder(army.id)}}}

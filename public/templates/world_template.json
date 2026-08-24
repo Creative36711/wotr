@@ -1,5 +1,5 @@
 {
-  "version": 29,
+  "version": 30,
   "grid": {
     "config": {
       "orientation": "pointy",
@@ -73,7 +73,9 @@
       "strategic": "warrior",
       "rts": "warrior"
     },
-    "pendingOrders": []
+    "pendingOrders": [],
+    "alliedPlans": [],
+    "turnMovements": []
   },
   "battles": []
 }

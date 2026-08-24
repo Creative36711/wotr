@@ -4,7 +4,7 @@ import { factionIsActive, factionSide } from './campaign'
 import { heroIsDeployed, heroUnlockSatisfied } from './heroes'
 import { recruitableUnitsAtLocation } from './recruitment'
 import { cellMovementCost, findPath, hexDistance, locationHexId, neighborIds, resolveGrid } from '../hex/hexGrid'
-import type { Army, CampaignState, CaptainType, FactionDefinition, Hero, HexGridData, MapLocation, Region, StrategicSide, UnitType } from '../types'
+import type { AlliedMovementPlan, Army, CampaignState, CaptainType, FactionDefinition, Hero, HexGridData, LogicalHex, MapLocation, Region, StrategicSide, UnitType } from '../types'
 
 const aiId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -143,6 +143,143 @@ export function runAiPlanning(
   return nextArmies
 }
 
+interface MarchTarget {
+  location: MapLocation
+  targetHexId: string
+  target: LogicalHex
+  garrison: number
+  allyAlreadyNear: boolean
+}
+
+export function movementTargetLabel(hexId: string, locations: MapLocation[], regions: Region[], logicalGrid: { byId: Map<string, LogicalHex> }) {
+  const location = locations.find((candidate) => candidate.hex === hexId)
+  if (location) return location.name
+  const regionId = logicalGrid.byId.get(hexId)?.regionId ?? null
+  const region = regionId ? regions.find((candidate) => candidate.id === regionId) : null
+  return region?.name ?? null
+}
+
+export function armyCommanderName(army: Army, heroes: Hero[]) {
+  if (!army.commander) return null
+  if (army.commander.kind === 'hero') return heroes.find((hero) => hero.id === army.commander!.entityId)?.name ?? null
+  return army.commander.displayName ?? null
+}
+
+function recordTurnMovement(campaign: CampaignState, army: Army, heroes: Hero[], action: 'moved' | 'stayed' | 'retreated' | 'besieged', targetLabel: string | null, distance: number) {
+  campaign.turnMovements.push({
+    id: aiId(`move-${army.id}`),
+    round: campaign.round,
+    factionId: army.factionId,
+    armyName: army.name,
+    commanderName: armyCommanderName(army, heroes),
+    action,
+    targetLabel,
+    distance,
+  })
+}
+
+function hostileLocationsForSide(side: StrategicSide, locations: MapLocation[], factions: FactionDefinition[]) {
+  return locations.filter((location) => factionSide(factions, location.side) === (side === 'good' ? 'evil' : 'good'))
+}
+
+function chooseArmyMarchTarget(
+  army: Army,
+  origin: LogicalHex,
+  nextArmies: Army[],
+  hostileLocations: MapLocation[],
+  logicalGrid: { byId: Map<string, LogicalHex> },
+  campaign: CampaignState,
+  factions: FactionDefinition[],
+  grid: HexGridData,
+  claimedTargetIds: Set<string>,
+): MarchTarget | null {
+  const allTargets = hostileLocations.map((location) => {
+    const targetHexId = locationHexId(location, grid.config)
+    const target = logicalGrid.byId.get(targetHexId)
+    const neighboringIds = target ? new Set(neighborIds(target.q, target.r)) : new Set<string>()
+    const allyAlreadyNear = nextArmies.some((candidate) => candidate.id !== army.id && factionSide(factions, candidate.factionId) === factionSide(factions, army.factionId) && (candidate.hexId === targetHexId || neighboringIds.has(candidate.hexId)))
+    return { location, targetHexId, target, garrison: campaign.locationStates[location.id]?.reserve.length ?? 0, allyAlreadyNear }
+  }).filter((item): item is MarchTarget => Boolean(item.target))
+  const availableTargets = allTargets.filter((item) => !claimedTargetIds.has(item.location.id) && !item.allyAlreadyNear)
+  const unclaimedTargets = allTargets.filter((item) => !claimedTargetIds.has(item.location.id))
+  const targets = (availableTargets.length ? availableTargets : unclaimedTargets.length ? unclaimedTargets : allTargets)
+    .sort((left, right) => hexDistance(origin, left.target) - hexDistance(origin, right.target) || left.garrison - right.garrison || left.location.name.localeCompare(right.location.name, 'ru'))
+  return targets[0] ?? null
+}
+
+function truncatePathAtEnemies(path: string[], nextArmies: Army[], factions: FactionDefinition[], factionId: string) {
+  const firstEnemyIndex = path.findIndex((id, index) => index > 0 && nextArmies.some((candidate) => candidate.hexId === id && areFactionsHostile(factions, candidate.factionId, factionId)))
+  return firstEnemyIndex > 0 ? path.slice(0, firstEnemyIndex + 1) : path
+}
+
+function affordablePathPrefix(path: string[], army: Army, logicalGrid: { byId: Map<string, LogicalHex> }, factions: FactionDefinition[]) {
+  let spent = 0
+  let destinationIndex = 0
+  for (let index = 1; index < path.length; index += 1) {
+    const cell = logicalGrid.byId.get(path[index])
+    if (!cell) break
+    const step = cellMovementCost(cell, army.factionId)
+    if (spent + step > army.movementRemaining) break
+    spent += step
+    destinationIndex = index
+  }
+  return { destinationIndex, spent }
+}
+
+function armyCanMarch(campaign: CampaignState, factions: FactionDefinition[], army: Army, side: StrategicSide, excludedFactionId: string | null) {
+  return army.factionId !== excludedFactionId
+    && factionIsActive(campaign, army.factionId)
+    && factionSide(factions, army.factionId) === side
+    && !army.engaged
+    && Boolean(army.commander)
+    && army.movementRemaining > 0
+}
+
+/**
+ * Pre-computes the marches of allied AI armies at the start of the planning
+ * phase. Plans are rendered as dashed preview arrows and executed during the
+ * movement phase; they are never applied while the player is planning.
+ */
+export function planAlliedMovement(
+  side: StrategicSide,
+  campaign: CampaignState,
+  armies: Army[],
+  locations: MapLocation[],
+  factions: FactionDefinition[],
+  grid: HexGridData,
+  regions: Region[],
+  excludedFactionId: string | null = campaign.playerFactionId,
+): AlliedMovementPlan[] {
+  const logicalGrid = resolveGrid(grid, locations, regions)
+  const hostileLocations = hostileLocationsForSide(side, locations, factions)
+  const claimedTargetIds = new Set<string>()
+  const plans: AlliedMovementPlan[] = []
+  for (const army of armies) {
+    if (!armyCanMarch(campaign, factions, army, side, excludedFactionId)) continue
+    const origin = logicalGrid.byId.get(army.hexId)
+    if (!origin) continue
+    const target = chooseArmyMarchTarget(army, origin, armies, hostileLocations, logicalGrid, campaign, factions, grid, claimedTargetIds)
+    if (!target) continue
+    let path = findPath(logicalGrid.byId, army.hexId, target.targetHexId, army.factionId)
+    if (path.length < 2) continue
+    path = truncatePathAtEnemies(path, armies, factions, army.factionId)
+    const { destinationIndex, spent } = affordablePathPrefix(path, army, logicalGrid, factions)
+    if (!destinationIndex) continue
+    claimedTargetIds.add(target.location.id)
+    const destinationId = path[destinationIndex]
+    const destinationLocation = locations.find((location) => locationHexId(location, grid.config) === destinationId)
+    plans.push({
+      armyId: army.id,
+      factionId: army.factionId,
+      path: path.slice(0, destinationIndex + 1),
+      destinationHexId: destinationId,
+      locationId: destinationLocation?.id ?? null,
+      cost: spent,
+    })
+  }
+  return plans
+}
+
 export function runAiMovement(
   side: StrategicSide,
   campaign: CampaignState,
@@ -152,44 +289,60 @@ export function runAiMovement(
   grid: HexGridData,
   regions: Region[],
   excludedFactionId: string | null = campaign.playerFactionId,
+  heroes: Hero[] = [],
+  plans: AlliedMovementPlan[] = [],
 ) {
   const nextArmies = armies.map((army) => ({ ...army, commander: army.commander ? { ...army.commander } : null, unitSlots: army.unitSlots.map((slot) => ({ ...slot })), heroSlots: army.heroSlots.map((slot) => ({ ...slot })) }))
   const logicalGrid = resolveGrid(grid, locations, regions)
-  const hostileLocations = locations.filter((location) => factionSide(factions, location.side) === (side === 'good' ? 'evil' : 'good'))
+  const hostileLocations = hostileLocationsForSide(side, locations, factions)
   const claimedTargetIds = new Set<string>()
+  const planByArmyId = new Map(plans
+    .filter((plan) => factionSide(factions, plan.factionId) === side && plan.factionId !== excludedFactionId)
+    .map((plan) => [plan.armyId, plan]))
 
   for (const army of nextArmies) {
-    if (army.factionId === excludedFactionId || !factionIsActive(campaign, army.factionId) || factionSide(factions, army.factionId) !== side || army.engaged || !army.commander || army.movementRemaining <= 0) continue
+    if (!armyCanMarch(campaign, factions, army, side, excludedFactionId)) continue
     const origin = logicalGrid.byId.get(army.hexId)
     if (!origin) continue
-    const allTargets = hostileLocations.map((location) => {
-      const targetHexId = locationHexId(location, grid.config)
-      const target = logicalGrid.byId.get(targetHexId)
-      const neighboringIds = target ? new Set(neighborIds(target.q, target.r)) : new Set<string>()
-      const allyAlreadyNear = nextArmies.some((candidate) => candidate.id !== army.id && factionSide(factions, candidate.factionId) === side && (candidate.hexId === targetHexId || neighboringIds.has(candidate.hexId)))
-      return { location, targetHexId, target, garrison: campaign.locationStates[location.id]?.reserve.length ?? 0, allyAlreadyNear }
-    }).filter((item) => item.target)
-    const availableTargets = allTargets.filter((item) => !claimedTargetIds.has(item.location.id) && !item.allyAlreadyNear)
-    const targets = (availableTargets.length ? availableTargets : allTargets.filter((item) => !claimedTargetIds.has(item.location.id)).length ? allTargets.filter((item) => !claimedTargetIds.has(item.location.id)) : allTargets)
-      .sort((left, right) => hexDistance(origin, left.target!) - hexDistance(origin, right.target!) || left.garrison - right.garrison || left.location.name.localeCompare(right.location.name, 'ru'))
-    const target = targets[0]
-    if (!target) continue
-    claimedTargetIds.add(target.location.id)
-    let path = findPath(logicalGrid.byId, army.hexId, target.targetHexId, army.factionId)
-    if (path.length < 2) continue
-    const firstEnemyIndex = path.findIndex((id, index) => index > 0 && nextArmies.some((candidate) => candidate.hexId === id && areFactionsHostile(factions, candidate.factionId, army.factionId)))
-    if (firstEnemyIndex > 0) path = path.slice(0, firstEnemyIndex + 1)
-    let spent = 0
+
+    let path: string[] = []
     let destinationIndex = 0
-    for (let index = 1; index < path.length; index += 1) {
-      const cell = logicalGrid.byId.get(path[index])
-      if (!cell) break
-      const step = cellMovementCost(cell, army.factionId)
-      if (spent + step > army.movementRemaining) break
-      spent += step
-      destinationIndex = index
+    let spent = 0
+    let usedPlan = false
+    const plan = planByArmyId.get(army.id)
+    if (plan && plan.path.length >= 2 && plan.path[0] === army.hexId) {
+      const candidate = truncatePathAtEnemies(plan.path, nextArmies, factions, army.factionId)
+      const affordable = affordablePathPrefix(candidate, army, logicalGrid, factions)
+      if (affordable.destinationIndex > 0) {
+        path = candidate
+        destinationIndex = affordable.destinationIndex
+        spent = affordable.spent
+        usedPlan = true
+        if (plan.locationId) claimedTargetIds.add(plan.locationId)
+      }
     }
-    if (!destinationIndex) continue
+    if (!usedPlan) {
+      const target = chooseArmyMarchTarget(army, origin, nextArmies, hostileLocations, logicalGrid, campaign, factions, grid, claimedTargetIds)
+      if (!target) {
+        recordTurnMovement(campaign, army, heroes, 'stayed', movementTargetLabel(army.hexId, locations, regions, logicalGrid), 0)
+        continue
+      }
+      claimedTargetIds.add(target.location.id)
+      const computed = truncatePathAtEnemies(findPath(logicalGrid.byId, army.hexId, target.targetHexId, army.factionId), nextArmies, factions, army.factionId)
+      if (computed.length < 2) {
+        recordTurnMovement(campaign, army, heroes, 'stayed', movementTargetLabel(army.hexId, locations, regions, logicalGrid), 0)
+        continue
+      }
+      const affordable = affordablePathPrefix(computed, army, logicalGrid, factions)
+      if (!affordable.destinationIndex) {
+        recordTurnMovement(campaign, army, heroes, 'stayed', movementTargetLabel(army.hexId, locations, regions, logicalGrid), 0)
+        continue
+      }
+      path = computed
+      destinationIndex = affordable.destinationIndex
+      spent = affordable.spent
+    }
+
     const destinationId = path[destinationIndex]
     const hostileArmy = nextArmies.some((candidate) => candidate.id !== army.id && candidate.hexId === destinationId && areFactionsHostile(factions, candidate.factionId, army.factionId))
     const destinationLocation = locations.find((location) => locationHexId(location, grid.config) === destinationId)
@@ -203,6 +356,7 @@ export function runAiMovement(
       army.engaged = true
       for (const candidate of nextArmies) if (candidate.hexId === destinationId && areFactionsHostile(factions, candidate.factionId, army.factionId)) candidate.engaged = true
     }
+    recordTurnMovement(campaign, army, heroes, hostileArmy || hostileLocation ? 'besieged' : 'moved', movementTargetLabel(destinationId, locations, regions, logicalGrid), destinationIndex)
   }
   return nextArmies
 }

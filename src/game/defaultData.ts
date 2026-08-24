@@ -73,6 +73,8 @@ export function createDefaultCampaign(
     locationStates,
     heroStates,
     pendingOrders: [],
+    alliedPlans: [],
+    turnMovements: [],
     conflicts: [],
     currentConflictId: null,
     log: [],

@@ -1,0 +1,1006 @@
+{
+  "source": "_tools/middle_earth_world.json",
+  "method": "Snap CV anchors to nearest land hex; unique BFS placement; geographic region assignment; nearest-seed land partition; domain flood by nearest domain in region.",
+  "objects": {
+    "grey-havens": {
+      "ai_id": "mithlond",
+      "ai_raw": "2:7",
+      "snapped": "1:12",
+      "old": "-2:15",
+      "snap_d": 5,
+      "final": "1:12",
+      "moved": 3,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "rivendell": {
+      "ai_id": "rivendell",
+      "ai_raw": "16:8",
+      "snapped": "16:8",
+      "old": "13:14",
+      "snap_d": 0,
+      "final": "16:8",
+      "moved": 6,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "moria": {
+      "ai_id": "moria",
+      "ai_raw": "13:13",
+      "snapped": "13:13",
+      "old": "12:17",
+      "snap_d": 0,
+      "final": "13:13",
+      "moved": 4,
+      "regionId": "region-enedwaith",
+      "structuralType": "domain"
+    },
+    "lorien": {
+      "ai_id": "caras_galadhon",
+      "ai_raw": "14:14",
+      "snapped": "14:14",
+      "old": "12:20",
+      "snap_d": 0,
+      "final": "14:14",
+      "moved": 6,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "isengard": {
+      "ai_id": "isengard",
+      "ai_raw": "10:18",
+      "snapped": "10:18",
+      "old": "8:22",
+      "snap_d": 0,
+      "final": "10:18",
+      "moved": 4,
+      "regionId": "region-enedwaith",
+      "structuralType": "domain"
+    },
+    "helms-deep": {
+      "ai_id": "helms_deep",
+      "ai_raw": "11:20",
+      "snapped": "11:20",
+      "old": "7:25",
+      "snap_d": 0,
+      "final": "11:20",
+      "moved": 5,
+      "regionId": "region-rohan",
+      "structuralType": "stronghold"
+    },
+    "edoras": {
+      "ai_id": "edoras",
+      "ai_raw": "12:21",
+      "snapped": "12:21",
+      "old": "9:26",
+      "snap_d": 0,
+      "final": "12:21",
+      "moved": 5,
+      "regionId": "region-rohan",
+      "structuralType": "domain"
+    },
+    "woodland": {
+      "ai_id": "thranduil_halls",
+      "ai_raw": "21:6",
+      "snapped": "21:5",
+      "old": "21:13",
+      "snap_d": 1,
+      "final": "21:5",
+      "moved": 8,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "dol-guldur": {
+      "ai_id": "dol_guldur",
+      "ai_raw": "16:13",
+      "snapped": "16:13",
+      "old": "16:18",
+      "snap_d": 0,
+      "final": "16:13",
+      "moved": 5,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "erebor": {
+      "ai_id": "erebor",
+      "ai_raw": "25:5",
+      "snapped": "23:5",
+      "old": "24:12",
+      "snap_d": 2,
+      "final": "23:5",
+      "moved": 8,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "dale": {
+      "ai_id": "dale",
+      "ai_raw": "25:6",
+      "snapped": "25:8",
+      "old": "23:13",
+      "snap_d": 2,
+      "final": "25:8",
+      "moved": 5,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "cair-andros": {
+      "ai_id": "cair_andros",
+      "ai_raw": "16:23",
+      "snapped": "16:23",
+      "old": "15:26",
+      "snap_d": 0,
+      "final": "17:22",
+      "moved": 4,
+      "regionId": "region-gondor",
+      "structuralType": "stronghold"
+    },
+    "minas-tirith": {
+      "ai_id": "minas_tirith",
+      "ai_raw": "15:24",
+      "snapped": "15:24",
+      "old": "14:27",
+      "snap_d": 0,
+      "final": "15:24",
+      "moved": 3,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "osgiliath": {
+      "ai_id": "osgiliath",
+      "ai_raw": "16:24",
+      "snapped": "16:24",
+      "old": "14:25",
+      "snap_d": 0,
+      "final": "16:23",
+      "moved": 2,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "dol-amroth": {
+      "ai_id": "dol_amroth",
+      "ai_raw": "11:27",
+      "snapped": "10:27",
+      "old": "5:30",
+      "snap_d": 1,
+      "final": "10:27",
+      "moved": 5,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "pelargir": {
+      "ai_id": "pelargir",
+      "ai_raw": "15:26",
+      "snapped": "15:26",
+      "old": "12:30",
+      "snap_d": 0,
+      "final": "15:26",
+      "moved": 4,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "black-gate": {
+      "ai_id": "morannon",
+      "ai_raw": "17:21",
+      "snapped": "17:21",
+      "old": "18:23",
+      "snap_d": 0,
+      "final": "17:21",
+      "moved": 3,
+      "regionId": "region-mordor",
+      "structuralType": "stronghold"
+    },
+    "minas-morgul": {
+      "ai_id": "minas_morgul",
+      "ai_raw": "17:24",
+      "snapped": "16:24",
+      "old": "17:27",
+      "snap_d": 1,
+      "final": "16:24",
+      "moved": 4,
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    "cirith-ungol": {
+      "ai_id": "tower_cirith_ungol",
+      "ai_raw": "17:24",
+      "snapped": "16:24",
+      "old": "18:26",
+      "snap_d": 1,
+      "final": "17:23",
+      "moved": 4,
+      "regionId": "region-mordor",
+      "structuralType": "stronghold"
+    },
+    "barad-dur": {
+      "ai_id": "barad_dur",
+      "ai_raw": "20:22",
+      "snapped": "19:23",
+      "old": "22:25",
+      "snap_d": 1,
+      "final": "19:23",
+      "moved": 5,
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    "lindon": {
+      "ai_id": "gulf_of_lhun",
+      "ai_raw": "2:8",
+      "snapped": "1:12",
+      "old": "5:10",
+      "snap_d": 4,
+      "final": "1:14",
+      "moved": 4,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "forlindon": {
+      "ai_id": "forlindon",
+      "ai_raw": "0:5",
+      "snapped": "1:12",
+      "old": "-1:13",
+      "snap_d": 8,
+      "final": "1:13",
+      "moved": 2,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "harlindon": {
+      "ai_id": "harlindon",
+      "ai_raw": "0:10",
+      "snapped": "1:12",
+      "old": "-2:17",
+      "snap_d": 3,
+      "final": "0:14",
+      "moved": 3,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "ered-luin": {
+      "ai_id": "ered_luin",
+      "ai_raw": "1:6",
+      "snapped": "1:12",
+      "old": "2:13",
+      "snap_d": 6,
+      "final": "2:12",
+      "moved": 1,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "shire": {
+      "ai_id": "shire",
+      "ai_raw": "5:8",
+      "snapped": "4:11",
+      "old": "5:14",
+      "snap_d": 3,
+      "final": "4:11",
+      "moved": 4,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "hobbiton": {
+      "ai_id": "hobbiton",
+      "ai_raw": "6:8",
+      "snapped": "6:10",
+      "old": "7:15",
+      "snap_d": 2,
+      "final": "5:12",
+      "moved": 5,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "bree": {
+      "ai_id": "bree",
+      "ai_raw": "7:8",
+      "snapped": "6:10",
+      "old": "8:16",
+      "snap_d": 2,
+      "final": "5:11",
+      "moved": 8,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "weathertop": {
+      "ai_id": "amon_sul",
+      "ai_raw": "9:7",
+      "snapped": "6:10",
+      "old": "10:15",
+      "snap_d": 3,
+      "final": "6:10",
+      "moved": 9,
+      "regionId": "region-eriador",
+      "structuralType": "stronghold"
+    },
+    "evendim": {
+      "ai_id": "annuminas",
+      "ai_raw": "6:5",
+      "snapped": "10:2",
+      "old": "7:13",
+      "snap_d": 4,
+      "final": "11:1",
+      "moved": 12,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "arnor": {
+      "ai_id": "fornost",
+      "ai_raw": "7:5",
+      "snapped": "10:2",
+      "old": "7:12",
+      "snap_d": 3,
+      "final": "11:2",
+      "moved": 10,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "cardolan": {
+      "ai_id": "cardolan",
+      "ai_raw": "8:11",
+      "snapped": "7:11",
+      "old": "2:21",
+      "snap_d": 1,
+      "final": "7:11",
+      "moved": 10,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "minhiriath": {
+      "ai_id": "minhiriath",
+      "ai_raw": "8:13",
+      "snapped": "8:13",
+      "old": "6:18",
+      "snap_d": 0,
+      "final": "8:13",
+      "moved": 5,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "tharbad": {
+      "ai_id": "tharbad",
+      "ai_raw": "10:13",
+      "snapped": "12:11",
+      "old": "5:20",
+      "snap_d": 2,
+      "final": "13:11",
+      "moved": 9,
+      "regionId": "region-enedwaith",
+      "structuralType": "domain"
+    },
+    "enedwaith": {
+      "ai_id": "plains_enedwaith",
+      "ai_raw": "8:16",
+      "snapped": "7:16",
+      "old": "4:23",
+      "snap_d": 1,
+      "final": "7:16",
+      "moved": 7,
+      "regionId": "region-enedwaith",
+      "structuralType": "domain"
+    },
+    "dunland": {
+      "ai_id": "dunland_highlands",
+      "ai_raw": "11:15",
+      "snapped": "11:15",
+      "old": "8:20",
+      "snap_d": 0,
+      "final": "11:15",
+      "moved": 5,
+      "regionId": "region-enedwaith",
+      "structuralType": "domain"
+    },
+    "eregion": {
+      "ai_id": "eregion",
+      "ai_raw": "12:11",
+      "snapped": "12:11",
+      "old": "7:19",
+      "snap_d": 0,
+      "final": "12:11",
+      "moved": 8,
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    "fangorn": {
+      "ai_id": "fangorn",
+      "ai_raw": "12:16",
+      "snapped": "12:16",
+      "old": "11:21",
+      "snap_d": 0,
+      "final": "12:16",
+      "moved": 5,
+      "regionId": "region-enedwaith",
+      "structuralType": "domain"
+    },
+    "gap-rohan": {
+      "ai_id": "fords_of_isen",
+      "ai_raw": "10:19",
+      "snapped": "10:19",
+      "old": "8:23",
+      "snap_d": 0,
+      "final": "10:19",
+      "moved": 4,
+      "regionId": "region-rohan",
+      "structuralType": "stronghold"
+    },
+    "rohan": {
+      "ai_id": "westemnet",
+      "ai_raw": "12:19",
+      "snapped": "12:19",
+      "old": "11:24",
+      "snap_d": 0,
+      "final": "12:19",
+      "moved": 5,
+      "regionId": "region-rohan",
+      "structuralType": "domain"
+    },
+    "westfold": {
+      "ai_id": "westfold",
+      "ai_raw": "11:20",
+      "snapped": "11:20",
+      "old": "8:25",
+      "snap_d": 0,
+      "final": "12:20",
+      "moved": 5,
+      "regionId": "region-rohan",
+      "structuralType": "domain"
+    },
+    "eastemnet": {
+      "ai_id": "eastemnet",
+      "ai_raw": "14:19",
+      "snapped": "14:19",
+      "old": "13:23",
+      "snap_d": 0,
+      "final": "14:19",
+      "moved": 4,
+      "regionId": "region-rohan",
+      "structuralType": "domain"
+    },
+    "druwaith": {
+      "ai_id": "druwaith_iaur",
+      "ai_raw": "6:21",
+      "snapped": "6:20",
+      "old": "3:26",
+      "snap_d": 1,
+      "final": "6:20",
+      "moved": 6,
+      "regionId": "region-enedwaith",
+      "structuralType": "domain"
+    },
+    "andrast": {
+      "ai_id": "andrast",
+      "ai_raw": "5:25",
+      "snapped": "5:25",
+      "old": "1:30",
+      "snap_d": 0,
+      "final": "5:25",
+      "moved": 5,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "pinnath": {
+      "ai_id": "pinnath_gelin",
+      "ai_raw": "9:23",
+      "snapped": "10:22",
+      "old": "4:29",
+      "snap_d": 1,
+      "final": "10:22",
+      "moved": 7,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "anfalas": {
+      "ai_id": "anfalas",
+      "ai_raw": "8:24",
+      "snapped": "8:24",
+      "old": "5:29",
+      "snap_d": 0,
+      "final": "8:24",
+      "moved": 5,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "belfalas": {
+      "ai_id": "belfalas",
+      "ai_raw": "12:27",
+      "snapped": "12:27",
+      "old": "5:32",
+      "snap_d": 0,
+      "final": "12:27",
+      "moved": 7,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "tolfalas": {
+      "ai_id": "tolfalas",
+      "ai_raw": "13:29",
+      "snapped": "13:29",
+      "old": "5:34",
+      "snap_d": 0,
+      "final": "13:29",
+      "moved": 8,
+      "regionId": "region-gondor",
+      "structuralType": "stronghold"
+    },
+    "gondor": {
+      "ai_id": "pelennor",
+      "ai_raw": "15:24",
+      "snapped": "15:24",
+      "old": "6:28",
+      "snap_d": 0,
+      "final": "15:23",
+      "moved": 9,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "lebennin": {
+      "ai_id": "lebennin",
+      "ai_raw": "14:26",
+      "snapped": "13:27",
+      "old": "10:30",
+      "snap_d": 1,
+      "final": "13:27",
+      "moved": 3,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "lossarnach": {
+      "ai_id": "lossarnach",
+      "ai_raw": "15:24",
+      "snapped": "15:24",
+      "old": "13:28",
+      "snap_d": 0,
+      "final": "14:24",
+      "moved": 4,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "anorien": {
+      "ai_id": "anorien",
+      "ai_raw": "14:22",
+      "snapped": "14:23",
+      "old": "13:24",
+      "snap_d": 1,
+      "final": "14:23",
+      "moved": 1,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "ithilien": {
+      "ai_id": "north_ithilien",
+      "ai_raw": "16:23",
+      "snapped": "16:23",
+      "old": "15:28",
+      "snap_d": 0,
+      "final": "16:22",
+      "moved": 6,
+      "regionId": "region-ithilien",
+      "structuralType": "domain"
+    },
+    "emyn-muil": {
+      "ai_id": "emyn_muil",
+      "ai_raw": "16:19",
+      "snapped": "16:19",
+      "old": "15:22",
+      "snap_d": 0,
+      "final": "17:18",
+      "moved": 4,
+      "regionId": "region-ithilien",
+      "structuralType": "stronghold"
+    },
+    "argonath": {
+      "ai_id": "argonath",
+      "ai_raw": "16:19",
+      "snapped": "16:19",
+      "old": "14:21",
+      "snap_d": 0,
+      "final": "17:19",
+      "moved": 3,
+      "regionId": "region-ithilien",
+      "structuralType": "stronghold"
+    },
+    "amon-hen": {
+      "ai_id": "amon_hen",
+      "ai_raw": "16:19",
+      "snapped": "16:19",
+      "old": "14:22",
+      "snap_d": 0,
+      "final": "16:19",
+      "moved": 3,
+      "regionId": "region-ithilien",
+      "structuralType": "stronghold"
+    },
+    "dead-marshes": {
+      "ai_id": "dead_marshes",
+      "ai_raw": "17:20",
+      "snapped": "16:20",
+      "old": "17:23",
+      "snap_d": 1,
+      "final": "16:20",
+      "moved": 4,
+      "regionId": "region-mordor",
+      "structuralType": "stronghold"
+    },
+    "dagorlad": {
+      "ai_id": "dagorlad",
+      "ai_raw": "18:21",
+      "snapped": "17:21",
+      "old": "19:22",
+      "snap_d": 1,
+      "final": "16:21",
+      "moved": 4,
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    "udun": {
+      "ai_id": "udun",
+      "ai_raw": "17:22",
+      "snapped": "17:22",
+      "old": "19:24",
+      "snap_d": 0,
+      "final": "15:22",
+      "moved": 6,
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    "orodruin": {
+      "ai_id": "orodruin",
+      "ai_raw": "19:23",
+      "snapped": "19:23",
+      "old": "21:24",
+      "snap_d": 0,
+      "final": "20:23",
+      "moved": 2,
+      "regionId": "region-mordor",
+      "structuralType": "stronghold"
+    },
+    "gorgoroth": {
+      "ai_id": "gorgoroth",
+      "ai_raw": "19:23",
+      "snapped": "19:23",
+      "old": "20:24",
+      "snap_d": 0,
+      "final": "21:23",
+      "moved": 1,
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    "nurn": {
+      "ai_id": "nurn",
+      "ai_raw": "21:28",
+      "snapped": "17:28",
+      "old": "18:30",
+      "snap_d": 4,
+      "final": "17:28",
+      "moved": 3,
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    "mordor": {
+      "ai_id": "lithlad",
+      "ai_raw": "23:24",
+      "snapped": "23:24",
+      "old": "21:28",
+      "snap_d": 0,
+      "final": "23:24",
+      "moved": 4,
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    "harondor": {
+      "ai_id": "harondor",
+      "ai_raw": "16:29",
+      "snapped": "16:29",
+      "old": "11:33",
+      "snap_d": 0,
+      "final": "16:29",
+      "moved": 5,
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    "harad": {
+      "ai_id": "near_harad",
+      "ai_raw": "17:34",
+      "snapped": "17:34",
+      "old": "11:36",
+      "snap_d": 0,
+      "final": "17:34",
+      "moved": 6,
+      "regionId": "region-harad",
+      "structuralType": "domain"
+    },
+    "umbar": {
+      "ai_id": "umbar",
+      "ai_raw": "3:36",
+      "snapped": "5:37",
+      "old": "5:37",
+      "snap_d": 3,
+      "final": "5:37",
+      "moved": 0,
+      "regionId": "region-harad",
+      "structuralType": "domain"
+    },
+    "khand": {
+      "ai_id": "khand",
+      "ai_raw": "26:30",
+      "snapped": "25:30",
+      "old": "22:34",
+      "snap_d": 1,
+      "final": "25:30",
+      "moved": 4,
+      "regionId": "region-harad",
+      "structuralType": "domain"
+    },
+    "mirkwood": {
+      "ai_id": "south_mirkwood",
+      "ai_raw": "17:14",
+      "snapped": "17:14",
+      "old": "18:16",
+      "snap_d": 0,
+      "final": "17:14",
+      "moved": 3,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "rhovanion": {
+      "ai_id": "anduin_valley",
+      "ai_raw": "15:9",
+      "snapped": "15:9",
+      "old": "21:17",
+      "snap_d": 0,
+      "final": "15:9",
+      "moved": 14,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "brown-lands": {
+      "ai_id": "brown_lands",
+      "ai_raw": "18:18",
+      "snapped": "18:18",
+      "old": "20:20",
+      "snap_d": 0,
+      "final": "18:18",
+      "moved": 4,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "iron-hills": {
+      "ai_id": "iron_hills",
+      "ai_raw": "26:4",
+      "snapped": "24:4",
+      "old": "29:11",
+      "snap_d": 2,
+      "final": "24:4",
+      "moved": 12,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "withered-heath": {
+      "ai_id": "withered_heath",
+      "ai_raw": "22:3",
+      "snapped": "21:3",
+      "old": "27:9",
+      "snap_d": 1,
+      "final": "21:3",
+      "moved": 12,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "esgaroth": {
+      "ai_id": "esgaroth",
+      "ai_raw": "25:6",
+      "snapped": "25:8",
+      "old": "22:14",
+      "snap_d": 2,
+      "final": "26:8",
+      "moved": 6,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "sea-rhun": {
+      "ai_id": "sea_of_rhun",
+      "ai_raw": "31:16",
+      "snapped": "31:16",
+      "old": "29:18",
+      "snap_d": 0,
+      "final": "31:16",
+      "moved": 2,
+      "regionId": "region-rhun",
+      "structuralType": "domain"
+    },
+    "dorwinion": {
+      "ai_id": "dorwinion",
+      "ai_raw": "27:12",
+      "snapped": "28:12",
+      "old": "27:17",
+      "snap_d": 1,
+      "final": "28:12",
+      "moved": 5,
+      "regionId": "region-rhun",
+      "structuralType": "domain"
+    },
+    "gundabad": {
+      "ai_id": "gundabad",
+      "ai_raw": "13:3",
+      "snapped": "12:2",
+      "old": "15:10",
+      "snap_d": 2,
+      "final": "12:2",
+      "moved": 11,
+      "regionId": "region-angmar",
+      "structuralType": "domain"
+    },
+    "grey-mountains": {
+      "ai_id": "ered_mithrin",
+      "ai_raw": "18:3",
+      "snapped": "17:4",
+      "old": "21:9",
+      "snap_d": 1,
+      "final": "17:4",
+      "moved": 9,
+      "regionId": "region-rhovanion",
+      "structuralType": "domain"
+    },
+    "forochel": {
+      "ai_id": "icebay_forochel",
+      "ai_raw": "4:2",
+      "snapped": "10:2",
+      "old": "8:8",
+      "snap_d": 6,
+      "final": "12:1",
+      "moved": 7,
+      "regionId": "region-angmar",
+      "structuralType": "domain"
+    },
+    "angmar": {
+      "ai_id": "carn_dum",
+      "ai_raw": "10:2",
+      "snapped": "10:2",
+      "old": "9:10",
+      "snap_d": 0,
+      "final": "10:2",
+      "moved": 8,
+      "regionId": "region-angmar",
+      "structuralType": "domain"
+    },
+    "rhudaur": {
+      "ai_id": "rhudaur",
+      "ai_raw": "13:7",
+      "snapped": "13:8",
+      "old": "11:13",
+      "snap_d": 1,
+      "final": "13:8",
+      "moved": 5,
+      "regionId": "region-angmar",
+      "structuralType": "domain"
+    }
+  },
+  "regions": {
+    "region-eriador": {
+      "hexes": 55,
+      "objects": [
+        "grey-havens",
+        "rivendell",
+        "lindon",
+        "forlindon",
+        "harlindon",
+        "ered-luin",
+        "shire",
+        "hobbiton",
+        "bree",
+        "weathertop",
+        "evendim",
+        "arnor",
+        "cardolan",
+        "minhiriath",
+        "eregion"
+      ]
+    },
+    "region-angmar": {
+      "hexes": 6,
+      "objects": [
+        "gundabad",
+        "forochel",
+        "angmar",
+        "rhudaur"
+      ]
+    },
+    "region-rhovanion": {
+      "hexes": 168,
+      "objects": [
+        "lorien",
+        "woodland",
+        "dol-guldur",
+        "erebor",
+        "dale",
+        "mirkwood",
+        "rhovanion",
+        "brown-lands",
+        "iron-hills",
+        "withered-heath",
+        "esgaroth",
+        "grey-mountains"
+      ]
+    },
+    "region-enedwaith": {
+      "hexes": 47,
+      "objects": [
+        "moria",
+        "isengard",
+        "tharbad",
+        "enedwaith",
+        "dunland",
+        "fangorn",
+        "druwaith"
+      ]
+    },
+    "region-rohan": {
+      "hexes": 28,
+      "objects": [
+        "helms-deep",
+        "edoras",
+        "gap-rohan",
+        "rohan",
+        "westfold",
+        "eastemnet"
+      ]
+    },
+    "region-gondor": {
+      "hexes": 63,
+      "objects": [
+        "cair-andros",
+        "minas-tirith",
+        "osgiliath",
+        "dol-amroth",
+        "pelargir",
+        "andrast",
+        "pinnath",
+        "anfalas",
+        "belfalas",
+        "tolfalas",
+        "gondor",
+        "lebennin",
+        "lossarnach",
+        "anorien",
+        "harondor"
+      ]
+    },
+    "region-ithilien": {
+      "hexes": 8,
+      "objects": [
+        "ithilien",
+        "emyn-muil",
+        "argonath",
+        "amon-hen"
+      ]
+    },
+    "region-mordor": {
+      "hexes": 29,
+      "objects": [
+        "black-gate",
+        "minas-morgul",
+        "cirith-ungol",
+        "barad-dur",
+        "dead-marshes",
+        "dagorlad",
+        "udun",
+        "orodruin",
+        "gorgoroth",
+        "nurn",
+        "mordor"
+      ]
+    },
+    "region-harad": {
+      "hexes": 105,
+      "objects": [
+        "harad",
+        "umbar",
+        "khand"
+      ]
+    },
+    "region-rhun": {
+      "hexes": 28,
+      "objects": [
+        "sea-rhun",
+        "dorwinion"
+      ]
+    }
+  }
+}

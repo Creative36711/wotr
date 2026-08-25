@@ -24,13 +24,12 @@
       "nameTranslations": {
         "ru": "Серые Гавани"
       },
-      "hex": "-2:15",
+      "hex": "1:12",
       "structuralType": "domain",
       "economicType": "port",
       "regionId": "region-eriador",
       "hexes": [
-        "0:14",
-        "-1:15"
+        "1:12"
       ]
     },
     {
@@ -56,28 +55,15 @@
       "nameTranslations": {
         "ru": "Ривенделл"
       },
-      "hex": "13:14",
+      "hex": "16:8",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-eriador",
       "hexes": [
-        "15:12",
-        "17:12",
-        "13:13",
-        "14:13",
-        "15:13",
-        "16:13",
-        "17:13",
-        "12:14",
-        "13:14",
-        "14:14",
-        "15:14",
-        "16:14",
-        "11:15",
-        "12:15",
-        "14:15",
-        "15:15",
-        "11:16"
+        "15:8",
+        "16:8",
+        "17:8",
+        "16:9"
       ]
     },
     {
@@ -103,18 +89,18 @@
       "nameTranslations": {
         "ru": "Мория"
       },
-      "hex": "12:17",
+      "hex": "13:13",
       "structuralType": "domain",
       "economicType": "mine",
-      "regionId": "region-eriador",
+      "regionId": "region-enedwaith",
       "hexes": [
-        "12:16",
-        "13:16",
-        "14:16",
-        "10:17",
-        "11:17",
-        "12:17",
-        "13:17"
+        "15:11",
+        "15:12",
+        "12:13",
+        "13:13",
+        "14:13",
+        "12:14",
+        "13:14"
       ]
     },
     {
@@ -140,22 +126,17 @@
       "nameTranslations": {
         "ru": "Карас Галадон"
       },
-      "hex": "12:20",
+      "hex": "14:14",
       "structuralType": "domain",
       "economicType": "capital",
-      "regionId": "region-enedwaith",
+      "regionId": "region-rhovanion",
       "hexes": [
-        "11:18",
-        "12:18",
-        "11:19",
-        "12:19",
-        "13:19",
-        "10:20",
-        "11:20",
-        "12:20",
-        "13:20",
-        "12:21",
-        "13:21"
+        "15:13",
+        "14:14",
+        "15:14",
+        "14:15",
+        "15:15",
+        "14:17"
       ]
     },
     {
@@ -181,13 +162,18 @@
       "nameTranslations": {
         "ru": "Изенгард"
       },
-      "hex": "8:22",
+      "hex": "10:18",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-enedwaith",
       "hexes": [
-        "9:21",
-        "8:22"
+        "9:17",
+        "10:17",
+        "11:17",
+        "8:18",
+        "10:18",
+        "11:18",
+        "8:19"
       ]
     },
     {
@@ -277,7 +263,7 @@
       "nameTranslations": {
         "ru": "Хельмова Падь"
       },
-      "hex": "7:25",
+      "hex": "11:20",
       "structuralType": "stronghold",
       "economicType": "fortress",
       "regionId": "region-rohan"
@@ -305,16 +291,23 @@
       "nameTranslations": {
         "ru": "Эдорас"
       },
-      "hex": "9:26",
+      "hex": "12:21",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-rohan",
       "hexes": [
-        "8:27",
-        "9:27",
-        "10:27",
-        "9:28",
-        "8:29"
+        "13:20",
+        "9:21",
+        "10:21",
+        "11:21",
+        "12:21",
+        "13:21",
+        "8:22",
+        "11:22",
+        "11:23",
+        "12:23",
+        "11:24",
+        "12:24"
       ]
     },
     {
@@ -340,22 +333,24 @@
       "nameTranslations": {
         "ru": "Чертоги Трандуила"
       },
-      "hex": "21:13",
+      "hex": "21:5",
       "structuralType": "domain",
       "economicType": "fortress",
       "regionId": "region-rhovanion",
       "hexes": [
-        "22:11",
-        "20:12",
-        "21:12",
-        "18:13",
-        "19:13",
-        "20:13",
-        "21:13",
-        "22:13",
-        "19:14",
-        "20:14",
-        "20:15"
+        "21:4",
+        "22:4",
+        "19:5",
+        "20:5",
+        "21:5",
+        "22:5",
+        "18:8",
+        "19:8",
+        "20:8",
+        "21:8",
+        "19:9",
+        "20:9",
+        "21:9"
       ]
     },
     {
@@ -381,32 +376,22 @@
       "nameTranslations": {
         "ru": "Дол Гулдур"
       },
-      "hex": "16:18",
+      "hex": "16:13",
       "structuralType": "domain",
       "economicType": "fortress",
       "regionId": "region-rhovanion",
       "hexes": [
-        "16:15",
-        "15:16",
-        "16:16",
-        "14:17",
-        "15:17",
-        "16:17",
-        "17:17",
-        "13:18",
-        "14:18",
-        "15:18",
-        "16:18",
-        "17:18",
-        "18:18",
-        "14:19",
-        "15:19",
-        "16:19",
-        "17:19",
-        "18:19",
-        "14:20",
-        "15:20",
-        "16:20"
+        "17:10",
+        "19:10",
+        "16:11",
+        "17:11",
+        "18:11",
+        "19:11",
+        "17:12",
+        "18:12",
+        "16:13",
+        "17:13",
+        "16:14"
       ]
     },
     {
@@ -432,16 +417,13 @@
       "nameTranslations": {
         "ru": "Эребор"
       },
-      "hex": "24:12",
+      "hex": "23:5",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-rhovanion",
       "hexes": [
-        "24:10",
-        "25:10",
-        "24:11",
-        "23:12",
-        "24:12"
+        "23:5",
+        "22:8"
       ]
     },
     {
@@ -467,13 +449,33 @@
       "nameTranslations": {
         "ru": "Дейл"
       },
-      "hex": "23:13",
+      "hex": "25:8",
       "structuralType": "domain",
       "economicType": "fortress",
       "regionId": "region-rhovanion",
       "hexes": [
-        "23:13",
-        "23:14"
+        "32:0",
+        "33:0",
+        "30:2",
+        "29:3",
+        "30:3",
+        "25:8",
+        "22:9",
+        "23:9",
+        "24:9",
+        "25:9",
+        "22:10",
+        "23:10",
+        "24:10",
+        "25:10",
+        "21:11",
+        "22:11",
+        "24:11",
+        "21:12",
+        "23:12",
+        "24:12",
+        "22:13",
+        "23:13"
       ]
     },
     {
@@ -499,10 +501,10 @@
       "nameTranslations": {
         "ru": "Каир Андрос"
       },
-      "hex": "15:26",
+      "hex": "17:22",
       "structuralType": "stronghold",
       "economicType": "fortress",
-      "regionId": "region-ithilien"
+      "regionId": "region-gondor"
     },
     {
       "id": "minas-tirith",
@@ -527,15 +529,13 @@
       "nameTranslations": {
         "ru": "Минас Тирит"
       },
-      "hex": "14:27",
+      "hex": "15:24",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-gondor",
       "hexes": [
-        "12:27",
-        "13:27",
-        "15:27",
-        "14:28"
+        "15:24",
+        "14:25"
       ]
     },
     {
@@ -561,23 +561,12 @@
       "nameTranslations": {
         "ru": "Осгилиат"
       },
-      "hex": "14:25",
+      "hex": "16:23",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-ithilien",
+      "regionId": "region-gondor",
       "hexes": [
-        "15:21",
-        "16:21",
-        "17:21",
-        "16:22",
-        "17:22",
-        "15:23",
-        "16:23",
-        "14:24",
-        "15:24",
-        "16:24",
-        "14:25",
-        "15:25"
+        "16:23"
       ]
     },
     {
@@ -603,13 +592,28 @@
       "nameTranslations": {
         "ru": "Дол Амрот"
       },
-      "hex": "5:30",
+      "hex": "10:27",
       "structuralType": "domain",
       "economicType": "fortress",
       "regionId": "region-gondor",
       "hexes": [
+        "11:25",
+        "12:25",
+        "7:27",
+        "8:27",
+        "9:27",
+        "10:27",
+        "6:28",
+        "9:28",
+        "10:28",
         "6:29",
-        "7:29"
+        "7:29",
+        "8:29",
+        "8:30",
+        "9:30",
+        "10:30",
+        "9:31",
+        "10:31"
       ]
     },
     {
@@ -635,18 +639,13 @@
       "nameTranslations": {
         "ru": "Пеларгир"
       },
-      "hex": "12:30",
+      "hex": "15:26",
       "structuralType": "domain",
       "economicType": "port",
       "regionId": "region-gondor",
       "hexes": [
-        "12:29",
-        "13:29",
-        "12:30",
-        "13:30",
-        "11:31",
-        "12:31",
-        "14:31"
+        "15:26",
+        "14:28"
       ]
     },
     {
@@ -672,7 +671,7 @@
       "nameTranslations": {
         "ru": "Чёрные Врата"
       },
-      "hex": "18:23",
+      "hex": "17:21",
       "structuralType": "stronghold",
       "economicType": "fortress",
       "regionId": "region-mordor"
@@ -700,17 +699,13 @@
       "nameTranslations": {
         "ru": "Минас Моргул"
       },
-      "hex": "17:27",
+      "hex": "16:24",
       "structuralType": "domain",
       "economicType": "fortress",
-      "regionId": "region-ithilien",
+      "regionId": "region-mordor",
       "hexes": [
-        "17:25",
-        "17:26",
-        "17:28",
-        "16:29",
-        "17:29",
-        "15:30"
+        "16:24",
+        "17:25"
       ]
     },
     {
@@ -736,10 +731,10 @@
       "nameTranslations": {
         "ru": "Кирит Унгол"
       },
-      "hex": "18:26",
+      "hex": "17:23",
       "structuralType": "stronghold",
       "economicType": "fortress",
-      "regionId": "region-ithilien"
+      "regionId": "region-mordor"
     },
     {
       "id": "barad-dur",
@@ -764,28 +759,12 @@
       "nameTranslations": {
         "ru": "Барад-дур"
       },
-      "hex": "22:25",
+      "hex": "19:23",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-mordor",
       "hexes": [
-        "22:23",
-        "23:23",
-        "24:23",
-        "26:23",
-        "22:24",
-        "23:24",
-        "24:24",
-        "25:24",
-        "26:24",
-        "27:24",
-        "28:24",
-        "26:25",
-        "27:25",
-        "25:26",
-        "25:27",
-        "25:28",
-        "25:29"
+        "19:23"
       ]
     },
     {
@@ -811,14 +790,33 @@
       "nameTranslations": {
         "ru": "Линдон"
       },
-      "hex": "5:10",
+      "hex": "1:14",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-eriador",
       "hexes": [
-        "4:11",
-        "5:11",
-        "5:12"
+        "1:14",
+        "3:14",
+        "1:15",
+        "2:15",
+        "0:16",
+        "-1:17",
+        "0:17",
+        "1:17",
+        "2:17",
+        "-2:18",
+        "-1:18",
+        "0:18",
+        "1:18",
+        "2:18",
+        "-2:19",
+        "-1:19",
+        "0:19",
+        "2:19",
+        "-2:20",
+        "-1:20",
+        "0:20",
+        "1:20"
       ]
     },
     {
@@ -844,12 +842,12 @@
       "nameTranslations": {
         "ru": "Форлиндон"
       },
-      "hex": "-1:13",
+      "hex": "1:13",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-eriador",
       "hexes": [
-        "1:12"
+        "1:13"
       ]
     },
     {
@@ -875,24 +873,13 @@
       "nameTranslations": {
         "ru": "Харлиндон"
       },
-      "hex": "-2:17",
+      "hex": "0:14",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-eriador",
       "hexes": [
-        "0:16",
-        "-1:17",
-        "0:17",
-        "1:17",
-        "-2:18",
-        "-1:18",
-        "0:18",
-        "1:18",
-        "-2:19",
-        "-1:19",
-        "0:19",
-        "-2:20",
-        "-1:20"
+        "0:14",
+        "-1:15"
       ]
     },
     {
@@ -918,18 +905,12 @@
       "nameTranslations": {
         "ru": "Синие горы"
       },
-      "hex": "2:13",
+      "hex": "2:12",
       "structuralType": "domain",
       "economicType": "mine",
       "regionId": "region-eriador",
       "hexes": [
-        "2:12",
-        "1:13",
-        "4:13",
-        "1:14",
-        "3:14",
-        "1:15",
-        "2:15"
+        "2:12"
       ]
     },
     {
@@ -955,14 +936,12 @@
       "nameTranslations": {
         "ru": "Шир"
       },
-      "hex": "5:14",
+      "hex": "4:11",
       "structuralType": "domain",
       "economicType": "farm",
       "regionId": "region-eriador",
       "hexes": [
-        "4:16",
-        "2:17",
-        "2:18"
+        "4:11"
       ]
     },
     {
@@ -988,17 +967,15 @@
       "nameTranslations": {
         "ru": "Хоббитон"
       },
-      "hex": "7:15",
+      "hex": "5:12",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-eriador",
       "hexes": [
-        "7:14",
-        "8:14",
-        "6:15",
-        "7:15",
-        "6:16",
-        "7:16"
+        "5:12",
+        "6:12",
+        "4:13",
+        "4:16"
       ]
     },
     {
@@ -1024,14 +1001,12 @@
       "nameTranslations": {
         "ru": "Бри"
       },
-      "hex": "8:16",
+      "hex": "5:11",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-eriador",
       "hexes": [
-        "10:16",
-        "7:17",
-        "9:17"
+        "5:11"
       ]
     },
     {
@@ -1057,7 +1032,7 @@
       "nameTranslations": {
         "ru": "Заветерть"
       },
-      "hex": "10:15",
+      "hex": "6:10",
       "structuralType": "stronghold",
       "economicType": "village",
       "regionId": "region-eriador"
@@ -1085,13 +1060,14 @@
       "nameTranslations": {
         "ru": "Озеро Эвендим"
       },
-      "hex": "7:13",
+      "hex": "11:1",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-eriador",
       "hexes": [
-        "7:13",
-        "8:13"
+        "11:0",
+        "12:0",
+        "11:1"
       ]
     },
     {
@@ -1117,13 +1093,12 @@
       "nameTranslations": {
         "ru": "Арнор"
       },
-      "hex": "7:12",
+      "hex": "11:2",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-eriador",
       "hexes": [
-        "7:11",
-        "6:12"
+        "11:2"
       ]
     },
     {
@@ -1149,19 +1124,12 @@
       "nameTranslations": {
         "ru": "Кардолан"
       },
-      "hex": "2:21",
+      "hex": "7:11",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-enedwaith",
+      "regionId": "region-eriador",
       "hexes": [
-        "0:20",
-        "1:20",
-        "2:20",
-        "1:21",
-        "0:22",
-        "1:22",
-        "3:22",
-        "1:23"
+        "7:11"
       ]
     },
     {
@@ -1187,20 +1155,17 @@
       "nameTranslations": {
         "ru": "Минихириат"
       },
-      "hex": "6:18",
+      "hex": "8:13",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-eriador",
       "hexes": [
-        "6:17",
-        "4:18",
-        "5:18",
-        "6:18",
-        "7:18",
-        "2:19",
-        "3:19",
-        "5:19",
-        "6:19"
+        "7:13",
+        "8:13",
+        "7:14",
+        "8:14",
+        "6:15",
+        "7:15"
       ]
     },
     {
@@ -1226,14 +1191,13 @@
       "nameTranslations": {
         "ru": "Тарбад"
       },
-      "hex": "5:20",
+      "hex": "13:11",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-enedwaith",
       "hexes": [
-        "5:20",
-        "6:20",
-        "4:21"
+        "14:10",
+        "13:11"
       ]
     },
     {
@@ -1259,12 +1223,20 @@
       "nameTranslations": {
         "ru": "Энедвайт"
       },
-      "hex": "4:23",
+      "hex": "7:16",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-enedwaith",
       "hexes": [
-        "3:23"
+        "6:16",
+        "7:16",
+        "6:17",
+        "7:17",
+        "4:18",
+        "5:18",
+        "6:18",
+        "7:18",
+        "3:19"
       ]
     },
     {
@@ -1290,15 +1262,15 @@
       "nameTranslations": {
         "ru": "Дунланд"
       },
-      "hex": "8:20",
+      "hex": "11:15",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-enedwaith",
       "hexes": [
-        "10:18",
-        "8:19",
-        "10:19",
-        "9:20"
+        "11:15",
+        "12:15",
+        "10:16",
+        "11:16"
       ]
     },
     {
@@ -1324,13 +1296,17 @@
       "nameTranslations": {
         "ru": "Эрегион"
       },
-      "hex": "7:19",
+      "hex": "12:11",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-enedwaith",
+      "regionId": "region-eriador",
       "hexes": [
-        "8:18",
-        "7:19"
+        "12:9",
+        "13:9",
+        "12:10",
+        "13:10",
+        "12:11",
+        "12:12"
       ]
     },
     {
@@ -1356,15 +1332,16 @@
       "nameTranslations": {
         "ru": "Фангорн"
       },
-      "hex": "11:21",
+      "hex": "12:16",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-enedwaith",
       "hexes": [
-        "10:21",
-        "11:21",
-        "10:22",
-        "11:22"
+        "12:16",
+        "13:16",
+        "14:16",
+        "12:17",
+        "13:17"
       ]
     },
     {
@@ -1390,7 +1367,7 @@
       "nameTranslations": {
         "ru": "Проход Рохана"
       },
-      "hex": "8:23",
+      "hex": "10:19",
       "structuralType": "stronghold",
       "economicType": "village",
       "regionId": "region-rohan"
@@ -1418,16 +1395,18 @@
       "nameTranslations": {
         "ru": "Рохан"
       },
-      "hex": "11:24",
+      "hex": "12:19",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-rohan",
       "hexes": [
-        "11:23",
-        "12:23",
-        "11:24",
-        "12:24",
-        "11:25"
+        "12:18",
+        "13:18",
+        "11:19",
+        "12:19",
+        "13:19",
+        "9:20",
+        "10:20"
       ]
     },
     {
@@ -1453,18 +1432,12 @@
       "nameTranslations": {
         "ru": "Вестфолд"
       },
-      "hex": "8:25",
+      "hex": "12:20",
       "structuralType": "domain",
       "economicType": "farm",
       "regionId": "region-rohan",
       "hexes": [
-        "7:24",
-        "8:24",
-        "5:25",
-        "6:25",
-        "5:26",
-        "6:26",
-        "7:26"
+        "12:20"
       ]
     },
     {
@@ -1490,12 +1463,17 @@
       "nameTranslations": {
         "ru": "Истемнет"
       },
-      "hex": "13:23",
+      "hex": "14:19",
       "structuralType": "domain",
       "economicType": "farm",
       "regionId": "region-rohan",
       "hexes": [
-        "14:23"
+        "14:18",
+        "15:18",
+        "14:19",
+        "15:19",
+        "14:20",
+        "15:20"
       ]
     },
     {
@@ -1521,15 +1499,24 @@
       "nameTranslations": {
         "ru": "Друвайт Иаур"
       },
-      "hex": "3:26",
+      "hex": "6:20",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-enedwaith",
       "hexes": [
-        "3:25",
-        "4:25",
-        "2:26",
-        "4:26"
+        "5:19",
+        "6:19",
+        "7:19",
+        "2:20",
+        "5:20",
+        "6:20",
+        "1:21",
+        "4:21",
+        "0:22",
+        "1:22",
+        "3:22",
+        "1:23",
+        "3:23"
       ]
     },
     {
@@ -1555,11 +1542,19 @@
       "nameTranslations": {
         "ru": "Андраст"
       },
-      "hex": "1:30",
+      "hex": "5:25",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-gondor",
       "hexes": [
+        "3:25",
+        "4:25",
+        "5:25",
+        "6:25",
+        "2:26",
+        "4:26",
+        "5:26",
+        "6:26",
         "0:29"
       ]
     },
@@ -1586,12 +1581,12 @@
       "nameTranslations": {
         "ru": "Пиннат-Гелин"
       },
-      "hex": "4:29",
+      "hex": "10:22",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-gondor",
       "hexes": [
-        "4:29"
+        "10:22"
       ]
     },
     {
@@ -1617,12 +1612,15 @@
       "nameTranslations": {
         "ru": "Анфалас"
       },
-      "hex": "5:29",
+      "hex": "8:24",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-gondor",
       "hexes": [
-        "5:29"
+        "8:23",
+        "7:24",
+        "8:24",
+        "7:26"
       ]
     },
     {
@@ -1648,12 +1646,19 @@
       "nameTranslations": {
         "ru": "Белфалас"
       },
-      "hex": "5:32",
+      "hex": "12:27",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-rohan",
+      "regionId": "region-gondor",
       "hexes": [
-        "5:32"
+        "12:27",
+        "11:28",
+        "12:28",
+        "11:29",
+        "12:29",
+        "12:30",
+        "11:31",
+        "12:31"
       ]
     },
     {
@@ -1679,7 +1684,7 @@
       "nameTranslations": {
         "ru": "Толфалас"
       },
-      "hex": "5:34",
+      "hex": "13:29",
       "structuralType": "stronghold",
       "economicType": "village",
       "regionId": "region-gondor"
@@ -1707,13 +1712,12 @@
       "nameTranslations": {
         "ru": "Гондор"
       },
-      "hex": "6:28",
+      "hex": "15:23",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-gondor",
       "hexes": [
-        "7:27",
-        "6:28"
+        "15:23"
       ]
     },
     {
@@ -1739,21 +1743,14 @@
       "nameTranslations": {
         "ru": "Лебеннин"
       },
-      "hex": "10:30",
+      "hex": "13:27",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-gondor",
       "hexes": [
-        "10:28",
-        "11:28",
-        "11:29",
-        "8:30",
-        "9:30",
-        "10:30",
-        "9:31",
-        "10:31",
-        "8:32",
-        "9:32"
+        "13:27",
+        "13:28",
+        "13:30"
       ]
     },
     {
@@ -1779,13 +1776,13 @@
       "nameTranslations": {
         "ru": "Лоссарнах"
       },
-      "hex": "13:28",
+      "hex": "14:24",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-gondor",
       "hexes": [
-        "12:28",
-        "13:28"
+        "13:24",
+        "14:24"
       ]
     },
     {
@@ -1811,13 +1808,12 @@
       "nameTranslations": {
         "ru": "Анориэн"
       },
-      "hex": "13:24",
+      "hex": "14:23",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-rohan",
+      "regionId": "region-gondor",
       "hexes": [
-        "13:24",
-        "12:25"
+        "14:23"
       ]
     },
     {
@@ -1843,12 +1839,16 @@
       "nameTranslations": {
         "ru": "Итилиэн"
       },
-      "hex": "15:28",
+      "hex": "16:22",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-gondor",
+      "regionId": "region-ithilien",
       "hexes": [
-        "15:28"
+        "17:17",
+        "16:18",
+        "16:22",
+        "15:25",
+        "15:27"
       ]
     },
     {
@@ -1874,7 +1874,7 @@
       "nameTranslations": {
         "ru": "Эмин Муил"
       },
-      "hex": "15:22",
+      "hex": "17:18",
       "structuralType": "stronghold",
       "economicType": "village",
       "regionId": "region-ithilien"
@@ -1961,10 +1961,10 @@
       "nameTranslations": {
         "ru": "Аргонат"
       },
-      "hex": "14:21",
+      "hex": "17:19",
       "structuralType": "stronghold",
       "economicType": "village",
-      "regionId": "region-rhovanion"
+      "regionId": "region-ithilien"
     },
     {
       "id": "amon-hen",
@@ -1989,10 +1989,10 @@
       "nameTranslations": {
         "ru": "Амон Хен"
       },
-      "hex": "14:22",
+      "hex": "16:19",
       "structuralType": "stronghold",
       "economicType": "village",
-      "regionId": "region-rohan"
+      "regionId": "region-ithilien"
     },
     {
       "id": "dead-marshes",
@@ -2017,7 +2017,7 @@
       "nameTranslations": {
         "ru": "Мёртвые топи"
       },
-      "hex": "17:23",
+      "hex": "16:20",
       "structuralType": "stronghold",
       "economicType": "village",
       "regionId": "region-mordor"
@@ -2045,12 +2045,13 @@
       "nameTranslations": {
         "ru": "Дагорлад"
       },
-      "hex": "19:22",
+      "hex": "16:21",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-mordor",
       "hexes": [
-        "19:23"
+        "15:21",
+        "16:21"
       ]
     },
     {
@@ -2076,12 +2077,12 @@
       "nameTranslations": {
         "ru": "Удун"
       },
-      "hex": "19:24",
+      "hex": "15:22",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-mordor",
       "hexes": [
-        "20:23"
+        "15:22"
       ]
     },
     {
@@ -2107,7 +2108,7 @@
       "nameTranslations": {
         "ru": "Ородруин"
       },
-      "hex": "21:24",
+      "hex": "20:23",
       "structuralType": "stronghold",
       "economicType": "village",
       "regionId": "region-mordor"
@@ -2135,12 +2136,13 @@
       "nameTranslations": {
         "ru": "Горгорот"
       },
-      "hex": "20:24",
+      "hex": "21:23",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-mordor",
       "hexes": [
-        "21:23"
+        "21:23",
+        "22:23"
       ]
     },
     {
@@ -2166,32 +2168,13 @@
       "nameTranslations": {
         "ru": "Нурн"
       },
-      "hex": "18:30",
+      "hex": "17:28",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-mordor",
       "hexes": [
-        "16:30",
-        "17:30",
-        "16:31",
-        "17:31",
-        "15:32",
-        "16:32",
-        "17:32",
-        "18:32",
-        "19:32",
-        "20:32",
-        "15:33",
-        "16:33",
-        "17:33",
-        "18:33",
-        "19:33",
-        "15:34",
-        "16:34",
-        "17:34",
-        "18:34",
-        "16:35",
-        "17:35"
+        "17:26",
+        "17:28"
       ]
     },
     {
@@ -2217,12 +2200,26 @@
       "nameTranslations": {
         "ru": "Мордор"
       },
-      "hex": "21:28",
+      "hex": "23:24",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-ithilien",
+      "regionId": "region-mordor",
       "hexes": [
-        "21:28"
+        "27:22",
+        "28:22",
+        "23:23",
+        "24:23",
+        "26:23",
+        "22:24",
+        "23:24",
+        "24:24",
+        "25:24",
+        "26:24",
+        "27:24",
+        "28:24",
+        "26:25",
+        "27:25",
+        "25:26"
       ]
     },
     {
@@ -2248,17 +2245,21 @@
       "nameTranslations": {
         "ru": "Харондор"
       },
-      "hex": "11:33",
+      "hex": "16:29",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-harad",
+      "regionId": "region-gondor",
       "hexes": [
+        "16:29",
+        "17:29",
+        "15:30",
+        "16:30",
+        "17:30",
+        "14:31",
+        "16:31",
+        "17:31",
         "12:32",
-        "13:32",
-        "12:34",
-        "8:35",
-        "9:35",
-        "8:36"
+        "13:32"
       ]
     },
     {
@@ -2284,42 +2285,77 @@
       "nameTranslations": {
         "ru": "Харад"
       },
-      "hex": "11:36",
+      "hex": "17:34",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-harad",
       "hexes": [
+        "15:32",
+        "16:32",
+        "17:32",
+        "18:32",
+        "19:32",
+        "20:32",
+        "21:32",
+        "15:33",
+        "16:33",
+        "17:33",
+        "18:33",
+        "19:33",
+        "20:33",
+        "21:33",
+        "12:34",
         "13:34",
         "14:34",
+        "15:34",
+        "16:34",
+        "17:34",
+        "18:34",
+        "19:34",
+        "20:34",
+        "21:34",
         "12:35",
         "13:35",
         "14:35",
         "15:35",
-        "9:36",
-        "10:36",
+        "16:35",
+        "17:35",
+        "18:35",
+        "20:35",
+        "21:35",
         "11:36",
         "12:36",
         "13:36",
         "14:36",
         "15:36",
         "16:36",
-        "8:37",
-        "9:37",
-        "10:37",
+        "17:36",
+        "18:36",
+        "19:36",
+        "20:36",
+        "21:36",
         "11:37",
         "12:37",
         "13:37",
         "14:37",
         "15:37",
         "16:37",
-        "8:38",
-        "9:38",
-        "10:38",
+        "17:37",
+        "18:37",
+        "19:37",
+        "20:37",
+        "21:37",
         "11:38",
         "12:38",
         "13:38",
         "14:38",
-        "15:38"
+        "15:38",
+        "16:38",
+        "17:38",
+        "18:38",
+        "19:38",
+        "20:38",
+        "21:38"
       ]
     },
     {
@@ -2350,15 +2386,28 @@
       "economicType": "port",
       "regionId": "region-harad",
       "hexes": [
+        "8:32",
+        "9:32",
         "7:35",
+        "8:35",
+        "9:35",
         "6:36",
         "7:36",
+        "8:36",
+        "9:36",
+        "10:36",
         "5:37",
         "6:37",
         "7:37",
+        "8:37",
+        "9:37",
+        "10:37",
         "5:38",
         "6:38",
-        "7:38"
+        "7:38",
+        "8:38",
+        "9:38",
+        "10:38"
       ]
     },
     {
@@ -2384,49 +2433,27 @@
       "nameTranslations": {
         "ru": "Кханд"
       },
-      "hex": "22:34",
+      "hex": "25:30",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-rhun",
+      "regionId": "region-harad",
       "hexes": [
+        "25:27",
+        "25:28",
+        "25:29",
         "24:30",
         "25:30",
         "23:31",
         "24:31",
         "25:31",
-        "21:32",
         "22:32",
         "23:32",
         "24:32",
-        "20:33",
-        "21:33",
-        "19:34",
-        "20:34",
-        "21:34",
-        "18:35",
-        "20:35",
-        "21:35",
         "22:35",
         "23:35",
-        "17:36",
-        "18:36",
-        "19:36",
-        "20:36",
-        "21:36",
         "22:36",
         "23:36",
-        "17:37",
-        "18:37",
-        "19:37",
-        "20:37",
-        "21:37",
         "22:37",
-        "16:38",
-        "17:38",
-        "18:38",
-        "19:38",
-        "20:38",
-        "21:38",
         "22:38"
       ]
     },
@@ -2453,21 +2480,31 @@
       "nameTranslations": {
         "ru": "Лихолесье"
       },
-      "hex": "18:16",
+      "hex": "17:14",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-rhovanion",
       "hexes": [
+        "20:11",
+        "19:12",
+        "20:12",
+        "18:13",
+        "19:13",
+        "20:13",
+        "21:13",
         "17:14",
         "18:14",
+        "19:14",
+        "20:14",
+        "16:15",
         "17:15",
         "18:15",
         "19:15",
+        "15:16",
+        "16:16",
         "17:16",
-        "18:16",
-        "19:16",
-        "18:17",
-        "19:17"
+        "15:17",
+        "16:17"
       ]
     },
     {
@@ -2493,14 +2530,16 @@
       "nameTranslations": {
         "ru": "Рованион"
       },
-      "hex": "21:17",
+      "hex": "15:9",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-rhovanion",
       "hexes": [
-        "22:16",
-        "23:16",
-        "24:16"
+        "14:9",
+        "15:9",
+        "17:9",
+        "18:9",
+        "15:10"
       ]
     },
     {
@@ -2526,12 +2565,23 @@
       "nameTranslations": {
         "ru": "Бурые равнины"
       },
-      "hex": "20:20",
+      "hex": "18:18",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-rhovanion",
       "hexes": [
-        "20:20"
+        "22:14",
+        "23:14",
+        "20:15",
+        "22:15",
+        "18:16",
+        "19:16",
+        "22:16",
+        "23:16",
+        "18:17",
+        "19:17",
+        "18:18",
+        "18:19"
       ]
     },
     {
@@ -2557,42 +2607,26 @@
       "nameTranslations": {
         "ru": "Железные холмы"
       },
-      "hex": "29:11",
+      "hex": "24:4",
       "structuralType": "domain",
       "economicType": "mine",
       "regionId": "region-rhovanion",
       "hexes": [
-        "38:0",
-        "40:0",
-        "41:0",
-        "39:1",
-        "40:1",
-        "38:2",
-        "39:2",
-        "40:2",
-        "35:3",
-        "36:3",
-        "38:3",
-        "39:3",
-        "34:4",
-        "35:4",
-        "38:4",
-        "39:4",
-        "33:5",
-        "34:5",
-        "35:5",
-        "38:5",
-        "32:6",
-        "33:6",
-        "34:6",
-        "35:6",
-        "28:10",
-        "29:11",
-        "30:11",
-        "28:12",
-        "28:13",
-        "29:13",
-        "27:14"
+        "25:0",
+        "26:0",
+        "27:0",
+        "30:0",
+        "31:0",
+        "24:1",
+        "25:1",
+        "27:1",
+        "28:1",
+        "24:2",
+        "26:2",
+        "27:2",
+        "28:2",
+        "29:2",
+        "24:4"
       ]
     },
     {
@@ -2618,35 +2652,29 @@
       "nameTranslations": {
         "ru": "Исхохшая пустошь"
       },
-      "hex": "27:9",
+      "hex": "21:3",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-rhovanion",
       "hexes": [
-        "33:0",
-        "34:0",
-        "35:0",
-        "36:0",
-        "37:0",
-        "30:3",
-        "31:3",
-        "32:3",
-        "33:3",
-        "34:3",
-        "30:4",
-        "31:4",
-        "32:4",
-        "33:4",
-        "30:5",
-        "31:5",
-        "32:5",
-        "30:6",
-        "31:6",
-        "26:8",
-        "25:9",
-        "26:9",
-        "26:10",
-        "27:10"
+        "20:0",
+        "21:0",
+        "22:0",
+        "23:0",
+        "24:0",
+        "20:1",
+        "21:1",
+        "22:1",
+        "23:1",
+        "20:2",
+        "21:2",
+        "22:2",
+        "23:2",
+        "19:3",
+        "20:3",
+        "21:3",
+        "19:4",
+        "20:4"
       ]
     },
     {
@@ -2672,13 +2700,49 @@
       "nameTranslations": {
         "ru": "Эсгарот"
       },
-      "hex": "22:14",
+      "hex": "26:8",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-rhovanion",
       "hexes": [
-        "22:14",
-        "22:15"
+        "34:0",
+        "35:0",
+        "36:0",
+        "37:0",
+        "38:0",
+        "40:0",
+        "41:0",
+        "39:1",
+        "40:1",
+        "38:2",
+        "39:2",
+        "40:2",
+        "31:3",
+        "32:3",
+        "33:3",
+        "34:3",
+        "35:3",
+        "36:3",
+        "38:3",
+        "39:3",
+        "30:4",
+        "31:4",
+        "32:4",
+        "33:4",
+        "34:4",
+        "35:4",
+        "30:5",
+        "31:5",
+        "32:5",
+        "33:5",
+        "34:5",
+        "30:6",
+        "31:6",
+        "32:6",
+        "26:8",
+        "26:9",
+        "26:10",
+        "27:10"
       ]
     },
     {
@@ -2704,18 +2768,21 @@
       "nameTranslations": {
         "ru": "Море Рун"
       },
-      "hex": "29:18",
+      "hex": "31:16",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-rhun",
       "hexes": [
         "32:15",
+        "27:16",
+        "28:16",
         "31:16",
         "32:16",
+        "26:17",
+        "27:17",
+        "28:17",
         "31:17",
-        "28:21",
-        "27:22",
-        "28:22"
+        "28:21"
       ]
     },
     {
@@ -2741,19 +2808,29 @@
       "nameTranslations": {
         "ru": "Дорвинион"
       },
-      "hex": "27:17",
+      "hex": "28:12",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-rhun",
       "hexes": [
+        "38:4",
+        "39:4",
+        "35:5",
+        "38:5",
+        "33:6",
+        "34:6",
+        "35:6",
+        "28:10",
+        "29:11",
+        "30:11",
+        "28:12",
+        "28:13",
+        "29:13",
+        "27:14",
         "26:15",
+        "24:16",
         "25:16",
-        "26:16",
-        "27:16",
-        "28:16",
-        "26:17",
-        "27:17",
-        "28:17"
+        "26:16"
       ]
     },
     {
@@ -2779,48 +2856,12 @@
       "nameTranslations": {
         "ru": "Гундабад"
       },
-      "hex": "15:10",
+      "hex": "12:2",
       "structuralType": "domain",
       "economicType": "capital",
       "regionId": "region-angmar",
       "hexes": [
-        "20:0",
-        "19:1",
-        "20:1",
-        "19:2",
-        "20:2",
-        "19:3",
-        "20:3",
-        "17:4",
-        "18:4",
-        "19:4",
-        "20:4",
-        "17:5",
-        "18:5",
-        "19:5",
-        "20:5",
-        "13:8",
-        "14:8",
-        "15:8",
-        "16:8",
-        "17:8",
-        "18:8",
-        "12:9",
-        "13:9",
-        "14:9",
-        "15:9",
-        "16:9",
-        "17:9",
-        "18:9",
-        "12:10",
-        "13:10",
-        "14:10",
-        "15:10",
-        "17:10",
-        "13:11",
-        "15:11",
-        "16:11",
-        "17:11"
+        "12:2"
       ]
     },
     {
@@ -2846,65 +2887,17 @@
       "nameTranslations": {
         "ru": "Серые горы"
       },
-      "hex": "21:9",
+      "hex": "17:4",
       "structuralType": "domain",
       "economicType": "village",
-      "regionId": "region-angmar",
+      "regionId": "region-rhovanion",
       "hexes": [
-        "21:0",
-        "22:0",
-        "23:0",
-        "24:0",
-        "25:0",
-        "26:0",
-        "27:0",
-        "30:0",
-        "31:0",
-        "32:0",
-        "21:1",
-        "22:1",
-        "23:1",
-        "24:1",
-        "25:1",
-        "27:1",
-        "28:1",
-        "21:2",
-        "22:2",
-        "23:2",
-        "24:2",
-        "26:2",
-        "27:2",
-        "28:2",
-        "29:2",
-        "30:2",
-        "21:3",
-        "29:3",
-        "21:4",
-        "22:4",
-        "24:4",
-        "21:5",
-        "22:5",
-        "23:5",
-        "19:8",
-        "20:8",
-        "21:8",
-        "22:8",
-        "25:8",
-        "19:9",
-        "20:9",
-        "21:9",
-        "22:9",
-        "23:9",
-        "24:9",
-        "19:10",
-        "22:10",
-        "23:10",
-        "18:11",
-        "19:11",
-        "20:11",
-        "21:11",
-        "18:12",
-        "19:12"
+        "19:1",
+        "19:2",
+        "17:4",
+        "18:4",
+        "17:5",
+        "18:5"
       ]
     },
     {
@@ -2930,20 +2923,13 @@
       "nameTranslations": {
         "ru": "Залив Форхел"
       },
-      "hex": "8:8",
+      "hex": "12:1",
       "structuralType": "domain",
       "economicType": "village",
       "regionId": "region-angmar",
       "hexes": [
-        "11:0",
-        "12:0",
         "13:0",
-        "11:1",
-        "12:1",
-        "10:2",
-        "11:2",
-        "12:2",
-        "6:10"
+        "12:1"
       ]
     },
     {
@@ -2969,12 +2955,12 @@
       "nameTranslations": {
         "ru": "Карн Дум"
       },
-      "hex": "9:10",
+      "hex": "10:2",
       "structuralType": "domain",
       "economicType": "capital",
-      "regionId": "region-eriador",
+      "regionId": "region-angmar",
       "hexes": [
-        "9:10"
+        "10:2"
       ]
     },
     {
@@ -3000,14 +2986,13 @@
       "nameTranslations": {
         "ru": "Рудаур"
       },
-      "hex": "11:13",
+      "hex": "13:8",
       "structuralType": "domain",
       "economicType": "fortress",
       "regionId": "region-angmar",
       "hexes": [
-        "12:11",
-        "12:12",
-        "12:13"
+        "13:8",
+        "14:8"
       ]
     }
   ],
@@ -11392,89 +11377,69 @@
       "nameTranslations": {
         "ru": "Эриадор"
       },
-      "color": "#6B8E6B",
-      "description": "Lands west of the Misty Mountains, from the Blue Mountains to the Baranduin.",
-      "descriptionTranslations": {
-        "ru": "Земли к западу от Мглистых Гор, от Синих Гор до Барадуина."
-      },
       "hexes": [
+        "11:0",
+        "12:0",
+        "11:1",
+        "11:2",
+        "15:8",
+        "16:8",
+        "17:8",
+        "12:9",
+        "13:9",
+        "16:9",
+        "6:10",
+        "12:10",
+        "13:10",
         "4:11",
         "5:11",
         "7:11",
+        "12:11",
         "1:12",
         "2:12",
         "5:12",
         "6:12",
-        "15:12",
-        "17:12",
+        "12:12",
         "1:13",
         "4:13",
         "7:13",
         "8:13",
-        "13:13",
-        "14:13",
-        "15:13",
-        "16:13",
-        "17:13",
         "0:14",
         "1:14",
         "3:14",
         "7:14",
         "8:14",
-        "12:14",
-        "13:14",
-        "14:14",
-        "15:14",
-        "16:14",
         "-1:15",
         "1:15",
         "2:15",
         "6:15",
         "7:15",
-        "11:15",
-        "12:15",
-        "14:15",
-        "15:15",
         "0:16",
         "4:16",
-        "6:16",
-        "7:16",
-        "10:16",
-        "11:16",
-        "12:16",
-        "13:16",
-        "14:16",
         "-1:17",
         "0:17",
         "1:17",
         "2:17",
-        "6:17",
-        "7:17",
-        "9:17",
-        "10:17",
-        "11:17",
-        "12:17",
-        "13:17",
         "-2:18",
         "-1:18",
         "0:18",
         "1:18",
         "2:18",
-        "4:18",
-        "5:18",
-        "6:18",
-        "7:18",
         "-2:19",
         "-1:19",
         "0:19",
         "2:19",
-        "3:19",
-        "5:19",
-        "6:19",
         "-2:20",
-        "-1:20"
+        "-1:20",
+        "0:20",
+        "1:20"
       ],
-      "ownerFactionId": null
+      "color": "#6B8E6B",
+      "ownerFactionId": null,
+      "description": "Lands west of the Misty Mountains, from the Blue Mountains to the Baranduin.",
+      "descriptionTranslations": {
+        "ru": "Земли к западу от Мглистых Гор, от Синих Гор до Барадуина."
+      }
     },
     {
       "id": "region-angmar",
@@ -11482,15 +11447,28 @@
       "nameTranslations": {
         "ru": "Ангмар"
       },
+      "hexes": [
+        "13:0",
+        "12:1",
+        "10:2",
+        "12:2",
+        "13:8",
+        "14:8"
+      ],
       "color": "#5C4A6E",
+      "ownerFactionId": null,
       "description": "The far north: icy wastes and the northern spurs of the Misty Mountains.",
       "descriptionTranslations": {
         "ru": "Крайний север: ледяные пустоши и северные отроги Мглистых Гор."
+      }
+    },
+    {
+      "id": "region-rhovanion",
+      "name": "Rhovanion",
+      "nameTranslations": {
+        "ru": "Рованион"
       },
       "hexes": [
-        "11:0",
-        "12:0",
-        "13:0",
         "20:0",
         "21:0",
         "22:0",
@@ -11502,8 +11480,14 @@
         "30:0",
         "31:0",
         "32:0",
-        "11:1",
-        "12:1",
+        "33:0",
+        "34:0",
+        "35:0",
+        "36:0",
+        "37:0",
+        "38:0",
+        "40:0",
+        "41:0",
         "19:1",
         "20:1",
         "21:1",
@@ -11513,9 +11497,8 @@
         "25:1",
         "27:1",
         "28:1",
-        "10:2",
-        "11:2",
-        "12:2",
+        "39:1",
+        "40:1",
         "19:2",
         "20:2",
         "21:2",
@@ -11527,98 +11510,13 @@
         "28:2",
         "29:2",
         "30:2",
+        "38:2",
+        "39:2",
+        "40:2",
         "19:3",
         "20:3",
         "21:3",
         "29:3",
-        "17:4",
-        "18:4",
-        "19:4",
-        "20:4",
-        "21:4",
-        "22:4",
-        "24:4",
-        "17:5",
-        "18:5",
-        "19:5",
-        "20:5",
-        "21:5",
-        "22:5",
-        "23:5",
-        "13:8",
-        "14:8",
-        "15:8",
-        "16:8",
-        "17:8",
-        "18:8",
-        "19:8",
-        "20:8",
-        "21:8",
-        "22:8",
-        "25:8",
-        "12:9",
-        "13:9",
-        "14:9",
-        "15:9",
-        "16:9",
-        "17:9",
-        "18:9",
-        "19:9",
-        "20:9",
-        "21:9",
-        "22:9",
-        "23:9",
-        "24:9",
-        "6:10",
-        "12:10",
-        "13:10",
-        "14:10",
-        "15:10",
-        "17:10",
-        "19:10",
-        "22:10",
-        "23:10",
-        "12:11",
-        "13:11",
-        "15:11",
-        "16:11",
-        "17:11",
-        "18:11",
-        "19:11",
-        "20:11",
-        "21:11",
-        "12:12",
-        "18:12",
-        "19:12",
-        "12:13"
-      ],
-      "ownerFactionId": null
-    },
-    {
-      "id": "region-rhovanion",
-      "name": "Rhovanion",
-      "nameTranslations": {
-        "ru": "Рованион"
-      },
-      "color": "#4A7A4A",
-      "description": "Wilderland east of the Misty Mountains: Mirkwood, Dale, and the Iron Hills.",
-      "descriptionTranslations": {
-        "ru": "Земли к востоку от Мглистых Гор: Лихолесье, Дейл и Железные Холмы."
-      },
-      "hexes": [
-        "33:0",
-        "34:0",
-        "35:0",
-        "36:0",
-        "37:0",
-        "38:0",
-        "40:0",
-        "41:0",
-        "39:1",
-        "40:1",
-        "38:2",
-        "39:2",
-        "40:2",
         "30:3",
         "31:3",
         "32:3",
@@ -11628,59 +11526,97 @@
         "36:3",
         "38:3",
         "39:3",
+        "17:4",
+        "18:4",
+        "19:4",
+        "20:4",
+        "21:4",
+        "22:4",
+        "24:4",
         "30:4",
         "31:4",
         "32:4",
         "33:4",
         "34:4",
         "35:4",
-        "38:4",
-        "39:4",
+        "17:5",
+        "18:5",
+        "19:5",
+        "20:5",
+        "21:5",
+        "22:5",
+        "23:5",
         "30:5",
         "31:5",
         "32:5",
         "33:5",
         "34:5",
-        "35:5",
-        "38:5",
         "30:6",
         "31:6",
         "32:6",
-        "33:6",
-        "34:6",
-        "35:6",
+        "18:8",
+        "19:8",
+        "20:8",
+        "21:8",
+        "22:8",
+        "25:8",
         "26:8",
+        "14:9",
+        "15:9",
+        "17:9",
+        "18:9",
+        "19:9",
+        "20:9",
+        "21:9",
+        "22:9",
+        "23:9",
+        "24:9",
         "25:9",
         "26:9",
+        "15:10",
+        "17:10",
+        "19:10",
+        "22:10",
+        "23:10",
         "24:10",
         "25:10",
         "26:10",
         "27:10",
-        "28:10",
+        "16:11",
+        "17:11",
+        "18:11",
+        "19:11",
+        "20:11",
+        "21:11",
         "22:11",
         "24:11",
-        "29:11",
-        "30:11",
+        "17:12",
+        "18:12",
+        "19:12",
         "20:12",
         "21:12",
         "23:12",
         "24:12",
-        "28:12",
+        "15:13",
+        "16:13",
+        "17:13",
         "18:13",
         "19:13",
         "20:13",
         "21:13",
         "22:13",
         "23:13",
-        "28:13",
-        "29:13",
+        "14:14",
+        "15:14",
+        "16:14",
         "17:14",
         "18:14",
         "19:14",
         "20:14",
         "22:14",
         "23:14",
-        "27:14",
+        "14:15",
+        "15:15",
         "16:15",
         "17:15",
         "18:15",
@@ -11694,29 +11630,20 @@
         "19:16",
         "22:16",
         "23:16",
-        "24:16",
         "14:17",
         "15:17",
         "16:17",
-        "17:17",
         "18:17",
         "19:17",
-        "13:18",
-        "14:18",
-        "15:18",
-        "16:18",
-        "17:18",
         "18:18",
-        "14:19",
-        "15:19",
-        "16:19",
-        "17:19",
-        "18:19",
-        "14:20",
-        "15:20",
-        "16:20"
+        "18:19"
       ],
-      "ownerFactionId": null
+      "color": "#4A7A4A",
+      "ownerFactionId": null,
+      "description": "Wilderland east of the Misty Mountains: Mirkwood, Dale, and the Iron Hills.",
+      "descriptionTranslations": {
+        "ru": "Земли к востоку от Мглистых Гор: Лихолесье, Дейл и Железные Холмы."
+      }
     },
     {
       "id": "region-enedwaith",
@@ -11724,53 +11651,61 @@
       "nameTranslations": {
         "ru": "Энедвайт"
       },
-      "color": "#8B7D5B",
-      "description": "The empty lands between Eriador and Rohan: Dunland, Fangorn, and Isengard.",
-      "descriptionTranslations": {
-        "ru": "Пустоши между Эриадором и Роханом: Дунланд, Фангорн и Изенгард."
-      },
       "hexes": [
+        "14:10",
+        "13:11",
+        "15:11",
+        "15:12",
+        "12:13",
+        "13:13",
+        "14:13",
+        "12:14",
+        "13:14",
+        "11:15",
+        "12:15",
+        "6:16",
+        "7:16",
+        "10:16",
+        "11:16",
+        "12:16",
+        "13:16",
+        "14:16",
+        "6:17",
+        "7:17",
+        "9:17",
+        "10:17",
+        "11:17",
+        "12:17",
+        "13:17",
+        "4:18",
+        "5:18",
+        "6:18",
+        "7:18",
         "8:18",
         "10:18",
         "11:18",
-        "12:18",
+        "3:19",
+        "5:19",
+        "6:19",
         "7:19",
         "8:19",
-        "10:19",
-        "11:19",
-        "12:19",
-        "13:19",
-        "0:20",
-        "1:20",
         "2:20",
         "5:20",
         "6:20",
-        "9:20",
-        "10:20",
-        "11:20",
-        "12:20",
-        "13:20",
         "1:21",
         "4:21",
-        "9:21",
-        "10:21",
-        "11:21",
-        "12:21",
-        "13:21",
         "0:22",
         "1:22",
         "3:22",
-        "8:22",
-        "10:22",
-        "11:22",
         "1:23",
-        "3:23",
-        "3:25",
-        "4:25",
-        "2:26",
-        "4:26"
+        "3:23"
       ],
-      "ownerFactionId": null
+      "color": "#8B7D5B",
+      "ownerFactionId": null,
+      "description": "The empty lands between Eriador and Rohan: Dunland, Fangorn, and Isengard.",
+      "descriptionTranslations": {
+        "ru": "Пустоши между Эриадором и Роханом: Дунланд, Фангорн и Изенгард."
+      }
     },
     {
       "id": "region-rohan",
@@ -11778,35 +11713,42 @@
       "nameTranslations": {
         "ru": "Рохан"
       },
+      "hexes": [
+        "12:18",
+        "13:18",
+        "14:18",
+        "15:18",
+        "10:19",
+        "11:19",
+        "12:19",
+        "13:19",
+        "14:19",
+        "15:19",
+        "9:20",
+        "10:20",
+        "11:20",
+        "12:20",
+        "13:20",
+        "14:20",
+        "15:20",
+        "9:21",
+        "10:21",
+        "11:21",
+        "12:21",
+        "13:21",
+        "8:22",
+        "11:22",
+        "11:23",
+        "12:23",
+        "11:24",
+        "12:24"
+      ],
       "color": "#7A9E3A",
+      "ownerFactionId": "men-of-the-west",
       "description": "The grassy plains of the Rohirrim from the Gap of Rohan to the Entwash.",
       "descriptionTranslations": {
         "ru": "Травянистые равнины Рохиррим от Врат Рохана до Энтуош."
-      },
-      "hexes": [
-        "8:23",
-        "11:23",
-        "12:23",
-        "14:23",
-        "7:24",
-        "8:24",
-        "11:24",
-        "12:24",
-        "13:24",
-        "5:25",
-        "6:25",
-        "11:25",
-        "12:25",
-        "5:26",
-        "6:26",
-        "7:26",
-        "8:27",
-        "9:27",
-        "10:27",
-        "9:28",
-        "8:29"
-      ],
-      "ownerFactionId": "men-of-the-west"
+      }
     },
     {
       "id": "region-gondor",
@@ -11814,17 +11756,39 @@
       "nameTranslations": {
         "ru": "Гондор"
       },
-      "color": "#4A6FA5",
-      "description": "The southern kingdom from the White Mountains to the Anduin and the sea.",
-      "descriptionTranslations": {
-        "ru": "Южное королевство от Белых Гор до Андуина и моря."
-      },
       "hexes": [
+        "10:22",
+        "17:22",
+        "8:23",
+        "14:23",
+        "15:23",
+        "16:23",
+        "7:24",
+        "8:24",
+        "13:24",
+        "14:24",
+        "15:24",
+        "3:25",
+        "4:25",
+        "5:25",
+        "6:25",
+        "11:25",
+        "12:25",
+        "14:25",
+        "2:26",
+        "4:26",
+        "5:26",
+        "6:26",
+        "7:26",
+        "15:26",
         "7:27",
+        "8:27",
+        "9:27",
+        "10:27",
         "12:27",
         "13:27",
-        "15:27",
         "6:28",
+        "9:28",
         "10:28",
         "11:28",
         "12:28",
@@ -11833,23 +11797,36 @@
         "0:29",
         "6:29",
         "7:29",
+        "8:29",
         "11:29",
         "12:29",
         "13:29",
+        "16:29",
+        "17:29",
         "8:30",
         "9:30",
         "10:30",
         "12:30",
         "13:30",
+        "15:30",
+        "16:30",
+        "17:30",
         "9:31",
         "10:31",
         "11:31",
         "12:31",
         "14:31",
-        "8:32",
-        "9:32"
+        "16:31",
+        "17:31",
+        "12:32",
+        "13:32"
       ],
-      "ownerFactionId": "men-of-the-west"
+      "color": "#4A6FA5",
+      "ownerFactionId": null,
+      "description": "The southern kingdom from the White Mountains to the Anduin and the sea.",
+      "descriptionTranslations": {
+        "ru": "Южное королевство от Белых Гор до Андуина и моря."
+      }
     },
     {
       "id": "region-ithilien",
@@ -11857,34 +11834,22 @@
       "nameTranslations": {
         "ru": "Итилиэн"
       },
+      "hexes": [
+        "17:17",
+        "16:18",
+        "17:18",
+        "16:19",
+        "17:19",
+        "16:22",
+        "15:25",
+        "15:27"
+      ],
       "color": "#5A8A5A",
+      "ownerFactionId": "men-of-the-west",
       "description": "The eastern province of Gondor between the Anduin and Mordor.",
       "descriptionTranslations": {
         "ru": "Восточная провинция Гондора между Андуином и Мордором."
-      },
-      "hexes": [
-        "15:21",
-        "16:21",
-        "17:21",
-        "15:22",
-        "16:22",
-        "17:22",
-        "15:23",
-        "16:23",
-        "14:24",
-        "15:24",
-        "16:24",
-        "14:25",
-        "15:25",
-        "17:25",
-        "15:26",
-        "17:26",
-        "17:28",
-        "16:29",
-        "17:29",
-        "15:30"
-      ],
-      "ownerFactionId": null
+      }
     },
     {
       "id": "region-mordor",
@@ -11892,12 +11857,14 @@
       "nameTranslations": {
         "ru": "Мордор"
       },
-      "color": "#8B2020",
-      "description": "Volcanic wastes ringed by the Ephel Dúath and Ered Lithui.",
-      "descriptionTranslations": {
-        "ru": "Вулканические пустоши, окружённые Эфель Дуат и Эред Литуй."
-      },
       "hexes": [
+        "16:20",
+        "15:21",
+        "16:21",
+        "17:21",
+        "15:22",
+        "27:22",
+        "28:22",
         "17:23",
         "19:23",
         "20:23",
@@ -11906,6 +11873,7 @@
         "23:23",
         "24:23",
         "26:23",
+        "16:24",
         "22:24",
         "23:24",
         "24:24",
@@ -11913,35 +11881,19 @@
         "26:24",
         "27:24",
         "28:24",
+        "17:25",
         "26:25",
         "27:25",
+        "17:26",
         "25:26",
-        "25:27",
-        "25:28",
-        "25:29",
-        "16:30",
-        "17:30",
-        "16:31",
-        "17:31",
-        "15:32",
-        "16:32",
-        "17:32",
-        "18:32",
-        "19:32",
-        "20:32",
-        "15:33",
-        "16:33",
-        "17:33",
-        "18:33",
-        "19:33",
-        "15:34",
-        "16:34",
-        "17:34",
-        "18:34",
-        "16:35",
-        "17:35"
+        "17:28"
       ],
-      "ownerFactionId": "mordor"
+      "color": "#8B2020",
+      "ownerFactionId": "mordor",
+      "description": "Volcanic wastes ringed by the Ephel Dúath and Ered Lithui.",
+      "descriptionTranslations": {
+        "ru": "Вулканические пустоши, окружённые Эфель Дуат и Эред Литуй."
+      }
     },
     {
       "id": "region-harad",
@@ -11949,17 +11901,44 @@
       "nameTranslations": {
         "ru": "Харад"
       },
-      "color": "#C4A035",
-      "description": "Southern deserts and savannas beyond the Harnen.",
-      "descriptionTranslations": {
-        "ru": "Южные пустыни и саванны за рекой Харнен."
-      },
       "hexes": [
-        "12:32",
-        "13:32",
+        "25:27",
+        "25:28",
+        "25:29",
+        "24:30",
+        "25:30",
+        "23:31",
+        "24:31",
+        "25:31",
+        "8:32",
+        "9:32",
+        "15:32",
+        "16:32",
+        "17:32",
+        "18:32",
+        "19:32",
+        "20:32",
+        "21:32",
+        "22:32",
+        "23:32",
+        "24:32",
+        "15:33",
+        "16:33",
+        "17:33",
+        "18:33",
+        "19:33",
+        "20:33",
+        "21:33",
         "12:34",
         "13:34",
         "14:34",
+        "15:34",
+        "16:34",
+        "17:34",
+        "18:34",
+        "19:34",
+        "20:34",
+        "21:34",
         "7:35",
         "8:35",
         "9:35",
@@ -11967,6 +11946,13 @@
         "13:35",
         "14:35",
         "15:35",
+        "16:35",
+        "17:35",
+        "18:35",
+        "20:35",
+        "21:35",
+        "22:35",
+        "23:35",
         "6:36",
         "7:36",
         "8:36",
@@ -11978,6 +11964,13 @@
         "14:36",
         "15:36",
         "16:36",
+        "17:36",
+        "18:36",
+        "19:36",
+        "20:36",
+        "21:36",
+        "22:36",
+        "23:36",
         "5:37",
         "6:37",
         "7:37",
@@ -11990,6 +11983,12 @@
         "14:37",
         "15:37",
         "16:37",
+        "17:37",
+        "18:37",
+        "19:37",
+        "20:37",
+        "21:37",
+        "22:37",
         "5:38",
         "6:38",
         "7:38",
@@ -12000,9 +11999,21 @@
         "12:38",
         "13:38",
         "14:38",
-        "15:38"
+        "15:38",
+        "16:38",
+        "17:38",
+        "18:38",
+        "19:38",
+        "20:38",
+        "21:38",
+        "22:38"
       ],
-      "ownerFactionId": "mordor"
+      "color": "#C4A035",
+      "ownerFactionId": "mordor",
+      "description": "Southern deserts and savannas beyond the Harnen.",
+      "descriptionTranslations": {
+        "ru": "Южные пустыни и саванны за рекой Харнен."
+      }
     },
     {
       "id": "region-rhun",
@@ -12010,14 +12021,24 @@
       "nameTranslations": {
         "ru": "Рун"
       },
-      "color": "#9E6B3A",
-      "description": "Eastern lands around the Sea of Rhûn, home of the Easterlings.",
-      "descriptionTranslations": {
-        "ru": "Восточные земли вокруг Моря Рун, родина истерлингов."
-      },
       "hexes": [
+        "38:4",
+        "39:4",
+        "35:5",
+        "38:5",
+        "33:6",
+        "34:6",
+        "35:6",
+        "28:10",
+        "29:11",
+        "30:11",
+        "28:12",
+        "28:13",
+        "29:13",
+        "27:14",
         "26:15",
         "32:15",
+        "24:16",
         "25:16",
         "26:16",
         "27:16",
@@ -12028,50 +12049,14 @@
         "27:17",
         "28:17",
         "31:17",
-        "28:21",
-        "27:22",
-        "28:22",
-        "24:30",
-        "25:30",
-        "23:31",
-        "24:31",
-        "25:31",
-        "21:32",
-        "22:32",
-        "23:32",
-        "24:32",
-        "20:33",
-        "21:33",
-        "19:34",
-        "20:34",
-        "21:34",
-        "18:35",
-        "20:35",
-        "21:35",
-        "22:35",
-        "23:35",
-        "17:36",
-        "18:36",
-        "19:36",
-        "20:36",
-        "21:36",
-        "22:36",
-        "23:36",
-        "17:37",
-        "18:37",
-        "19:37",
-        "20:37",
-        "21:37",
-        "22:37",
-        "16:38",
-        "17:38",
-        "18:38",
-        "19:38",
-        "20:38",
-        "21:38",
-        "22:38"
+        "28:21"
       ],
-      "ownerFactionId": null
+      "color": "#9E6B3A",
+      "ownerFactionId": null,
+      "description": "Eastern lands around the Sea of Rhûn, home of the Easterlings.",
+      "descriptionTranslations": {
+        "ru": "Восточные земли вокруг Моря Рун, родина истерлингов."
+      }
     }
   ],
   "campaign": {

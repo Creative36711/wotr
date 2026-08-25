@@ -1,5 +1,5 @@
 {
-  "version": 34,
+  "version": 35,
   "grid": {
     "config": {
       "orientation": "pointy",
@@ -95,7 +95,7 @@
       "allowsCaptainHire": false,
       "isCapital": false,
       "allowedForDomain": true,
-      "allowedForStronghold": false
+      "allowedForStronghold": true
     },
     {
       "id": "city",
@@ -113,7 +113,7 @@
       "allowsCaptainHire": true,
       "isCapital": false,
       "allowedForDomain": true,
-      "allowedForStronghold": false
+      "allowedForStronghold": true
     },
     {
       "id": "fortress",
@@ -185,7 +185,7 @@
       "allowsCaptainHire": false,
       "isCapital": false,
       "allowedForDomain": true,
-      "allowedForStronghold": false
+      "allowedForStronghold": true
     },
     {
       "id": "farm",
@@ -203,7 +203,7 @@
       "allowsCaptainHire": false,
       "isCapital": false,
       "allowedForDomain": true,
-      "allowedForStronghold": false
+      "allowedForStronghold": true
     },
     {
       "id": "wilderness",
@@ -221,7 +221,7 @@
       "allowsCaptainHire": false,
       "isCapital": false,
       "allowedForDomain": true,
-      "allowedForStronghold": false
+      "allowedForStronghold": true
     },
     {
       "id": "swamp",
@@ -292,6 +292,24 @@
       "battleType": "settlement",
       "allowsCaptainHire": false,
       "isCapital": false,
+      "allowedForDomain": true,
+      "allowedForStronghold": true
+    },
+    {
+      "id": "monument",
+      "name": "Monument / Shrine",
+      "nameTranslations": {
+        "ru": "Памятник / святилище"
+      },
+      "gold": 5,
+      "materials": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
+      "visionRadius": 2,
+      "defenseBonus": 0.1,
+      "battleType": "settlement",
+      "allowsCaptainHire": false,
+      "isCapital": false,
       "allowedForDomain": false,
       "allowedForStronghold": true
     },
@@ -310,7 +328,7 @@
       "battleType": "settlement",
       "allowsCaptainHire": false,
       "isCapital": false,
-      "allowedForDomain": false,
+      "allowedForDomain": true,
       "allowedForStronghold": true
     },
     {

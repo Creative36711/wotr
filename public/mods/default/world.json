@@ -1,5 +1,5 @@
 {
-  "version": 34,
+  "version": 35,
   "locations": [
     {
       "id": "mithlond",
@@ -1129,7 +1129,7 @@
       "rtsFortress": null,
       "hex": "14:21",
       "structuralType": "stronghold",
-      "economicType": "ruins",
+      "economicType": "monument",
       "regionId": "region-rhovanion"
     },
     {
@@ -4259,7 +4259,7 @@
       "rtsFortress": null,
       "hex": "15:27",
       "structuralType": "stronghold",
-      "economicType": "ruins",
+      "economicType": "monument",
       "regionId": "region-gondor"
     },
     {
@@ -4623,7 +4623,7 @@
       "rtsFortress": null,
       "hex": "23:12",
       "structuralType": "stronghold",
-      "economicType": "ruins",
+      "economicType": "monument",
       "regionId": "region-rhovanion"
     },
     {
@@ -14161,6 +14161,24 @@
       "allowsCaptainHire": false,
       "isCapital": false,
       "allowedForDomain": true,
+      "allowedForStronghold": true
+    },
+    {
+      "id": "monument",
+      "name": "Monument / Shrine",
+      "nameTranslations": {
+        "ru": "Памятник / святилище"
+      },
+      "gold": 5,
+      "materials": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
+      "visionRadius": 2,
+      "defenseBonus": 0.1,
+      "battleType": "settlement",
+      "allowsCaptainHire": false,
+      "isCapital": false,
+      "allowedForDomain": false,
       "allowedForStronghold": true
     },
     {

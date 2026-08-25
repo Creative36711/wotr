@@ -590,7 +590,7 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     armies,
     regions,
     campaign: { ...campaign, turnOrder: [...campaign.turnOrder], log: [...campaign.log] },
-    battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
+    battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
   }
 }
 

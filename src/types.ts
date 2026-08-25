@@ -9,7 +9,7 @@ export type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 export type UnitCategory = 'infantry' | 'archers' | 'cavalry' | 'monsters' | 'siege'
 export type ArmyStatus = 'ready' | 'marched' | 'retreating' | 'garrison' | 'camp'
 export type BattleType = 'field' | 'siege' | 'settlement'
-export type SettlementType = 'village' | 'city' | 'fortress' | 'capital' | 'port' | 'mine' | 'farm' | 'wilderness' | 'swamp' | 'forest' | 'mountains' | 'ruins' | 'crossroads' | 'ford' | 'pass' | 'signal_tower' | 'camp'
+export type SettlementType = 'village' | 'city' | 'fortress' | 'capital' | 'port' | 'mine' | 'farm' | 'wilderness' | 'swamp' | 'forest' | 'mountains' | 'ruins' | 'monument' | 'crossroads' | 'ford' | 'pass' | 'signal_tower' | 'camp'
 
 /** Editable rules for one economic settlement type. Stored in world.json. */
 export interface EconomicTypeDefinition {
@@ -570,7 +570,7 @@ export interface RosterData {
 }
 
 export interface WorldData {
-  version: 34
+  version: 35
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]

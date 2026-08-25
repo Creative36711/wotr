@@ -10,7 +10,7 @@ export const SETTLEMENT_RECRUITMENT_LABELS: Record<SettlementType, string> = {
   capital: 'Capital',
   port: 'Port',
   mine: 'Mine / Forge',
-  farm:'Farm / Pasture',wilderness:'Wilderness',swamp:'Swamp',forest:'Forest',mountains:'Mountains',ruins:'Ruins',crossroads:'Crossroads',ford:'Ford',pass:'Pass',signal_tower:'Signal Tower',camp:'Camp',
+  farm:'Farm / Pasture',wilderness:'Wilderness',swamp:'Swamp',forest:'Forest',mountains:'Mountains',ruins:'Ruins',monument:'Monument / Shrine',crossroads:'Crossroads',ford:'Ford',pass:'Pass',signal_tower:'Signal Tower',camp:'Camp',
 }
 
 export const ALL_SETTLEMENT_TYPES = Object.keys(SETTLEMENT_RECRUITMENT_LABELS) as SettlementType[]

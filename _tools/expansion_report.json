@@ -1,0 +1,401 @@
+{
+  "added": [
+    {
+      "id": "tower-hills",
+      "hex": "3:11",
+      "regionId": "region-lindon",
+      "structuralType": "domain"
+    },
+    {
+      "id": "gulf-of-lhun",
+      "hex": "1:11",
+      "regionId": "region-lindon",
+      "structuralType": "domain"
+    },
+    {
+      "id": "arthedain",
+      "hex": "5:12",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "buckland",
+      "hex": "6:12",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "bree-land",
+      "hex": "6:11",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "old-forest",
+      "hex": "4:13",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "barrow-downs",
+      "hex": "5:13",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "weather-hills",
+      "hex": "7:11",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "lone-lands",
+      "hex": "8:12",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "trollshaws",
+      "hex": "11:12",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "ettenmoors",
+      "hex": "12:11",
+      "regionId": "region-eriador",
+      "structuralType": "domain"
+    },
+    {
+      "id": "annuminas",
+      "hex": "6:13",
+      "regionId": "region-eriador",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "michel-delving",
+      "hex": "3:14",
+      "regionId": "region-eriador",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "angmar-foothills",
+      "hex": "14:8",
+      "regionId": "region-angmar",
+      "structuralType": "domain"
+    },
+    {
+      "id": "northern-waste",
+      "hex": "19:2",
+      "regionId": "region-forodwaith",
+      "structuralType": "domain"
+    },
+    {
+      "id": "cape-forochel",
+      "hex": "10:1",
+      "regionId": "region-forodwaith",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "high-pass",
+      "hex": "13:12",
+      "regionId": "region-misty-mountains",
+      "structuralType": "domain"
+    },
+    {
+      "id": "redhorn-pass",
+      "hex": "11:17",
+      "regionId": "region-misty-mountains",
+      "structuralType": "domain"
+    },
+    {
+      "id": "dimrill-dale",
+      "hex": "11:18",
+      "regionId": "region-misty-mountains",
+      "structuralType": "domain"
+    },
+    {
+      "id": "nan-curunir",
+      "hex": "6:24",
+      "regionId": "region-misty-mountains",
+      "structuralType": "domain"
+    },
+    {
+      "id": "goblin-town",
+      "hex": "14:12",
+      "regionId": "region-misty-mountains",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "lond-daer",
+      "hex": "3:22",
+      "regionId": "region-enedwaith",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "eastfold",
+      "hex": "8:27",
+      "regionId": "region-rohan",
+      "structuralType": "domain"
+    },
+    {
+      "id": "westemnet",
+      "hex": "6:26",
+      "regionId": "region-rohan",
+      "structuralType": "domain"
+    },
+    {
+      "id": "dunharrow",
+      "hex": "7:26",
+      "regionId": "region-rohan",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "aldburg",
+      "hex": "9:27",
+      "regionId": "region-rohan",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "fords-of-isen",
+      "hex": "6:25",
+      "regionId": "region-rohan",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "ithilien-south",
+      "hex": "13:32",
+      "regionId": "region-gondor",
+      "structuralType": "domain"
+    },
+    {
+      "id": "henneth-annun",
+      "hex": "14:30",
+      "regionId": "region-gondor",
+      "structuralType": "stronghold"
+    },
+    {
+      "id": "lithlad",
+      "hex": "21:29",
+      "regionId": "region-mordor",
+      "structuralType": "domain"
+    },
+    {
+      "id": "north-mirkwood",
+      "hex": "19:12",
+      "regionId": "region-mirkwood",
+      "structuralType": "domain"
+    },
+    {
+      "id": "south-mirkwood",
+      "hex": "15:18",
+      "regionId": "region-mirkwood",
+      "structuralType": "domain"
+    },
+    {
+      "id": "far-harad",
+      "hex": "7:35",
+      "regionId": "region-harad",
+      "structuralType": "domain"
+    },
+    {
+      "id": "easterling-lands",
+      "hex": "31:15",
+      "regionId": "region-rhun",
+      "structuralType": "domain"
+    }
+  ],
+  "totals": {
+    "objects": 113,
+    "domains": 92,
+    "strongholds": 21,
+    "regions": 14,
+    "land_hexes": 1139,
+    "region_hexes": 1139
+  },
+  "regions": {
+    "region-lindon": {
+      "hexes": 48,
+      "objects": [
+        "ered-luin",
+        "forlindon",
+        "grey-havens",
+        "gulf-of-lhun",
+        "harlindon",
+        "lindon",
+        "tower-hills"
+      ]
+    },
+    "region-eriador": {
+      "hexes": 104,
+      "objects": [
+        "annuminas",
+        "arnor",
+        "arthedain",
+        "barrow-downs",
+        "bree",
+        "bree-land",
+        "buckland",
+        "cardolan",
+        "eregion",
+        "ettenmoors",
+        "evendim",
+        "hobbiton",
+        "lone-lands",
+        "michel-delving",
+        "minhiriath",
+        "old-forest",
+        "rhudaur",
+        "rivendell",
+        "shire",
+        "trollshaws",
+        "weather-hills",
+        "weathertop"
+      ]
+    },
+    "region-angmar": {
+      "hexes": 49,
+      "objects": [
+        "angmar",
+        "angmar-foothills",
+        "gundabad"
+      ]
+    },
+    "region-forodwaith": {
+      "hexes": 102,
+      "objects": [
+        "cape-forochel",
+        "forochel",
+        "northern-waste"
+      ]
+    },
+    "region-misty-mountains": {
+      "hexes": 31,
+      "objects": [
+        "dimrill-dale",
+        "gap-rohan",
+        "goblin-town",
+        "high-pass",
+        "isengard",
+        "moria",
+        "nan-curunir",
+        "redhorn-pass"
+      ]
+    },
+    "region-enedwaith": {
+      "hexes": 21,
+      "objects": [
+        "enedwaith",
+        "lond-daer",
+        "tharbad"
+      ]
+    },
+    "region-dunland": {
+      "hexes": 25,
+      "objects": [
+        "druwaith",
+        "dunland"
+      ]
+    },
+    "region-rohan": {
+      "hexes": 30,
+      "objects": [
+        "aldburg",
+        "dunharrow",
+        "eastemnet",
+        "eastfold",
+        "edoras",
+        "fangorn",
+        "fords-of-isen",
+        "helms-deep",
+        "rohan",
+        "westemnet",
+        "westfold"
+      ]
+    },
+    "region-gondor": {
+      "hexes": 108,
+      "objects": [
+        "andrast",
+        "anfalas",
+        "anorien",
+        "belfalas",
+        "cair-andros",
+        "dol-amroth",
+        "gondor",
+        "harondor",
+        "henneth-annun",
+        "ithilien",
+        "ithilien-south",
+        "lebennin",
+        "lossarnach",
+        "minas-tirith",
+        "osgiliath",
+        "pelargir",
+        "pinnath",
+        "tolfalas"
+      ]
+    },
+    "region-mordor": {
+      "hexes": 110,
+      "objects": [
+        "barad-dur",
+        "black-gate",
+        "cirith-ungol",
+        "gorgoroth",
+        "lithlad",
+        "minas-morgul",
+        "mordor",
+        "nurn",
+        "orodruin",
+        "udun"
+      ]
+    },
+    "region-rhovanion": {
+      "hexes": 282,
+      "objects": [
+        "amon-hen",
+        "argonath",
+        "brown-lands",
+        "dagorlad",
+        "dale",
+        "dead-marshes",
+        "emyn-muil",
+        "erebor",
+        "esgaroth",
+        "grey-mountains",
+        "iron-hills",
+        "lorien",
+        "rhovanion",
+        "withered-heath"
+      ]
+    },
+    "region-mirkwood": {
+      "hexes": 54,
+      "objects": [
+        "dol-guldur",
+        "mirkwood",
+        "north-mirkwood",
+        "south-mirkwood",
+        "woodland"
+      ]
+    },
+    "region-harad": {
+      "hexes": 98,
+      "objects": [
+        "far-harad",
+        "harad",
+        "khand",
+        "umbar"
+      ]
+    },
+    "region-rhun": {
+      "hexes": 77,
+      "objects": [
+        "dorwinion",
+        "easterling-lands",
+        "sea-rhun"
+      ]
+    }
+  }
+}

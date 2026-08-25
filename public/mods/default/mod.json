@@ -5,7 +5,7 @@
   "author": "WOTR Team",
   "version": "2.01.0",
   "createdAt": "2026-08-16T00:00:00.000Z",
-  "updatedAt": "2026-08-25T00:00:00.000Z",
+  "updatedAt": "2026-08-25T20:00:00.000Z",
   "bfmeVersion": "The Rise of the Witch-king 2.01",
   "mapImage": null,
   "rts": {
@@ -25,7 +25,7 @@
     "networkRules": "0 0 0 400 1000 -1 -1 -1 -1 -1"
   },
   "dataVersions": {
-    "world": 31,
+    "world": 32,
     "roster": 14
   }
 }

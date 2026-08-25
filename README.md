@@ -13,10 +13,10 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.44.0
-world.json: 31
+Application: 0.44.1
+world.json: 32
 roster.json: 14
-savegame.json: 30
+savegame.json: 31
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
@@ -229,7 +229,7 @@ Regions are a first-class authored array in `world.json`:
 }
 ```
 
-Vanilla 2.01 ships ten regions: Eriador, Angmar, Rhovanion, Enedwaith, Rohan, Gondor, Ithilien, Mordor, Harad, Rhûn.
+Vanilla 2.01 ships fourteen regions: Lindon, Eriador, Angmar, Forodwaith, Misty Mountains, Enedwaith, Dunland, Rohan, Gondor, Mordor, Rhovanion, Mirkwood, Harad, Rhûn.
 
 The editor provides a **Regions** tab to create regions, edit names/colors/descriptions, paint hex membership (via hex selection on the map), and delete empty regions. Uncovered land hexes are invalid for a finished map.
 

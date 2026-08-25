@@ -2217,7 +2217,7 @@
       "portrait": "",
       "unlockType": "starting",
       "requiredTurn": 1,
-      "requiredLocationId": "mirkwood",
+      "requiredLocationId": "south-mirkwood",
       "summonCostGold": 0
     },
     {
@@ -2239,7 +2239,7 @@
       "portrait": "",
       "unlockType": "starting",
       "requiredTurn": 1,
-      "requiredLocationId": "lorien",
+      "requiredLocationId": "caras-galadhon",
       "summonCostGold": 0
     },
     {
@@ -2283,7 +2283,7 @@
       "portrait": "",
       "unlockType": "turn_location",
       "requiredTurn": 3,
-      "requiredLocationId": "mirkwood",
+      "requiredLocationId": "south-mirkwood",
       "summonCostGold": 230
     },
     {
@@ -2679,7 +2679,7 @@
       "portrait": "",
       "unlockType": "starting",
       "requiredTurn": 1,
-      "requiredLocationId": "angmar",
+      "requiredLocationId": "carn-dum",
       "summonCostGold": 0
     },
     {
@@ -2701,7 +2701,7 @@
       "portrait": "",
       "unlockType": "starting",
       "requiredTurn": 1,
-      "requiredLocationId": "angmar",
+      "requiredLocationId": "carn-dum",
       "summonCostGold": 0
     },
     {
@@ -2745,7 +2745,7 @@
       "portrait": "",
       "unlockType": "turn_location",
       "requiredTurn": 2,
-      "requiredLocationId": "angmar",
+      "requiredLocationId": "carn-dum",
       "summonCostGold": 220
     },
     {
@@ -2767,7 +2767,7 @@
       "portrait": "",
       "unlockType": "turn_location",
       "requiredTurn": 3,
-      "requiredLocationId": "angmar",
+      "requiredLocationId": "carn-dum",
       "summonCostGold": 250
     }
   ],

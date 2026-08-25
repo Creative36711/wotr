@@ -13,10 +13,10 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.44.1
-world.json: 32
+Application: 0.45.0
+world.json: 33
 roster.json: 14
-savegame.json: 31
+savegame.json: 32
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.

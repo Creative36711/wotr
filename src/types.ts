@@ -544,7 +544,7 @@ export interface RosterData {
 }
 
 export interface WorldData {
-  version: 32
+  version: 33
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]
@@ -558,7 +558,7 @@ export interface WorldData {
 }
 
 export interface SaveGameData {
-  version: 31
+  version: 32
   gameVersion: string
   modId: string
   name: string

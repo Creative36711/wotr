@@ -681,9 +681,7 @@ export default function Inspector({ activeModId }: { activeModId:string }) {
 
         {!readonly&&<section className="inspector-section"><h3>Привязка к гексу</h3><div className="location-hex-card"><span className="hex-card-symbol">⬡</span><div><small>Положение объекта</small><b>{location.hex}</b><i>Координаты вычисляются из центра гекса</i></div><button type="button" onClick={()=>{selectHex(location.hex);setViewMode('strategic')}}>Открыть</button></div><p className="field-help">Перетащите объект на свободный гекс. Размещение двух объектов на одном гексе запрещено.</p></section>}
 
-        {mode === 'game' ? (
-          <section className="battle-card"><span className="battle-icon">⚔</span><div><b>Сражение</b><p>Поле будет выбрано из центрального и соседних гексов.</p></div><button type="button" disabled>Позже</button></section>
-        ) : (
+        {mode !== 'game' && (
           <section className="inspector-actions">
             <button type="button" onClick={() => duplicateLocation(location.id)}>Дублировать</button>
             <button type="button" className="danger-button" onClick={() => { if (window.confirm(`Удалить «${location.name}»?`)) removeLocation(location.id) }}>Удалить</button>

@@ -53,7 +53,7 @@ export default function App() {
     const [world,mapUrl]=await Promise.all([loadWorld(modId),loadModMapUrl(modId)])
     registerWorldTranslations(world)
     const definition=await loadModDefinition(modId,world.factions)
-    const loadedSave=await loadSaveGame(world,modId)
+    const loadedSave=await loadSaveGame(world,modId,definition.name)
     initialize(world,loadedSave.saveGame)
     setActiveMod(definition);setMapImageUrl(mapUrl);setSaveCompatible(loadedSave.compatible);setSaveCompatibilityReason(loadedSave.reason);setSaveState('saved')
     return definition

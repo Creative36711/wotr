@@ -1,7 +1,7 @@
 {
   "name": "wotr-map-editor",
   "private": true,
-  "version": "0.42.0",
+  "version": "0.43.0",
   "type": "module",
   "description": "Война за Кольцо — глобальная карта и редактор для BFME2",
   "scripts": {

@@ -10,10 +10,9 @@ export const DEFAULT_UNIT_TYPES: UnitType[] = []
 export const DEFAULT_HEROES: Hero[] = []
 export const DEFAULT_CAPTAINS: CaptainType[] = []
 
-export function createDefaultRegions(locations: MapLocation[]): Region[] {
-  return locations.filter((location)=>location.structuralType==='domain').map((location) => ({
-    id:`region-${location.id}`,name:location.name,nameTranslations:{...location.nameTranslations},locationId:location.id,ownerFactionId:location.side==='civilian'?null:location.side,description:'',descriptionTranslations:{},
-  }))
+/** Empty regions list for brand-new mods; authors paint regions in the editor. */
+export function createDefaultRegions(_locations: MapLocation[] = []): Region[] {
+  return []
 }
 
 export function createDefaultArmies(_locations: MapLocation[], _grid: HexGridData): Army[] {

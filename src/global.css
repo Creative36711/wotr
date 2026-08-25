@@ -765,7 +765,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .army-editor-actions { display: flex; gap: 4px; }
 .army-editor-actions button,.region-editor-list article > button { height: 29px; padding: 0 7px; border: 1px solid #3a484e; border-radius: 3px; background: #162126; color: #88969a; font-size: 10px; cursor: pointer; }
 .army-editor-actions button:last-child { color: #b26e66; border-color: #563633; }
-.region-editor-list article { display: grid; grid-template-columns: 32px 1fr 1.2fr 1fr 1.5fr 28px; align-items: end; gap: 7px; padding: 8px; border: 1px solid #2c383e; border-left: 3px solid var(--region-color); border-radius: 5px; background: #10181d; }
+.region-editor-list article { display: grid; grid-template-columns: 32px repeat(4, minmax(0, 1fr)); align-items: end; gap: 7px; padding: 8px; border: 1px solid #2c383e; border-left: 3px solid var(--region-color); border-radius: 5px; background: #10181d; }
 .region-editor-symbol { align-self: center; color: var(--region-color); font-size: 23px; text-align: center; }
 
 /* Campaign sidebar */
@@ -979,7 +979,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .location-image-card footer label,.location-image-card footer button { flex:1; height:29px; display:grid; place-items:center; border:1px solid #3a494f; border-radius:4px; background:#152127; color:#a8b5b5; font-size:10px; cursor:pointer; }
 .location-image-card footer input { display:none; }
 .location-image-card footer button { color:#b97a70; border-color:#553a36; }
-.region-editor-list .region-description { grid-column:2 / -2; }
+.region-editor-list .region-description { grid-column:2 / -1; }
 .region-editor-list .region-description textarea { width:100%; min-height:92px; resize:vertical; padding:8px; border:1px solid #354148; border-radius:4px; background:#091014; color:#bdc4c0; font-size:11px; line-height:1.45; }
 .region-lore-card { margin:8px 0; padding:10px; border:1px solid #3a443b; border-radius:5px; background:rgba(31,40,32,.45); }
 .region-lore-card span { display:block; color:#a99a72; font-family:Cinzel,serif; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
@@ -1000,7 +1000,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .army-auto-name small { display:block; margin-top:3px; color:#5e6a65; font-size:9px; }
 .army-slot-row.empty > div b { display:block; color:#8f9998; font-size:10px; line-height:1.3; }
 .army-slot-row.empty > div small { display:block; margin-top:3px; color:#59666b; font-size:9px; line-height:1.35; }
-.region-editor-list article { grid-template-columns:32px 1fr 1.2fr 1fr; }
+.region-editor-list article { grid-template-columns:32px repeat(3, minmax(0, 1fr)); }
 .region-editor-list .region-description { grid-column:2 / -1; }
 .region-readonly-field span { display:block; margin-bottom:4px; color:#66747a; font-size:10px; }
 .region-readonly-field b { display:block; color:#c5c9c3; font-size:11px; line-height:1.35; }
@@ -1048,3 +1048,37 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .reserve-unit-list button { width:27px; height:27px; border:1px solid #45606a; border-radius:4px; background:#17292f; color:#a7d0d8; cursor:pointer; }
 .mini-unit-portrait.hero { background-image:url('/assets/ui/hero-placeholder.jpg'); }
 .formation-controls { display:grid; grid-template-columns:1fr auto; gap:5px; }.formation-controls button { height:31px; padding:0 8px; border:1px solid #536847; border-radius:4px; background:#24351f; color:#bdd0ab; font-size:9px; cursor:pointer; }.formation-controls button:disabled { opacity:.35; cursor:not-allowed; }
+
+
+.region-object-list {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  margin: 0.4rem 0 0.6rem;
+}
+.region-object-list small {
+  flex: 1 0 100%;
+  opacity: 0.7;
+}
+.region-object-list span {
+  font-size: 0.82rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+}
+.region-editor-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  color: #f2e8c9;
+  text-shadow: 0 1px 2px rgba(0,0,0,.55);
+}
+
+.region-editor-list .army-editor-actions { grid-column: 2 / -1; display:flex; gap:6px; }
+.region-readonly-field { display:flex; flex-direction:column; gap:3px; }
+.region-readonly-field span { color:#66747a; font-size:10px; }
+.region-readonly-field b { min-height:29px; display:flex; align-items:center; color:#c5cbc7; font-size:12px; }

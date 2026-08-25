@@ -13,10 +13,10 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.43.0
-world.json: 30
+Application: 0.44.0
+world.json: 31
 roster.json: 14
-savegame.json: 29
+savegame.json: 30
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
@@ -72,7 +72,7 @@ English is canonical for all editable game content. Other languages are stored i
 }
 ```
 
-Names are never IDs. Factions, locations, units, heroes, captains, armies, and regions keep stable technical IDs separately.
+Names are never IDs. Factions, map objects (domains/strongholds), units, heroes, captains, armies, and regions keep stable technical IDs separately.
 
 The same architecture supports future locales without new schema fields:
 
@@ -110,33 +110,75 @@ The built-in `Vanilla 2.01` mod contains world and roster data only. **No MapCac
 
 ## World model
 
+### Hierarchy: Region → Domain / Stronghold
+
+The map uses a two-level territorial model. There is no separate “continent” entity — Middle-earth is implied by the map image.
+
+```text
+Region (Eriador)
+ ├── Domain (Shire)        — multi-hex holding, auto-generated inside the region
+ ├── Domain (Bree)
+ ├── Stronghold (Weathertop) — single hex inside the region, never part of a domain
+ └── ...
+```
+
+Glossary (English ID → Russian UI):
+
+| ID | UI | Meaning |
+| --- | --- | --- |
+| `region` | Регион | Named set of land hexes, authored by the modder |
+| `domain` | Владение | Anchor hex + auto-generated hexes inside one region |
+| `stronghold` | Оплот | Single-hex object inside a region |
+| `hex` | Гекс | Map grid cell |
+| map object | Объект карты | Domain or stronghold together |
+
+Rules:
+
+- every land hex belongs to exactly one region; water hexes may be outside regions;
+- a domain’s hexes are generated automatically and never cross region borders;
+- a stronghold occupies one hex, belongs to a region, and is excluded from every domain;
+- a region with no domains is allowed (wild land, no income);
+- full regional control is derived when every domain and stronghold inside the region belongs to the same faction (bonuses may use this later).
+
 ### Structural types
 
 Every map object has one structural type:
 
 ```text
-domain      — owns a surrounding region
-stronghold  — owns only its single hex
+domain      — multi-hex holding inside a region
+stronghold  — single-hex holding inside a region
 ```
 
-Example:
+Example domain:
+
+```json
+{
+  "id": "shire",
+  "structuralType": "domain",
+  "economicType": "farm",
+  "hex": "5:14",
+  "regionId": "region-eriador",
+  "hexes": ["4:13", "5:13", "5:14", "6:14"]
+}
+```
+
+Example stronghold:
 
 ```json
 {
   "id": "helms-deep",
   "structuralType": "stronghold",
   "economicType": "fortress",
-  "hex": "12:28"
+  "hex": "7:25",
+  "regionId": "region-rohan"
 }
 ```
 
-A domain creates a region. Capturing the domain transfers the whole region.
-
-A stronghold never creates a region. Capturing it transfers only its own hex.
+Capturing a domain transfers its hexes and income. Capturing a stronghold transfers only its hex. There is no separate “capture region” action — regional control changes through its objects.
 
 ### Hex positioning
 
-Objects no longer store free `x` and `y` map percentages. Their position is a stable axial hex ID:
+Objects store a stable axial hex ID for the anchor:
 
 ```json
 "hex": "12:28"
@@ -146,13 +188,13 @@ The rendered pixel position is derived from the center of that hex.
 
 Editor rules:
 
-- every new object snaps to the nearest hex center;
+- every new object snaps to the nearest hex center inside a region;
 - dragging always snaps to a hex;
 - one map object per hex;
 - occupied targets are shown in red and rejected;
 - free targets are shown in green;
-- moving or deleting a domain rebuilds region ownership;
-- moving or deleting a stronghold affects only its own hex.
+- moving an object updates `regionId` and regenerates domain hexes;
+- stronghold hexes are carved out of surrounding domains.
 
 ### Economic types and icons
 
@@ -171,26 +213,38 @@ Stronghold-oriented types:
 fortress, ruins, crossroads, ford, pass, signal_tower, camp
 ```
 
-A fortress icon therefore may represent either a domain-fortress or a stronghold-fortress. Their capture behavior remains different.
+A fortress icon therefore may represent either a domain-fortress or a stronghold-fortress. Their capture footprint remains different.
 
 ## Regions
 
-Regions exist only for domains. Their IDs are derived from domain IDs:
+Regions are a first-class authored array in `world.json`:
 
-```text
-region-<domain-id>
+```json
+{
+  "id": "region-eriador",
+  "name": "Eriador",
+  "nameTranslations": { "ru": "Эриадор" },
+  "hexes": ["3:5", "3:6", "4:5"],
+  "color": "#6B8E6B"
+}
 ```
 
-Unmodified hexes are assigned to the nearest domain. A stronghold hex is removed from domain regions and rendered as a one-hex control island above the regional fill.
+Vanilla 2.01 ships ten regions: Eriador, Angmar, Rhovanion, Enedwaith, Rohan, Gondor, Ithilien, Mordor, Harad, Rhûn.
 
-Region and stronghold ownership is reflected in:
+The editor provides a **Regions** tab to create regions, edit names/colors/descriptions, paint hex membership (via hex selection on the map), and delete empty regions. Uncovered land hexes are invalid for a finished map.
 
-- map fill and borders;
-- capture rules;
-- fog of war;
-- income;
-- recruitment and occupation;
-- strategic battle context.
+Visualization layers when the region overlay is on:
+
+1. map image  
+2. hex grid (optional)  
+3. region fill (~15%) and thick region borders  
+4. domain fill (~30% owner color) and thin domain borders  
+5. stronghold hex fill  
+6. object icons, armies, order arrows  
+
+Region names are drawn large and translucent near the region centroid and hide at high zoom.
+
+Ownership, fog of war, income, recruitment, and battle context all use domains and strongholds. A region only aggregates them for full-control checks and labels.
 
 ## Campaign turn
 
@@ -298,13 +352,7 @@ No RTS files are preinstalled. A mod author provides:
 - one shared BIG containing all supported maps;
 - one MapCache BIG for each domain or stronghold that supports RTS battles.
 
-Each map object stores exactly one MapCache. The same cache is used:
-
-- on the domain center;
-- anywhere inside that domain region;
-- on the single stronghold hex.
-
-There is no separate “location cache” versus “region cache” model.
+Each map object stores exactly one MapCache. The same cache is used on the object’s anchor hex and as the battle map when a fight is resolved on that object (or on one of its domain hexes). Regions themselves do not store MapCaches.
 
 ### Elevated deployment
 
@@ -378,7 +426,8 @@ Strategic units are arranged in concentric rings. Heroes are arranged near the c
 
 The editor manages:
 
-- domains and strongholds;
+- top-level regions (hex painting, colors, names);
+- domains and strongholds inside regions;
 - economic types;
 - hex terrain and infrastructure;
 - factions: a free global-map color (picker plus palette; the color must stay unique per faction — a taken shade is auto-adjusted to the nearest free one) separately from the fixed BFME RTS color, which may repeat;
@@ -386,7 +435,6 @@ The editor manages:
 - heroes, titles, unlock rules, and summoning;
 - captains and localized name pools;
 - starting armies;
-- domain regions;
 - mod RTS files and per-object MapCaches.
 
 Technical IDs remain automatic and stable. BFME Object IDs remain editable only where required for integration.

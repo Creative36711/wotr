@@ -56,7 +56,7 @@ export default function MainMenu({ view, canContinue, continueReason, mapImageUr
   if (view === 'menu') return <main className="main-menu-screen" style={mapImageUrl ? { backgroundImage: `url(${mapImageUrl})` } : undefined}>
     <div className="menu-vignette" />
     <section className="main-menu-card">
-      <header><span className="menu-ring"><i /></span><small>Глобальная стратегическая кампания</small><h1>Война за Кольцо</h1><p>Ремастер режима для The Battle for Middle-earth II</p></header>
+      <header><span className="menu-ring"><i /></span><small>Глобальная стратегическая кампания</small><h1>Война за Кольцо</h1><p>Ремастер режима для «Битва за Средиземье II»</p></header>
       <div className="main-menu-actions">
         <button type="button" className="primary" onClick={onNewCampaign}><span>⚔</span><b>Новая кампания</b><small>Выбрать фракцию и начать с шаблона мира</small></button>
         <button type="button" onClick={onContinue} disabled={!canContinue} title={!canContinue ? continueReason ?? 'Нет совместимого сохранения' : undefined}><span>▶</span><b>Продолжить</b><small>{canContinue && saveFaction ? `${saveFaction.label} · раунд ${menuCampaign?.round ?? 1}` : continueReason ?? 'Нет совместимого сохранения'}</small></button>

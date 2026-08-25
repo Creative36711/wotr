@@ -313,9 +313,14 @@ export function scanHotSpots(
     const evil = here.filter((army) => factionSide(factions, army.factionId) === 'evil')
     const location = locationsByHex.get(hexId) ?? null
     const battleCell = resolved.byId.get(hexId)
-    const regionId = battleCell?.regionId ?? null
-    const region = regionId ? regions.find((candidate) => candidate.id === regionId) ?? null : null
-    const rtsLocation=location??(region?locations.find((candidate)=>candidate.id===region.locationId)??null:null)
+    const regionId = battleCell?.regionId ?? location?.regionId ?? null
+    const regionObjects = regionId ? locations.filter((candidate) => candidate.regionId === regionId) : []
+    const rtsLocation = location
+      ?? (battleCell?.domainId ? locations.find((candidate) => candidate.id === battleCell.domainId) ?? null : null)
+      ?? regionObjects.find((candidate) => candidate.rtsMapCache)
+      ?? regionObjects.find((candidate) => candidate.structuralType === 'domain')
+      ?? regionObjects[0]
+      ?? null
     const ownerSide = location ? factionSide(factions, location.side) : null
     const hasArmyConflict = good.length > 0 && evil.length > 0
     const loneSide: StrategicSide | null = good.length && !evil.length ? 'good' : evil.length && !good.length ? 'evil' : null

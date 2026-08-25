@@ -47,7 +47,19 @@ export function calculateVisibleHexes(
   if (!campaign.fogOfWar.enabled || !campaign.playerFactionId) return new Set(resolved.cells.map((cell) => cell.id))
   const visible = new Set<string>()
   const sources: Array<{ hexId: string; radius: number }> = []
-  for(const location of locations.filter((candidate)=>candidate.side===campaign.playerFactionId)){sources.push({hexId:locationHexId(location,grid.config),radius:location.structuralType==='stronghold'?2:LOCATION_VISION[location.economicType]});if(location.structuralType==='domain'){const region=regions.find((item)=>item.locationId===location.id);if(region)for(const cell of resolved.cells)if(cell.regionId===region.id)visible.add(cell.id)}}
+  for (const location of locations.filter((candidate) => candidate.side === campaign.playerFactionId)) {
+    sources.push({
+      hexId: locationHexId(location, grid.config),
+      radius: location.structuralType === 'stronghold' ? 2 : LOCATION_VISION[location.economicType],
+    })
+    // Domain vision covers the domain's own hexes (not the whole top-level region).
+    if (location.structuralType === 'domain') {
+      const owned = location.hexes?.length
+        ? location.hexes
+        : resolved.cells.filter((cell) => cell.domainId === location.id).map((cell) => cell.id)
+      for (const hex of owned) visible.add(hex)
+    }
+  }
   for (const army of armies.filter((candidate) => candidate.factionId === campaign.playerFactionId)) {
     const cell = resolved.byId.get(army.hexId)
     const radius = Math.max(1, 2 + (cell?.terrain === 'hills' || cell?.terrain === 'mountains' ? 1 : 0) - (cell?.terrain === 'forest' ? 1 : 0))

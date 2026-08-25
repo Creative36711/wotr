@@ -1,5 +1,5 @@
 {
-  "version": 30,
+  "version": 31,
   "locations": [
     {
       "id": "grey-havens",
@@ -26,7 +26,12 @@
       },
       "hex": "-2:15",
       "structuralType": "domain",
-      "economicType": "port"
+      "economicType": "port",
+      "regionId": "region-eriador",
+      "hexes": [
+        "0:14",
+        "-1:15"
+      ]
     },
     {
       "id": "rivendell",
@@ -53,7 +58,27 @@
       },
       "hex": "13:14",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-eriador",
+      "hexes": [
+        "15:12",
+        "17:12",
+        "13:13",
+        "14:13",
+        "15:13",
+        "16:13",
+        "17:13",
+        "12:14",
+        "13:14",
+        "14:14",
+        "15:14",
+        "16:14",
+        "11:15",
+        "12:15",
+        "14:15",
+        "15:15",
+        "11:16"
+      ]
     },
     {
       "id": "moria",
@@ -80,7 +105,17 @@
       },
       "hex": "12:17",
       "structuralType": "domain",
-      "economicType": "mine"
+      "economicType": "mine",
+      "regionId": "region-eriador",
+      "hexes": [
+        "12:16",
+        "13:16",
+        "14:16",
+        "10:17",
+        "11:17",
+        "12:17",
+        "13:17"
+      ]
     },
     {
       "id": "lorien",
@@ -107,7 +142,21 @@
       },
       "hex": "12:20",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "11:18",
+        "12:18",
+        "11:19",
+        "12:19",
+        "13:19",
+        "10:20",
+        "11:20",
+        "12:20",
+        "13:20",
+        "12:21",
+        "13:21"
+      ]
     },
     {
       "id": "isengard",
@@ -134,7 +183,12 @@
       },
       "hex": "8:22",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "9:21",
+        "8:22"
+      ]
     },
     {
       "id": "helms-deep",
@@ -225,7 +279,8 @@
       },
       "hex": "7:25",
       "structuralType": "stronghold",
-      "economicType": "fortress"
+      "economicType": "fortress",
+      "regionId": "region-rohan"
     },
     {
       "id": "edoras",
@@ -252,7 +307,15 @@
       },
       "hex": "9:26",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-rohan",
+      "hexes": [
+        "8:27",
+        "9:27",
+        "10:27",
+        "9:28",
+        "8:29"
+      ]
     },
     {
       "id": "woodland",
@@ -279,7 +342,21 @@
       },
       "hex": "21:13",
       "structuralType": "domain",
-      "economicType": "fortress"
+      "economicType": "fortress",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "22:11",
+        "20:12",
+        "21:12",
+        "18:13",
+        "19:13",
+        "20:13",
+        "21:13",
+        "22:13",
+        "19:14",
+        "20:14",
+        "20:15"
+      ]
     },
     {
       "id": "dol-guldur",
@@ -306,7 +383,31 @@
       },
       "hex": "16:18",
       "structuralType": "domain",
-      "economicType": "fortress"
+      "economicType": "fortress",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "16:15",
+        "15:16",
+        "16:16",
+        "14:17",
+        "15:17",
+        "16:17",
+        "17:17",
+        "13:18",
+        "14:18",
+        "15:18",
+        "16:18",
+        "17:18",
+        "18:18",
+        "14:19",
+        "15:19",
+        "16:19",
+        "17:19",
+        "18:19",
+        "14:20",
+        "15:20",
+        "16:20"
+      ]
     },
     {
       "id": "erebor",
@@ -333,7 +434,15 @@
       },
       "hex": "24:12",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "24:10",
+        "25:10",
+        "24:11",
+        "23:12",
+        "24:12"
+      ]
     },
     {
       "id": "dale",
@@ -360,7 +469,12 @@
       },
       "hex": "23:13",
       "structuralType": "domain",
-      "economicType": "fortress"
+      "economicType": "fortress",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "23:13",
+        "23:14"
+      ]
     },
     {
       "id": "cair-andros",
@@ -386,8 +500,9 @@
         "ru": "Каир Андрос"
       },
       "hex": "15:26",
-      "structuralType": "domain",
-      "economicType": "fortress"
+      "structuralType": "stronghold",
+      "economicType": "fortress",
+      "regionId": "region-ithilien"
     },
     {
       "id": "minas-tirith",
@@ -414,7 +529,14 @@
       },
       "hex": "14:27",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-gondor",
+      "hexes": [
+        "12:27",
+        "13:27",
+        "15:27",
+        "14:28"
+      ]
     },
     {
       "id": "osgiliath",
@@ -441,7 +563,22 @@
       },
       "hex": "14:25",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-ithilien",
+      "hexes": [
+        "15:21",
+        "16:21",
+        "17:21",
+        "16:22",
+        "17:22",
+        "15:23",
+        "16:23",
+        "14:24",
+        "15:24",
+        "16:24",
+        "14:25",
+        "15:25"
+      ]
     },
     {
       "id": "dol-amroth",
@@ -468,7 +605,12 @@
       },
       "hex": "5:30",
       "structuralType": "domain",
-      "economicType": "fortress"
+      "economicType": "fortress",
+      "regionId": "region-gondor",
+      "hexes": [
+        "6:29",
+        "7:29"
+      ]
     },
     {
       "id": "pelargir",
@@ -495,7 +637,17 @@
       },
       "hex": "12:30",
       "structuralType": "domain",
-      "economicType": "port"
+      "economicType": "port",
+      "regionId": "region-gondor",
+      "hexes": [
+        "12:29",
+        "13:29",
+        "12:30",
+        "13:30",
+        "11:31",
+        "12:31",
+        "14:31"
+      ]
     },
     {
       "id": "black-gate",
@@ -521,8 +673,9 @@
         "ru": "Чёрные Врата"
       },
       "hex": "18:23",
-      "structuralType": "domain",
-      "economicType": "fortress"
+      "structuralType": "stronghold",
+      "economicType": "fortress",
+      "regionId": "region-mordor"
     },
     {
       "id": "minas-morgul",
@@ -549,7 +702,16 @@
       },
       "hex": "17:27",
       "structuralType": "domain",
-      "economicType": "fortress"
+      "economicType": "fortress",
+      "regionId": "region-ithilien",
+      "hexes": [
+        "17:25",
+        "17:26",
+        "17:28",
+        "16:29",
+        "17:29",
+        "15:30"
+      ]
     },
     {
       "id": "cirith-ungol",
@@ -575,8 +737,9 @@
         "ru": "Кирит Унгол"
       },
       "hex": "18:26",
-      "structuralType": "domain",
-      "economicType": "fortress"
+      "structuralType": "stronghold",
+      "economicType": "fortress",
+      "regionId": "region-ithilien"
     },
     {
       "id": "barad-dur",
@@ -603,7 +766,27 @@
       },
       "hex": "22:25",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-mordor",
+      "hexes": [
+        "22:23",
+        "23:23",
+        "24:23",
+        "26:23",
+        "22:24",
+        "23:24",
+        "24:24",
+        "25:24",
+        "26:24",
+        "27:24",
+        "28:24",
+        "26:25",
+        "27:25",
+        "25:26",
+        "25:27",
+        "25:28",
+        "25:29"
+      ]
     },
     {
       "id": "lindon",
@@ -630,7 +813,13 @@
       },
       "hex": "5:10",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-eriador",
+      "hexes": [
+        "4:11",
+        "5:11",
+        "5:12"
+      ]
     },
     {
       "id": "forlindon",
@@ -657,7 +846,11 @@
       },
       "hex": "-1:13",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-eriador",
+      "hexes": [
+        "1:12"
+      ]
     },
     {
       "id": "harlindon",
@@ -684,7 +877,23 @@
       },
       "hex": "-2:17",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-eriador",
+      "hexes": [
+        "0:16",
+        "-1:17",
+        "0:17",
+        "1:17",
+        "-2:18",
+        "-1:18",
+        "0:18",
+        "1:18",
+        "-2:19",
+        "-1:19",
+        "0:19",
+        "-2:20",
+        "-1:20"
+      ]
     },
     {
       "id": "ered-luin",
@@ -711,7 +920,17 @@
       },
       "hex": "2:13",
       "structuralType": "domain",
-      "economicType": "mine"
+      "economicType": "mine",
+      "regionId": "region-eriador",
+      "hexes": [
+        "2:12",
+        "1:13",
+        "4:13",
+        "1:14",
+        "3:14",
+        "1:15",
+        "2:15"
+      ]
     },
     {
       "id": "shire",
@@ -738,7 +957,13 @@
       },
       "hex": "5:14",
       "structuralType": "domain",
-      "economicType": "farm"
+      "economicType": "farm",
+      "regionId": "region-eriador",
+      "hexes": [
+        "4:16",
+        "2:17",
+        "2:18"
+      ]
     },
     {
       "id": "hobbiton",
@@ -765,7 +990,16 @@
       },
       "hex": "7:15",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-eriador",
+      "hexes": [
+        "7:14",
+        "8:14",
+        "6:15",
+        "7:15",
+        "6:16",
+        "7:16"
+      ]
     },
     {
       "id": "bree",
@@ -792,7 +1026,13 @@
       },
       "hex": "8:16",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-eriador",
+      "hexes": [
+        "10:16",
+        "7:17",
+        "9:17"
+      ]
     },
     {
       "id": "weathertop",
@@ -818,8 +1058,9 @@
         "ru": "Заветерть"
       },
       "hex": "10:15",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-eriador"
     },
     {
       "id": "evendim",
@@ -846,7 +1087,12 @@
       },
       "hex": "7:13",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-eriador",
+      "hexes": [
+        "7:13",
+        "8:13"
+      ]
     },
     {
       "id": "arnor",
@@ -873,7 +1119,12 @@
       },
       "hex": "7:12",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-eriador",
+      "hexes": [
+        "7:11",
+        "6:12"
+      ]
     },
     {
       "id": "cardolan",
@@ -900,7 +1151,18 @@
       },
       "hex": "2:21",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "0:20",
+        "1:20",
+        "2:20",
+        "1:21",
+        "0:22",
+        "1:22",
+        "3:22",
+        "1:23"
+      ]
     },
     {
       "id": "minhiriath",
@@ -927,7 +1189,19 @@
       },
       "hex": "6:18",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-eriador",
+      "hexes": [
+        "6:17",
+        "4:18",
+        "5:18",
+        "6:18",
+        "7:18",
+        "2:19",
+        "3:19",
+        "5:19",
+        "6:19"
+      ]
     },
     {
       "id": "tharbad",
@@ -954,7 +1228,13 @@
       },
       "hex": "5:20",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "5:20",
+        "6:20",
+        "4:21"
+      ]
     },
     {
       "id": "enedwaith",
@@ -981,7 +1261,11 @@
       },
       "hex": "4:23",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "3:23"
+      ]
     },
     {
       "id": "dunland",
@@ -1008,7 +1292,14 @@
       },
       "hex": "8:20",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "10:18",
+        "8:19",
+        "10:19",
+        "9:20"
+      ]
     },
     {
       "id": "eregion",
@@ -1035,7 +1326,12 @@
       },
       "hex": "7:19",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "8:18",
+        "7:19"
+      ]
     },
     {
       "id": "fangorn",
@@ -1062,7 +1358,14 @@
       },
       "hex": "11:21",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "10:21",
+        "11:21",
+        "10:22",
+        "11:22"
+      ]
     },
     {
       "id": "gap-rohan",
@@ -1088,8 +1391,9 @@
         "ru": "Проход Рохана"
       },
       "hex": "8:23",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-rohan"
     },
     {
       "id": "rohan",
@@ -1116,7 +1420,15 @@
       },
       "hex": "11:24",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rohan",
+      "hexes": [
+        "11:23",
+        "12:23",
+        "11:24",
+        "12:24",
+        "11:25"
+      ]
     },
     {
       "id": "westfold",
@@ -1143,7 +1455,17 @@
       },
       "hex": "8:25",
       "structuralType": "domain",
-      "economicType": "farm"
+      "economicType": "farm",
+      "regionId": "region-rohan",
+      "hexes": [
+        "7:24",
+        "8:24",
+        "5:25",
+        "6:25",
+        "5:26",
+        "6:26",
+        "7:26"
+      ]
     },
     {
       "id": "eastemnet",
@@ -1170,7 +1492,11 @@
       },
       "hex": "13:23",
       "structuralType": "domain",
-      "economicType": "farm"
+      "economicType": "farm",
+      "regionId": "region-rohan",
+      "hexes": [
+        "14:23"
+      ]
     },
     {
       "id": "druwaith",
@@ -1197,7 +1523,14 @@
       },
       "hex": "3:26",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "3:25",
+        "4:25",
+        "2:26",
+        "4:26"
+      ]
     },
     {
       "id": "andrast",
@@ -1224,7 +1557,11 @@
       },
       "hex": "1:30",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-gondor",
+      "hexes": [
+        "0:29"
+      ]
     },
     {
       "id": "pinnath",
@@ -1251,7 +1588,11 @@
       },
       "hex": "4:29",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-gondor",
+      "hexes": [
+        "4:29"
+      ]
     },
     {
       "id": "anfalas",
@@ -1278,7 +1619,11 @@
       },
       "hex": "5:29",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-gondor",
+      "hexes": [
+        "5:29"
+      ]
     },
     {
       "id": "belfalas",
@@ -1305,7 +1650,11 @@
       },
       "hex": "5:32",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rohan",
+      "hexes": [
+        "5:32"
+      ]
     },
     {
       "id": "tolfalas",
@@ -1331,8 +1680,9 @@
         "ru": "Толфалас"
       },
       "hex": "5:34",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-gondor"
     },
     {
       "id": "gondor",
@@ -1359,7 +1709,12 @@
       },
       "hex": "6:28",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-gondor",
+      "hexes": [
+        "7:27",
+        "6:28"
+      ]
     },
     {
       "id": "lebennin",
@@ -1386,7 +1741,20 @@
       },
       "hex": "10:30",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-gondor",
+      "hexes": [
+        "10:28",
+        "11:28",
+        "11:29",
+        "8:30",
+        "9:30",
+        "10:30",
+        "9:31",
+        "10:31",
+        "8:32",
+        "9:32"
+      ]
     },
     {
       "id": "lossarnach",
@@ -1413,7 +1781,12 @@
       },
       "hex": "13:28",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-gondor",
+      "hexes": [
+        "12:28",
+        "13:28"
+      ]
     },
     {
       "id": "anorien",
@@ -1440,7 +1813,12 @@
       },
       "hex": "13:24",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rohan",
+      "hexes": [
+        "13:24",
+        "12:25"
+      ]
     },
     {
       "id": "ithilien",
@@ -1467,7 +1845,11 @@
       },
       "hex": "15:28",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-gondor",
+      "hexes": [
+        "15:28"
+      ]
     },
     {
       "id": "emyn-muil",
@@ -1493,8 +1875,9 @@
         "ru": "Эмин Муил"
       },
       "hex": "15:22",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-ithilien"
     },
     {
       "id": "argonath",
@@ -1579,8 +1962,9 @@
         "ru": "Аргонат"
       },
       "hex": "14:21",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-rhovanion"
     },
     {
       "id": "amon-hen",
@@ -1606,8 +1990,9 @@
         "ru": "Амон Хен"
       },
       "hex": "14:22",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-rohan"
     },
     {
       "id": "dead-marshes",
@@ -1633,8 +2018,9 @@
         "ru": "Мёртвые топи"
       },
       "hex": "17:23",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-mordor"
     },
     {
       "id": "dagorlad",
@@ -1661,7 +2047,11 @@
       },
       "hex": "19:22",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-mordor",
+      "hexes": [
+        "19:23"
+      ]
     },
     {
       "id": "udun",
@@ -1688,7 +2078,11 @@
       },
       "hex": "19:24",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-mordor",
+      "hexes": [
+        "20:23"
+      ]
     },
     {
       "id": "orodruin",
@@ -1714,8 +2108,9 @@
         "ru": "Ородруин"
       },
       "hex": "21:24",
-      "structuralType": "domain",
-      "economicType": "village"
+      "structuralType": "stronghold",
+      "economicType": "village",
+      "regionId": "region-mordor"
     },
     {
       "id": "gorgoroth",
@@ -1742,7 +2137,11 @@
       },
       "hex": "20:24",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-mordor",
+      "hexes": [
+        "21:23"
+      ]
     },
     {
       "id": "nurn",
@@ -1769,7 +2168,31 @@
       },
       "hex": "18:30",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-mordor",
+      "hexes": [
+        "16:30",
+        "17:30",
+        "16:31",
+        "17:31",
+        "15:32",
+        "16:32",
+        "17:32",
+        "18:32",
+        "19:32",
+        "20:32",
+        "15:33",
+        "16:33",
+        "17:33",
+        "18:33",
+        "19:33",
+        "15:34",
+        "16:34",
+        "17:34",
+        "18:34",
+        "16:35",
+        "17:35"
+      ]
     },
     {
       "id": "mordor",
@@ -1796,7 +2219,11 @@
       },
       "hex": "21:28",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-ithilien",
+      "hexes": [
+        "21:28"
+      ]
     },
     {
       "id": "harondor",
@@ -1823,7 +2250,16 @@
       },
       "hex": "11:33",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-harad",
+      "hexes": [
+        "12:32",
+        "13:32",
+        "12:34",
+        "8:35",
+        "9:35",
+        "8:36"
+      ]
     },
     {
       "id": "harad",
@@ -1850,7 +2286,41 @@
       },
       "hex": "11:36",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-harad",
+      "hexes": [
+        "13:34",
+        "14:34",
+        "12:35",
+        "13:35",
+        "14:35",
+        "15:35",
+        "9:36",
+        "10:36",
+        "11:36",
+        "12:36",
+        "13:36",
+        "14:36",
+        "15:36",
+        "16:36",
+        "8:37",
+        "9:37",
+        "10:37",
+        "11:37",
+        "12:37",
+        "13:37",
+        "14:37",
+        "15:37",
+        "16:37",
+        "8:38",
+        "9:38",
+        "10:38",
+        "11:38",
+        "12:38",
+        "13:38",
+        "14:38",
+        "15:38"
+      ]
     },
     {
       "id": "umbar",
@@ -1877,7 +2347,19 @@
       },
       "hex": "5:37",
       "structuralType": "domain",
-      "economicType": "port"
+      "economicType": "port",
+      "regionId": "region-harad",
+      "hexes": [
+        "7:35",
+        "6:36",
+        "7:36",
+        "5:37",
+        "6:37",
+        "7:37",
+        "5:38",
+        "6:38",
+        "7:38"
+      ]
     },
     {
       "id": "khand",
@@ -1904,7 +2386,49 @@
       },
       "hex": "22:34",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rhun",
+      "hexes": [
+        "24:30",
+        "25:30",
+        "23:31",
+        "24:31",
+        "25:31",
+        "21:32",
+        "22:32",
+        "23:32",
+        "24:32",
+        "20:33",
+        "21:33",
+        "19:34",
+        "20:34",
+        "21:34",
+        "18:35",
+        "20:35",
+        "21:35",
+        "22:35",
+        "23:35",
+        "17:36",
+        "18:36",
+        "19:36",
+        "20:36",
+        "21:36",
+        "22:36",
+        "23:36",
+        "17:37",
+        "18:37",
+        "19:37",
+        "20:37",
+        "21:37",
+        "22:37",
+        "16:38",
+        "17:38",
+        "18:38",
+        "19:38",
+        "20:38",
+        "21:38",
+        "22:38"
+      ]
     },
     {
       "id": "mirkwood",
@@ -1931,7 +2455,20 @@
       },
       "hex": "18:16",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "17:14",
+        "18:14",
+        "17:15",
+        "18:15",
+        "19:15",
+        "17:16",
+        "18:16",
+        "19:16",
+        "18:17",
+        "19:17"
+      ]
     },
     {
       "id": "rhovanion",
@@ -1958,7 +2495,13 @@
       },
       "hex": "21:17",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "22:16",
+        "23:16",
+        "24:16"
+      ]
     },
     {
       "id": "brown-lands",
@@ -1985,7 +2528,11 @@
       },
       "hex": "20:20",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "20:20"
+      ]
     },
     {
       "id": "iron-hills",
@@ -2012,7 +2559,41 @@
       },
       "hex": "29:11",
       "structuralType": "domain",
-      "economicType": "mine"
+      "economicType": "mine",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "38:0",
+        "40:0",
+        "41:0",
+        "39:1",
+        "40:1",
+        "38:2",
+        "39:2",
+        "40:2",
+        "35:3",
+        "36:3",
+        "38:3",
+        "39:3",
+        "34:4",
+        "35:4",
+        "38:4",
+        "39:4",
+        "33:5",
+        "34:5",
+        "35:5",
+        "38:5",
+        "32:6",
+        "33:6",
+        "34:6",
+        "35:6",
+        "28:10",
+        "29:11",
+        "30:11",
+        "28:12",
+        "28:13",
+        "29:13",
+        "27:14"
+      ]
     },
     {
       "id": "withered-heath",
@@ -2039,7 +2620,34 @@
       },
       "hex": "27:9",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "33:0",
+        "34:0",
+        "35:0",
+        "36:0",
+        "37:0",
+        "30:3",
+        "31:3",
+        "32:3",
+        "33:3",
+        "34:3",
+        "30:4",
+        "31:4",
+        "32:4",
+        "33:4",
+        "30:5",
+        "31:5",
+        "32:5",
+        "30:6",
+        "31:6",
+        "26:8",
+        "25:9",
+        "26:9",
+        "26:10",
+        "27:10"
+      ]
     },
     {
       "id": "esgaroth",
@@ -2066,7 +2674,12 @@
       },
       "hex": "22:14",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rhovanion",
+      "hexes": [
+        "22:14",
+        "22:15"
+      ]
     },
     {
       "id": "sea-rhun",
@@ -2093,7 +2706,17 @@
       },
       "hex": "29:18",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-rhun",
+      "hexes": [
+        "32:15",
+        "31:16",
+        "32:16",
+        "31:17",
+        "28:21",
+        "27:22",
+        "28:22"
+      ]
     },
     {
       "id": "dorwinion",
@@ -2120,7 +2743,18 @@
       },
       "hex": "27:17",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-rhun",
+      "hexes": [
+        "26:15",
+        "25:16",
+        "26:16",
+        "27:16",
+        "28:16",
+        "26:17",
+        "27:17",
+        "28:17"
+      ]
     },
     {
       "id": "gundabad",
@@ -2147,7 +2781,47 @@
       },
       "hex": "15:10",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-angmar",
+      "hexes": [
+        "20:0",
+        "19:1",
+        "20:1",
+        "19:2",
+        "20:2",
+        "19:3",
+        "20:3",
+        "17:4",
+        "18:4",
+        "19:4",
+        "20:4",
+        "17:5",
+        "18:5",
+        "19:5",
+        "20:5",
+        "13:8",
+        "14:8",
+        "15:8",
+        "16:8",
+        "17:8",
+        "18:8",
+        "12:9",
+        "13:9",
+        "14:9",
+        "15:9",
+        "16:9",
+        "17:9",
+        "18:9",
+        "12:10",
+        "13:10",
+        "14:10",
+        "15:10",
+        "17:10",
+        "13:11",
+        "15:11",
+        "16:11",
+        "17:11"
+      ]
     },
     {
       "id": "grey-mountains",
@@ -2174,7 +2848,64 @@
       },
       "hex": "21:9",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-angmar",
+      "hexes": [
+        "21:0",
+        "22:0",
+        "23:0",
+        "24:0",
+        "25:0",
+        "26:0",
+        "27:0",
+        "30:0",
+        "31:0",
+        "32:0",
+        "21:1",
+        "22:1",
+        "23:1",
+        "24:1",
+        "25:1",
+        "27:1",
+        "28:1",
+        "21:2",
+        "22:2",
+        "23:2",
+        "24:2",
+        "26:2",
+        "27:2",
+        "28:2",
+        "29:2",
+        "30:2",
+        "21:3",
+        "29:3",
+        "21:4",
+        "22:4",
+        "24:4",
+        "21:5",
+        "22:5",
+        "23:5",
+        "19:8",
+        "20:8",
+        "21:8",
+        "22:8",
+        "25:8",
+        "19:9",
+        "20:9",
+        "21:9",
+        "22:9",
+        "23:9",
+        "24:9",
+        "19:10",
+        "22:10",
+        "23:10",
+        "18:11",
+        "19:11",
+        "20:11",
+        "21:11",
+        "18:12",
+        "19:12"
+      ]
     },
     {
       "id": "forochel",
@@ -2201,7 +2932,19 @@
       },
       "hex": "8:8",
       "structuralType": "domain",
-      "economicType": "village"
+      "economicType": "village",
+      "regionId": "region-angmar",
+      "hexes": [
+        "11:0",
+        "12:0",
+        "13:0",
+        "11:1",
+        "12:1",
+        "10:2",
+        "11:2",
+        "12:2",
+        "6:10"
+      ]
     },
     {
       "id": "angmar",
@@ -2228,7 +2971,11 @@
       },
       "hex": "9:10",
       "structuralType": "domain",
-      "economicType": "capital"
+      "economicType": "capital",
+      "regionId": "region-eriador",
+      "hexes": [
+        "9:10"
+      ]
     },
     {
       "id": "rhudaur",
@@ -2255,7 +3002,13 @@
       },
       "hex": "11:13",
       "structuralType": "domain",
-      "economicType": "fortress"
+      "economicType": "fortress",
+      "regionId": "region-angmar",
+      "hexes": [
+        "12:11",
+        "12:12",
+        "12:13"
+      ]
     }
   ],
   "grid": {
@@ -10634,862 +11387,212 @@
   ],
   "regions": [
     {
-      "id": "region-grey-havens",
-      "name": "Grey Havens",
-      "nameTranslations": {
-        "ru": "Серые Гавани"
-      },
-      "locationId": "grey-havens",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Grey Havens”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Серые Гавани»"
-      }
-    },
-    {
-      "id": "region-rivendell",
-      "name": "Rivendell",
-      "nameTranslations": {
-        "ru": "Ривенделл"
-      },
-      "locationId": "rivendell",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Rivendell”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Ривенделл»"
-      }
-    },
-    {
-      "id": "region-moria",
-      "name": "Moria",
-      "nameTranslations": {
-        "ru": "Мория"
-      },
-      "locationId": "moria",
-      "ownerFactionId": "goblins",
-      "description": "Region surrounding the location “Moria”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Мория»"
-      }
-    },
-    {
-      "id": "region-lorien",
-      "name": "Caras Galadhon",
-      "nameTranslations": {
-        "ru": "Карас Галадон"
-      },
-      "locationId": "lorien",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Caras Galadhon”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Карас Галадон»"
-      }
-    },
-    {
-      "id": "region-isengard",
-      "name": "Isengard",
-      "nameTranslations": {
-        "ru": "Изенгард"
-      },
-      "locationId": "isengard",
-      "ownerFactionId": "isengard",
-      "description": "Region surrounding the location “Isengard”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Изенгард»"
-      }
-    },
-    {
-      "id": "region-edoras",
-      "name": "Edoras",
-      "nameTranslations": {
-        "ru": "Эдорас"
-      },
-      "locationId": "edoras",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Edoras”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Эдорас»"
-      }
-    },
-    {
-      "id": "region-woodland",
-      "name": "Woodland Realm",
-      "nameTranslations": {
-        "ru": "Чертоги Трандуила"
-      },
-      "locationId": "woodland",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Woodland Realm”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Чертоги Трандуила»"
-      }
-    },
-    {
-      "id": "region-dol-guldur",
-      "name": "Dol Guldur",
-      "nameTranslations": {
-        "ru": "Дол Гулдур"
-      },
-      "locationId": "dol-guldur",
-      "ownerFactionId": "goblins",
-      "description": "Region surrounding the location “Dol Guldur”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Дол Гулдур»"
-      }
-    },
-    {
-      "id": "region-erebor",
-      "name": "Erebor",
-      "nameTranslations": {
-        "ru": "Эребор"
-      },
-      "locationId": "erebor",
-      "ownerFactionId": "dwarves",
-      "description": "Region surrounding the location “Erebor”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Эребор»"
-      }
-    },
-    {
-      "id": "region-dale",
-      "name": "Dale",
-      "nameTranslations": {
-        "ru": "Дейл"
-      },
-      "locationId": "dale",
-      "ownerFactionId": "dwarves",
-      "description": "Region surrounding the location “Dale”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Дейл»"
-      }
-    },
-    {
-      "id": "region-cair-andros",
-      "name": "Cair Andros",
-      "nameTranslations": {
-        "ru": "Каир Андрос"
-      },
-      "locationId": "cair-andros",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Cair Andros”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Каир Андрос»"
-      }
-    },
-    {
-      "id": "region-minas-tirith",
-      "name": "Minas Tirith",
-      "nameTranslations": {
-        "ru": "Минас Тирит"
-      },
-      "locationId": "minas-tirith",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Minas Tirith”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Минас Тирит»"
-      }
-    },
-    {
-      "id": "region-osgiliath",
-      "name": "Osgiliath",
-      "nameTranslations": {
-        "ru": "Осгилиат"
-      },
-      "locationId": "osgiliath",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Osgiliath”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Осгилиат»"
-      }
-    },
-    {
-      "id": "region-dol-amroth",
-      "name": "Dol Amroth",
-      "nameTranslations": {
-        "ru": "Дол Амрот"
-      },
-      "locationId": "dol-amroth",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Dol Amroth”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Дол Амрот»"
-      }
-    },
-    {
-      "id": "region-pelargir",
-      "name": "Pelargir",
-      "nameTranslations": {
-        "ru": "Пеларгир"
-      },
-      "locationId": "pelargir",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Pelargir”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Пеларгир»"
-      }
-    },
-    {
-      "id": "region-black-gate",
-      "name": "Black Gate",
-      "nameTranslations": {
-        "ru": "Чёрные Врата"
-      },
-      "locationId": "black-gate",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Black Gate”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Чёрные Врата»"
-      }
-    },
-    {
-      "id": "region-minas-morgul",
-      "name": "Minas Morgul",
-      "nameTranslations": {
-        "ru": "Минас Моргул"
-      },
-      "locationId": "minas-morgul",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Minas Morgul”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Минас Моргул»"
-      }
-    },
-    {
-      "id": "region-cirith-ungol",
-      "name": "Cirith Ungol",
-      "nameTranslations": {
-        "ru": "Кирит Унгол"
-      },
-      "locationId": "cirith-ungol",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Cirith Ungol”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Кирит Унгол»"
-      }
-    },
-    {
-      "id": "region-barad-dur",
-      "name": "Barad-dûr",
-      "nameTranslations": {
-        "ru": "Барад-дур"
-      },
-      "locationId": "barad-dur",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Barad-dûr”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Барад-дур»"
-      }
-    },
-    {
-      "id": "region-lindon",
-      "name": "Lindon",
-      "nameTranslations": {
-        "ru": "Линдон"
-      },
-      "locationId": "lindon",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Lindon”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Линдон»"
-      }
-    },
-    {
-      "id": "region-forlindon",
-      "name": "Forlindon",
-      "nameTranslations": {
-        "ru": "Форлиндон"
-      },
-      "locationId": "forlindon",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Forlindon”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Форлиндон»"
-      }
-    },
-    {
-      "id": "region-harlindon",
-      "name": "Harlindon",
-      "nameTranslations": {
-        "ru": "Харлиндон"
-      },
-      "locationId": "harlindon",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Harlindon”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Харлиндон»"
-      }
-    },
-    {
-      "id": "region-ered-luin",
-      "name": "Ered Luin",
-      "nameTranslations": {
-        "ru": "Синие горы"
-      },
-      "locationId": "ered-luin",
-      "ownerFactionId": "dwarves",
-      "description": "Region surrounding the location “Ered Luin”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Синие горы»"
-      }
-    },
-    {
-      "id": "region-shire",
-      "name": "The Shire",
-      "nameTranslations": {
-        "ru": "Шир"
-      },
-      "locationId": "shire",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “The Shire”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Шир»"
-      }
-    },
-    {
-      "id": "region-hobbiton",
-      "name": "Hobbiton",
-      "nameTranslations": {
-        "ru": "Хоббитон"
-      },
-      "locationId": "hobbiton",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Hobbiton”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Хоббитон»"
-      }
-    },
-    {
-      "id": "region-bree",
-      "name": "Bree",
-      "nameTranslations": {
-        "ru": "Бри"
-      },
-      "locationId": "bree",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Bree”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Бри»"
-      }
-    },
-    {
-      "id": "region-weathertop",
-      "name": "Weathertop",
-      "nameTranslations": {
-        "ru": "Заветерть"
-      },
-      "locationId": "weathertop",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Weathertop”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Заветерть»"
-      }
-    },
-    {
-      "id": "region-evendim",
-      "name": "Lake Evendim",
-      "nameTranslations": {
-        "ru": "Озеро Эвендим"
-      },
-      "locationId": "evendim",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Lake Evendim”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Озеро Эвендим»"
-      }
-    },
-    {
-      "id": "region-arnor",
-      "name": "Arnor",
-      "nameTranslations": {
-        "ru": "Арнор"
-      },
-      "locationId": "arnor",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Arnor”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Арнор»"
-      }
-    },
-    {
-      "id": "region-cardolan",
-      "name": "Cardolan",
-      "nameTranslations": {
-        "ru": "Кардолан"
-      },
-      "locationId": "cardolan",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Cardolan”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Кардолан»"
-      }
-    },
-    {
-      "id": "region-minhiriath",
-      "name": "Minhiriath",
-      "nameTranslations": {
-        "ru": "Минихириат"
-      },
-      "locationId": "minhiriath",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Minhiriath”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Минихириат»"
-      }
-    },
-    {
-      "id": "region-tharbad",
-      "name": "Tharbad",
-      "nameTranslations": {
-        "ru": "Тарбад"
-      },
-      "locationId": "tharbad",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Tharbad”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Тарбад»"
-      }
-    },
-    {
-      "id": "region-enedwaith",
-      "name": "Enedwaith",
-      "nameTranslations": {
-        "ru": "Энедвайт"
-      },
-      "locationId": "enedwaith",
-      "ownerFactionId": "isengard",
-      "description": "Region surrounding the location “Enedwaith”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Энедвайт»"
-      }
-    },
-    {
-      "id": "region-dunland",
-      "name": "Dunland",
-      "nameTranslations": {
-        "ru": "Дунланд"
-      },
-      "locationId": "dunland",
-      "ownerFactionId": "isengard",
-      "description": "Region surrounding the location “Dunland”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Дунланд»"
-      }
-    },
-    {
-      "id": "region-eregion",
-      "name": "Eregion",
-      "nameTranslations": {
-        "ru": "Эрегион"
-      },
-      "locationId": "eregion",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Eregion”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Эрегион»"
-      }
-    },
-    {
-      "id": "region-fangorn",
-      "name": "Fangorn",
-      "nameTranslations": {
-        "ru": "Фангорн"
-      },
-      "locationId": "fangorn",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Fangorn”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Фангорн»"
-      }
-    },
-    {
-      "id": "region-gap-rohan",
-      "name": "Gap of Rohan",
-      "nameTranslations": {
-        "ru": "Проход Рохана"
-      },
-      "locationId": "gap-rohan",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Gap of Rohan”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Проход Рохана»"
-      }
-    },
-    {
-      "id": "region-rohan",
-      "name": "Rohan",
-      "nameTranslations": {
-        "ru": "Рохан"
-      },
-      "locationId": "rohan",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Rohan”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Рохан»"
-      }
-    },
-    {
-      "id": "region-westfold",
-      "name": "Westfold",
-      "nameTranslations": {
-        "ru": "Вестфолд"
-      },
-      "locationId": "westfold",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Westfold”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Вестфолд»"
-      }
-    },
-    {
-      "id": "region-eastemnet",
-      "name": "Eastemnet",
-      "nameTranslations": {
-        "ru": "Истемнет"
-      },
-      "locationId": "eastemnet",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Eastemnet”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Истемнет»"
-      }
-    },
-    {
-      "id": "region-druwaith",
-      "name": "Drúwaith Iaur",
-      "nameTranslations": {
-        "ru": "Друвайт Иаур"
-      },
-      "locationId": "druwaith",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Drúwaith Iaur”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Друвайт Иаур»"
-      }
-    },
-    {
-      "id": "region-andrast",
-      "name": "Andrast",
-      "nameTranslations": {
-        "ru": "Андраст"
-      },
-      "locationId": "andrast",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Andrast”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Андраст»"
-      }
-    },
-    {
-      "id": "region-pinnath",
-      "name": "Pinnath Gelin",
-      "nameTranslations": {
-        "ru": "Пиннат-Гелин"
-      },
-      "locationId": "pinnath",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Pinnath Gelin”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Пиннат-Гелин»"
-      }
-    },
-    {
-      "id": "region-anfalas",
-      "name": "Anfalas",
-      "nameTranslations": {
-        "ru": "Анфалас"
-      },
-      "locationId": "anfalas",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Anfalas”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Анфалас»"
-      }
-    },
-    {
-      "id": "region-belfalas",
-      "name": "Belfalas",
-      "nameTranslations": {
-        "ru": "Белфалас"
-      },
-      "locationId": "belfalas",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Belfalas”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Белфалас»"
-      }
-    },
-    {
-      "id": "region-tolfalas",
-      "name": "Tolfalas",
-      "nameTranslations": {
-        "ru": "Толфалас"
-      },
-      "locationId": "tolfalas",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Tolfalas”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Толфалас»"
-      }
-    },
-    {
-      "id": "region-gondor",
-      "name": "Gondor",
-      "nameTranslations": {
-        "ru": "Гондор"
-      },
-      "locationId": "gondor",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Gondor”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Гондор»"
-      }
-    },
-    {
-      "id": "region-lebennin",
-      "name": "Lebennin",
-      "nameTranslations": {
-        "ru": "Лебеннин"
-      },
-      "locationId": "lebennin",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Lebennin”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Лебеннин»"
-      }
-    },
-    {
-      "id": "region-lossarnach",
-      "name": "Lossarnach",
-      "nameTranslations": {
-        "ru": "Лоссарнах"
-      },
-      "locationId": "lossarnach",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Lossarnach”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Лоссарнах»"
-      }
-    },
-    {
-      "id": "region-anorien",
-      "name": "Anórien",
-      "nameTranslations": {
-        "ru": "Анориэн"
-      },
-      "locationId": "anorien",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Anórien”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Анориэн»"
-      }
-    },
-    {
-      "id": "region-ithilien",
-      "name": "Ithilien",
-      "nameTranslations": {
-        "ru": "Итилиэн"
-      },
-      "locationId": "ithilien",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Ithilien”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Итилиэн»"
-      }
-    },
-    {
-      "id": "region-emyn-muil",
-      "name": "Emyn Muil",
-      "nameTranslations": {
-        "ru": "Эмин Муил"
-      },
-      "locationId": "emyn-muil",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Emyn Muil”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Эмин Муил»"
-      }
-    },
-    {
-      "id": "region-argonath",
-      "name": "Argonath",
-      "nameTranslations": {
-        "ru": "Аргонат"
-      },
-      "locationId": "argonath",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Argonath”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Аргонат»"
-      }
-    },
-    {
-      "id": "region-amon-hen",
-      "name": "Amon Hen",
-      "nameTranslations": {
-        "ru": "Амон Хен"
-      },
-      "locationId": "amon-hen",
-      "ownerFactionId": "men-of-the-west",
-      "description": "Region surrounding the location “Amon Hen”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Амон Хен»"
-      }
-    },
-    {
-      "id": "region-dead-marshes",
-      "name": "Dead Marshes",
-      "nameTranslations": {
-        "ru": "Мёртвые топи"
-      },
-      "locationId": "dead-marshes",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Dead Marshes”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Мёртвые топи»"
-      }
-    },
-    {
-      "id": "region-dagorlad",
-      "name": "Dagorlad",
-      "nameTranslations": {
-        "ru": "Дагорлад"
-      },
-      "locationId": "dagorlad",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Dagorlad”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Дагорлад»"
-      }
-    },
-    {
-      "id": "region-udun",
-      "name": "Udûn",
-      "nameTranslations": {
-        "ru": "Удун"
-      },
-      "locationId": "udun",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Udûn”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Удун»"
-      }
-    },
-    {
-      "id": "region-orodruin",
-      "name": "Mount Doom",
-      "nameTranslations": {
-        "ru": "Ородруин"
-      },
-      "locationId": "orodruin",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Mount Doom”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Ородруин»"
-      }
-    },
-    {
-      "id": "region-gorgoroth",
-      "name": "Gorgoroth",
-      "nameTranslations": {
-        "ru": "Горгорот"
-      },
-      "locationId": "gorgoroth",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Gorgoroth”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Горгорот»"
-      }
-    },
-    {
-      "id": "region-nurn",
-      "name": "Nurn",
-      "nameTranslations": {
-        "ru": "Нурн"
-      },
-      "locationId": "nurn",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Nurn”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Нурн»"
-      }
-    },
-    {
-      "id": "region-mordor",
-      "name": "Mordor",
-      "nameTranslations": {
-        "ru": "Мордор"
-      },
-      "locationId": "mordor",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Mordor”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Мордор»"
-      }
-    },
-    {
-      "id": "region-harondor",
-      "name": "Harondor",
-      "nameTranslations": {
-        "ru": "Харондор"
-      },
-      "locationId": "harondor",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Harondor”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Харондор»"
-      }
-    },
-    {
-      "id": "region-harad",
-      "name": "Harad",
-      "nameTranslations": {
-        "ru": "Харад"
-      },
-      "locationId": "harad",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Harad”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Харад»"
-      }
-    },
-    {
-      "id": "region-umbar",
-      "name": "Umbar",
-      "nameTranslations": {
-        "ru": "Умбар"
-      },
-      "locationId": "umbar",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Umbar”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Умбар»"
-      }
-    },
-    {
-      "id": "region-khand",
-      "name": "Khand",
-      "nameTranslations": {
-        "ru": "Кханд"
-      },
-      "locationId": "khand",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Khand”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Кханд»"
-      }
-    },
-    {
-      "id": "region-mirkwood",
-      "name": "Mirkwood",
-      "nameTranslations": {
-        "ru": "Лихолесье"
-      },
-      "locationId": "mirkwood",
-      "ownerFactionId": "elves",
-      "description": "Region surrounding the location “Mirkwood”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Лихолесье»"
-      }
+      "id": "region-eriador",
+      "name": "Eriador",
+      "nameTranslations": {
+        "ru": "Эриадор"
+      },
+      "color": "#6B8E6B",
+      "description": "Lands west of the Misty Mountains, from the Blue Mountains to the Baranduin.",
+      "descriptionTranslations": {
+        "ru": "Земли к западу от Мглистых Гор, от Синих Гор до Барадуина."
+      },
+      "hexes": [
+        "4:11",
+        "5:11",
+        "7:11",
+        "1:12",
+        "2:12",
+        "5:12",
+        "6:12",
+        "15:12",
+        "17:12",
+        "1:13",
+        "4:13",
+        "7:13",
+        "8:13",
+        "13:13",
+        "14:13",
+        "15:13",
+        "16:13",
+        "17:13",
+        "0:14",
+        "1:14",
+        "3:14",
+        "7:14",
+        "8:14",
+        "12:14",
+        "13:14",
+        "14:14",
+        "15:14",
+        "16:14",
+        "-1:15",
+        "1:15",
+        "2:15",
+        "6:15",
+        "7:15",
+        "11:15",
+        "12:15",
+        "14:15",
+        "15:15",
+        "0:16",
+        "4:16",
+        "6:16",
+        "7:16",
+        "10:16",
+        "11:16",
+        "12:16",
+        "13:16",
+        "14:16",
+        "-1:17",
+        "0:17",
+        "1:17",
+        "2:17",
+        "6:17",
+        "7:17",
+        "9:17",
+        "10:17",
+        "11:17",
+        "12:17",
+        "13:17",
+        "-2:18",
+        "-1:18",
+        "0:18",
+        "1:18",
+        "2:18",
+        "4:18",
+        "5:18",
+        "6:18",
+        "7:18",
+        "-2:19",
+        "-1:19",
+        "0:19",
+        "2:19",
+        "3:19",
+        "5:19",
+        "6:19",
+        "-2:20",
+        "-1:20"
+      ],
+      "ownerFactionId": null
+    },
+    {
+      "id": "region-angmar",
+      "name": "Angmar",
+      "nameTranslations": {
+        "ru": "Ангмар"
+      },
+      "color": "#5C4A6E",
+      "description": "The far north: icy wastes and the northern spurs of the Misty Mountains.",
+      "descriptionTranslations": {
+        "ru": "Крайний север: ледяные пустоши и северные отроги Мглистых Гор."
+      },
+      "hexes": [
+        "11:0",
+        "12:0",
+        "13:0",
+        "20:0",
+        "21:0",
+        "22:0",
+        "23:0",
+        "24:0",
+        "25:0",
+        "26:0",
+        "27:0",
+        "30:0",
+        "31:0",
+        "32:0",
+        "11:1",
+        "12:1",
+        "19:1",
+        "20:1",
+        "21:1",
+        "22:1",
+        "23:1",
+        "24:1",
+        "25:1",
+        "27:1",
+        "28:1",
+        "10:2",
+        "11:2",
+        "12:2",
+        "19:2",
+        "20:2",
+        "21:2",
+        "22:2",
+        "23:2",
+        "24:2",
+        "26:2",
+        "27:2",
+        "28:2",
+        "29:2",
+        "30:2",
+        "19:3",
+        "20:3",
+        "21:3",
+        "29:3",
+        "17:4",
+        "18:4",
+        "19:4",
+        "20:4",
+        "21:4",
+        "22:4",
+        "24:4",
+        "17:5",
+        "18:5",
+        "19:5",
+        "20:5",
+        "21:5",
+        "22:5",
+        "23:5",
+        "13:8",
+        "14:8",
+        "15:8",
+        "16:8",
+        "17:8",
+        "18:8",
+        "19:8",
+        "20:8",
+        "21:8",
+        "22:8",
+        "25:8",
+        "12:9",
+        "13:9",
+        "14:9",
+        "15:9",
+        "16:9",
+        "17:9",
+        "18:9",
+        "19:9",
+        "20:9",
+        "21:9",
+        "22:9",
+        "23:9",
+        "24:9",
+        "6:10",
+        "12:10",
+        "13:10",
+        "14:10",
+        "15:10",
+        "17:10",
+        "19:10",
+        "22:10",
+        "23:10",
+        "12:11",
+        "13:11",
+        "15:11",
+        "16:11",
+        "17:11",
+        "18:11",
+        "19:11",
+        "20:11",
+        "21:11",
+        "12:12",
+        "18:12",
+        "19:12",
+        "12:13"
+      ],
+      "ownerFactionId": null
     },
     {
       "id": "region-rhovanion",
@@ -11497,155 +11600,478 @@
       "nameTranslations": {
         "ru": "Рованион"
       },
-      "locationId": "rhovanion",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Rhovanion”",
+      "color": "#4A7A4A",
+      "description": "Wilderland east of the Misty Mountains: Mirkwood, Dale, and the Iron Hills.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Рованион»"
-      }
+        "ru": "Земли к востоку от Мглистых Гор: Лихолесье, Дейл и Железные Холмы."
+      },
+      "hexes": [
+        "33:0",
+        "34:0",
+        "35:0",
+        "36:0",
+        "37:0",
+        "38:0",
+        "40:0",
+        "41:0",
+        "39:1",
+        "40:1",
+        "38:2",
+        "39:2",
+        "40:2",
+        "30:3",
+        "31:3",
+        "32:3",
+        "33:3",
+        "34:3",
+        "35:3",
+        "36:3",
+        "38:3",
+        "39:3",
+        "30:4",
+        "31:4",
+        "32:4",
+        "33:4",
+        "34:4",
+        "35:4",
+        "38:4",
+        "39:4",
+        "30:5",
+        "31:5",
+        "32:5",
+        "33:5",
+        "34:5",
+        "35:5",
+        "38:5",
+        "30:6",
+        "31:6",
+        "32:6",
+        "33:6",
+        "34:6",
+        "35:6",
+        "26:8",
+        "25:9",
+        "26:9",
+        "24:10",
+        "25:10",
+        "26:10",
+        "27:10",
+        "28:10",
+        "22:11",
+        "24:11",
+        "29:11",
+        "30:11",
+        "20:12",
+        "21:12",
+        "23:12",
+        "24:12",
+        "28:12",
+        "18:13",
+        "19:13",
+        "20:13",
+        "21:13",
+        "22:13",
+        "23:13",
+        "28:13",
+        "29:13",
+        "17:14",
+        "18:14",
+        "19:14",
+        "20:14",
+        "22:14",
+        "23:14",
+        "27:14",
+        "16:15",
+        "17:15",
+        "18:15",
+        "19:15",
+        "20:15",
+        "22:15",
+        "15:16",
+        "16:16",
+        "17:16",
+        "18:16",
+        "19:16",
+        "22:16",
+        "23:16",
+        "24:16",
+        "14:17",
+        "15:17",
+        "16:17",
+        "17:17",
+        "18:17",
+        "19:17",
+        "13:18",
+        "14:18",
+        "15:18",
+        "16:18",
+        "17:18",
+        "18:18",
+        "14:19",
+        "15:19",
+        "16:19",
+        "17:19",
+        "18:19",
+        "14:20",
+        "15:20",
+        "16:20"
+      ],
+      "ownerFactionId": null
     },
     {
-      "id": "region-brown-lands",
-      "name": "Brown Lands",
+      "id": "region-enedwaith",
+      "name": "Enedwaith",
       "nameTranslations": {
-        "ru": "Бурые равнины"
+        "ru": "Энедвайт"
       },
-      "locationId": "brown-lands",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Brown Lands”",
+      "color": "#8B7D5B",
+      "description": "The empty lands between Eriador and Rohan: Dunland, Fangorn, and Isengard.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Бурые равнины»"
-      }
+        "ru": "Пустоши между Эриадором и Роханом: Дунланд, Фангорн и Изенгард."
+      },
+      "hexes": [
+        "8:18",
+        "10:18",
+        "11:18",
+        "12:18",
+        "7:19",
+        "8:19",
+        "10:19",
+        "11:19",
+        "12:19",
+        "13:19",
+        "0:20",
+        "1:20",
+        "2:20",
+        "5:20",
+        "6:20",
+        "9:20",
+        "10:20",
+        "11:20",
+        "12:20",
+        "13:20",
+        "1:21",
+        "4:21",
+        "9:21",
+        "10:21",
+        "11:21",
+        "12:21",
+        "13:21",
+        "0:22",
+        "1:22",
+        "3:22",
+        "8:22",
+        "10:22",
+        "11:22",
+        "1:23",
+        "3:23",
+        "3:25",
+        "4:25",
+        "2:26",
+        "4:26"
+      ],
+      "ownerFactionId": null
     },
     {
-      "id": "region-iron-hills",
-      "name": "Iron Hills",
+      "id": "region-rohan",
+      "name": "Rohan",
       "nameTranslations": {
-        "ru": "Железные холмы"
+        "ru": "Рохан"
       },
-      "locationId": "iron-hills",
-      "ownerFactionId": "dwarves",
-      "description": "Region surrounding the location “Iron Hills”",
+      "color": "#7A9E3A",
+      "description": "The grassy plains of the Rohirrim from the Gap of Rohan to the Entwash.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Железные холмы»"
-      }
+        "ru": "Травянистые равнины Рохиррим от Врат Рохана до Энтуош."
+      },
+      "hexes": [
+        "8:23",
+        "11:23",
+        "12:23",
+        "14:23",
+        "7:24",
+        "8:24",
+        "11:24",
+        "12:24",
+        "13:24",
+        "5:25",
+        "6:25",
+        "11:25",
+        "12:25",
+        "5:26",
+        "6:26",
+        "7:26",
+        "8:27",
+        "9:27",
+        "10:27",
+        "9:28",
+        "8:29"
+      ],
+      "ownerFactionId": "men-of-the-west"
     },
     {
-      "id": "region-withered-heath",
-      "name": "Withered Heath",
+      "id": "region-gondor",
+      "name": "Gondor",
       "nameTranslations": {
-        "ru": "Исхохшая пустошь"
+        "ru": "Гондор"
       },
-      "locationId": "withered-heath",
-      "ownerFactionId": "dwarves",
-      "description": "Region surrounding the location “Withered Heath”",
+      "color": "#4A6FA5",
+      "description": "The southern kingdom from the White Mountains to the Anduin and the sea.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Исхохшая пустошь»"
-      }
+        "ru": "Южное королевство от Белых Гор до Андуина и моря."
+      },
+      "hexes": [
+        "7:27",
+        "12:27",
+        "13:27",
+        "15:27",
+        "6:28",
+        "10:28",
+        "11:28",
+        "12:28",
+        "13:28",
+        "14:28",
+        "0:29",
+        "6:29",
+        "7:29",
+        "11:29",
+        "12:29",
+        "13:29",
+        "8:30",
+        "9:30",
+        "10:30",
+        "12:30",
+        "13:30",
+        "9:31",
+        "10:31",
+        "11:31",
+        "12:31",
+        "14:31",
+        "8:32",
+        "9:32"
+      ],
+      "ownerFactionId": "men-of-the-west"
     },
     {
-      "id": "region-esgaroth",
-      "name": "Esgaroth",
+      "id": "region-ithilien",
+      "name": "Ithilien",
       "nameTranslations": {
-        "ru": "Эсгарот"
+        "ru": "Итилиэн"
       },
-      "locationId": "esgaroth",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Esgaroth”",
+      "color": "#5A8A5A",
+      "description": "The eastern province of Gondor between the Anduin and Mordor.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Эсгарот»"
-      }
+        "ru": "Восточная провинция Гондора между Андуином и Мордором."
+      },
+      "hexes": [
+        "15:21",
+        "16:21",
+        "17:21",
+        "15:22",
+        "16:22",
+        "17:22",
+        "15:23",
+        "16:23",
+        "14:24",
+        "15:24",
+        "16:24",
+        "14:25",
+        "15:25",
+        "17:25",
+        "15:26",
+        "17:26",
+        "17:28",
+        "16:29",
+        "17:29",
+        "15:30"
+      ],
+      "ownerFactionId": null
     },
     {
-      "id": "region-sea-rhun",
-      "name": "Sea of Rhûn",
+      "id": "region-mordor",
+      "name": "Mordor",
       "nameTranslations": {
-        "ru": "Море Рун"
+        "ru": "Мордор"
       },
-      "locationId": "sea-rhun",
-      "ownerFactionId": "mordor",
-      "description": "Region surrounding the location “Sea of Rhûn”",
+      "color": "#8B2020",
+      "description": "Volcanic wastes ringed by the Ephel Dúath and Ered Lithui.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Море Рун»"
-      }
+        "ru": "Вулканические пустоши, окружённые Эфель Дуат и Эред Литуй."
+      },
+      "hexes": [
+        "17:23",
+        "19:23",
+        "20:23",
+        "21:23",
+        "22:23",
+        "23:23",
+        "24:23",
+        "26:23",
+        "22:24",
+        "23:24",
+        "24:24",
+        "25:24",
+        "26:24",
+        "27:24",
+        "28:24",
+        "26:25",
+        "27:25",
+        "25:26",
+        "25:27",
+        "25:28",
+        "25:29",
+        "16:30",
+        "17:30",
+        "16:31",
+        "17:31",
+        "15:32",
+        "16:32",
+        "17:32",
+        "18:32",
+        "19:32",
+        "20:32",
+        "15:33",
+        "16:33",
+        "17:33",
+        "18:33",
+        "19:33",
+        "15:34",
+        "16:34",
+        "17:34",
+        "18:34",
+        "16:35",
+        "17:35"
+      ],
+      "ownerFactionId": "mordor"
     },
     {
-      "id": "region-dorwinion",
-      "name": "Dorwinion",
+      "id": "region-harad",
+      "name": "Harad",
       "nameTranslations": {
-        "ru": "Дорвинион"
+        "ru": "Харад"
       },
-      "locationId": "dorwinion",
-      "ownerFactionId": null,
-      "description": "Region surrounding the location “Dorwinion”",
+      "color": "#C4A035",
+      "description": "Southern deserts and savannas beyond the Harnen.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Дорвинион»"
-      }
+        "ru": "Южные пустыни и саванны за рекой Харнен."
+      },
+      "hexes": [
+        "12:32",
+        "13:32",
+        "12:34",
+        "13:34",
+        "14:34",
+        "7:35",
+        "8:35",
+        "9:35",
+        "12:35",
+        "13:35",
+        "14:35",
+        "15:35",
+        "6:36",
+        "7:36",
+        "8:36",
+        "9:36",
+        "10:36",
+        "11:36",
+        "12:36",
+        "13:36",
+        "14:36",
+        "15:36",
+        "16:36",
+        "5:37",
+        "6:37",
+        "7:37",
+        "8:37",
+        "9:37",
+        "10:37",
+        "11:37",
+        "12:37",
+        "13:37",
+        "14:37",
+        "15:37",
+        "16:37",
+        "5:38",
+        "6:38",
+        "7:38",
+        "8:38",
+        "9:38",
+        "10:38",
+        "11:38",
+        "12:38",
+        "13:38",
+        "14:38",
+        "15:38"
+      ],
+      "ownerFactionId": "mordor"
     },
     {
-      "id": "region-gundabad",
-      "name": "Mount Gundabad",
+      "id": "region-rhun",
+      "name": "Rhûn",
       "nameTranslations": {
-        "ru": "Гундабад"
+        "ru": "Рун"
       },
-      "locationId": "gundabad",
-      "ownerFactionId": "goblins",
-      "description": "Region surrounding the location “Mount Gundabad”",
+      "color": "#9E6B3A",
+      "description": "Eastern lands around the Sea of Rhûn, home of the Easterlings.",
       "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Гундабад»"
-      }
-    },
-    {
-      "id": "region-grey-mountains",
-      "name": "Grey Mountains",
-      "nameTranslations": {
-        "ru": "Серые горы"
+        "ru": "Восточные земли вокруг Моря Рун, родина истерлингов."
       },
-      "locationId": "grey-mountains",
-      "ownerFactionId": "dwarves",
-      "description": "Region surrounding the location “Grey Mountains”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Серые горы»"
-      }
-    },
-    {
-      "id": "region-forochel",
-      "name": "Icebay of Forochel",
-      "nameTranslations": {
-        "ru": "Залив Форхел"
-      },
-      "locationId": "forochel",
-      "ownerFactionId": "angmar",
-      "description": "Region surrounding the location “Icebay of Forochel”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Залив Форхел»"
-      }
-    },
-    {
-      "id": "region-angmar",
-      "name": "Carn Dûm",
-      "nameTranslations": {
-        "ru": "Карн Дум"
-      },
-      "locationId": "angmar",
-      "ownerFactionId": "angmar",
-      "description": "Region surrounding the location “Carn Dûm”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Карн Дум»"
-      }
-    },
-    {
-      "id": "region-rhudaur",
-      "name": "Rhudaur",
-      "nameTranslations": {
-        "ru": "Рудаур"
-      },
-      "locationId": "rhudaur",
-      "ownerFactionId": "angmar",
-      "description": "Region surrounding the location “Rhudaur”",
-      "descriptionTranslations": {
-        "ru": "Регион вокруг локации «Рудаур»"
-      }
+      "hexes": [
+        "26:15",
+        "32:15",
+        "25:16",
+        "26:16",
+        "27:16",
+        "28:16",
+        "31:16",
+        "32:16",
+        "26:17",
+        "27:17",
+        "28:17",
+        "31:17",
+        "28:21",
+        "27:22",
+        "28:22",
+        "24:30",
+        "25:30",
+        "23:31",
+        "24:31",
+        "25:31",
+        "21:32",
+        "22:32",
+        "23:32",
+        "24:32",
+        "20:33",
+        "21:33",
+        "19:34",
+        "20:34",
+        "21:34",
+        "18:35",
+        "20:35",
+        "21:35",
+        "22:35",
+        "23:35",
+        "17:36",
+        "18:36",
+        "19:36",
+        "20:36",
+        "21:36",
+        "22:36",
+        "23:36",
+        "17:37",
+        "18:37",
+        "19:37",
+        "20:37",
+        "21:37",
+        "22:37",
+        "16:38",
+        "17:38",
+        "18:38",
+        "19:38",
+        "20:38",
+        "21:38",
+        "22:38"
+      ],
+      "ownerFactionId": null
     }
   ],
   "campaign": {

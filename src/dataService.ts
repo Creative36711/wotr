@@ -4,6 +4,16 @@ import { hexId, pixelToAxial } from './hex/hexGrid'
 import { BUILTIN_CONTENT_EN } from './contentTranslations'
 import { armyMovementCap, captainInstanceFromCommander, captainNamesForFaction, generateArmyName, generateCaptainName } from './game/army'
 import { createDefaultArmies, createDefaultCampaign, createDefaultRegions, DEFAULT_CAPTAINS, DEFAULT_HEROES, DEFAULT_UNIT_TYPES } from './game/defaultData'
+import {
+  partitionLandHexesIntoRegions,
+  refreshRegionOwners,
+  regenerateDomainHexes,
+  regionIdForHex,
+  syncMapObjectRegionIds,
+  VANILLA_REGION_SEEDS,
+  VANILLA_REGIONS,
+  VANILLA_STRONGHOLD_IDS,
+} from './game/regions'
 import { createNewSaveGame } from './game/saveGame'
 import { updateConflictRtsCompatibility } from './game/conflicts'
 import { heroIsDeployed, heroSummonLocation } from './game/heroes'
@@ -448,15 +458,47 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
   const unitTypes = normalizeUnits(rosterValue !== undefined ? roster?.unitTypes ?? [] : source.unitTypes)
   const heroes = normalizeHeroes(rosterValue !== undefined ? roster?.heroes ?? [] : source.heroes, (source.version ?? 0) < 5)
   const captains = normalizeCaptains(rosterValue !== undefined ? roster?.captains ?? [] : source.captains)
-  const vanillaMigration=(source.version??0)<29&&source.locations.length===79&&source.locations.some((location:any)=>location.id==='helms-deep')&&source.locations.some((location:any)=>location.id==='minas-tirith')
+  const looksLikeVanilla = source.locations.length === 79
+    && source.locations.some((location: any) => location.id === 'helms-deep')
+    && source.locations.some((location: any) => location.id === 'minas-tirith')
+  const needsRegionHierarchy = (source.version ?? 0) < 31
+  const sourceRegions = Array.isArray(source.regions) ? source.regions : []
+  const hasAuthoredRegions = sourceRegions.some((region: any) => Array.isArray(region?.hexes) && region.hexes.length > 0 && !region.locationId)
+
+  let regions: Region[]
+  if (hasAuthoredRegions) {
+    regions = sourceRegions.map((region: any) => {
+      const localizedName = canonicalLocalized(region.name, region.en, region.nameTranslations)
+      const localizedDescription = canonicalLocalized(region.description, region.descriptionEn, region.descriptionTranslations)
+      return {
+        id: String(region.id ?? 'region'),
+        name: localizedName.canonical,
+        nameTranslations: localizedName.translations,
+        hexes: Array.isArray(region.hexes) ? region.hexes.map(String).filter((hex: string) => /^-?\d+:-?\d+$/.test(hex)) : [],
+        color: typeof region.color === 'string' && /^#[0-9a-f]{6}$/i.test(region.color) ? region.color : '#7A8B99',
+        ownerFactionId: region.ownerFactionId ?? null,
+        description: localizedDescription.canonical,
+        descriptionTranslations: localizedDescription.translations,
+      } as Region
+    }).filter((region) => region.id)
+  } else if (looksLikeVanilla || needsRegionHierarchy) {
+    regions = partitionLandHexesIntoRegions(grid, VANILLA_REGIONS, VANILLA_REGION_SEEDS)
+  } else {
+    regions = createDefaultRegions()
+  }
+
   const locations = source.locations.map((location: any) => {
-    const localized=canonicalLocalized(location.name,location.en,location.nameTranslations)
-    const {en:_legacyEnglishName,x:_legacyX,y:_legacyY,kind:_legacyKind,settlementType:_legacyEconomicType,regionId:_legacyRegionId,...baseLocation}=location
-    const structuralType=location.structuralType==='stronghold'||location.structuralType==='domain'?location.structuralType:vanillaMigration?(location.id==='helms-deep'?'stronghold':'domain'):location.kind==='keep'?'stronghold':'domain'
-    const legacyAxial=pixelToAxial((Number(location.x??0)/100)*WORLD_WIDTH,(Number(location.y??0)/100)*WORLD_HEIGHT,grid.config)
-    const hex=typeof location.hex==='string'&&/^-?\d+:-?\d+$/.test(location.hex)?location.hex:hexId(legacyAxial.q,legacyAxial.r)
+    const localized = canonicalLocalized(location.name, location.en, location.nameTranslations)
+    const { en: _legacyEnglishName, x: _legacyX, y: _legacyY, kind: _legacyKind, settlementType: _legacyEconomicType, ...baseLocation } = location
+    let structuralType: 'domain' | 'stronghold' =
+      location.structuralType === 'stronghold' || location.structuralType === 'domain'
+        ? location.structuralType
+        : location.kind === 'keep' ? 'stronghold' : 'domain'
+    if (needsRegionHierarchy && looksLikeVanilla && VANILLA_STRONGHOLD_IDS.has(location.id)) structuralType = 'stronghold'
+    const legacyAxial = pixelToAxial((Number(location.x ?? 0) / 100) * WORLD_WIDTH, (Number(location.y ?? 0) / 100) * WORLD_HEIGHT, grid.config)
+    const hex = typeof location.hex === 'string' && /^-?\d+:-?\d+$/.test(location.hex) ? location.hex : hexId(legacyAxial.q, legacyAxial.r)
     const economicType = location.economicType ?? location.settlementType ?? defaultSettlementType(location)
-    const defaults = LOCATION_ECONOMY[economicType]
+    const defaults = LOCATION_ECONOMY[economicType as keyof typeof LOCATION_ECONOMY] ?? LOCATION_ECONOMY.village
     const factionRecruitment = unitTypes.filter((unit) => unit.factionId === location.side).map((unit) => unit.id)
     const recruitment = Array.isArray(location.recruitment)
       ? location.recruitment
@@ -466,12 +508,20 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     const rtsFortress = fortressPosition
       ? { defenderStartPosition: { x: Number.isFinite(fortressPosition.x) ? Math.max(0, Math.min(1, Number(fortressPosition.x))) : null, y: Number.isFinite(fortressPosition.y) ? Math.max(0, Math.min(1, Number(fortressPosition.y))) : null } }
       : null
+    const regionId = typeof location.regionId === 'string' && regions.some((region) => region.id === location.regionId)
+      ? location.regionId
+      : regionIdForHex(regions, hex) ?? ''
+    const hexes = structuralType === 'domain' && Array.isArray(location.hexes)
+      ? location.hexes.map(String).filter((value: string) => /^-?\d+:-?\d+$/.test(value))
+      : undefined
     return {
       ...baseLocation,
-      name:localized.canonical,
-      nameTranslations:localized.translations,
+      name: localized.canonical,
+      nameTranslations: localized.translations,
       structuralType,
       hex,
+      regionId,
+      ...(structuralType === 'domain' ? { hexes: hexes ?? [] } : {}),
       image: location.image ?? '',
       economicType,
       income: { gold: Math.max(0, location.income?.gold ?? defaults.gold), materials: Math.max(0, location.income?.materials ?? defaults.materials) },
@@ -488,27 +538,46 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
       rtsMapCache,
       rtsFortress,
       armyLimitBonus: Math.max(0, location.armyLimitBonus ?? (MAJOR_LOCATIONS.has(location.id) ? 1 : 0)),
+    } as MapLocation
+  })
+  const occupiedHexes = new Set<string>()
+  for (const location of locations) {
+    if (occupiedHexes.has(location.hex)) {
+      const [q, r] = location.hex.split(':').map(Number)
+      let replacement = ''
+      for (let radius = 1; radius < 20 && !replacement; radius++) {
+        for (let dq = -radius; dq <= radius && !replacement; dq++) {
+          for (let dr = -radius; dr <= radius && !replacement; dr++) {
+            const candidate = `${q + dq}:${r + dr}`
+            if (!occupiedHexes.has(candidate)) replacement = candidate
+          }
+        }
+      }
+      if (replacement) location.hex = replacement
     }
-  })
-  const occupiedHexes=new Set<string>();for(const location of locations){if(occupiedHexes.has(location.hex)){const[q,r]=location.hex.split(':').map(Number);let replacement='';for(let radius=1;radius<20&&!replacement;radius++)for(let dq=-radius;dq<=radius&&!replacement;dq++)for(let dr=-radius;dr<=radius&&!replacement;dr++){const candidate=`${q+dq}:${r+dr}`;if(!occupiedHexes.has(candidate))replacement=candidate}if(replacement)location.hex=replacement}occupiedHexes.add(location.hex)}
-  const sourceRegions = Array.isArray(source.regions) ? source.regions : createDefaultRegions(locations)
-  const regions = locations.filter((location)=>location.structuralType==='domain').map((location) => {
-    const regionId=`region-${location.id}`
-    const existing=sourceRegions.find((region:any)=>region.id===regionId||region.locationId===location.id||region.capitalLocationId===location.id)as any
-    const localizedDescription=canonicalLocalized(existing?.description,existing?.descriptionEn,existing?.descriptionTranslations)
-    return {id:regionId,name:location.name,nameTranslations:{...location.nameTranslations},locationId:location.id,ownerFactionId:existing?.ownerFactionId??(location.side==='civilian'?null:location.side),description:localizedDescription.canonical,descriptionTranslations:localizedDescription.translations}as Region
-  })
-  const validRegionIds=new Set(regions.map((region)=>region.id));for(const cell of Object.values(grid.cells))if(cell.regionId&&!validRegionIds.has(cell.regionId))cell.regionId=undefined
-  const defaultArmies = createDefaultArmies(locations, grid)
+    occupiedHexes.add(location.hex)
+  }
+
+  let normalizedLocations = syncMapObjectRegionIds(locations, regions)
+  const shouldRegenerateDomains = needsRegionHierarchy || normalizedLocations.some((location) => location.structuralType === 'domain' && !(location.hexes && location.hexes.length))
+  if (shouldRegenerateDomains) normalizedLocations = regenerateDomainHexes(normalizedLocations, regions)
+  regions = refreshRegionOwners(regions, normalizedLocations)
+
+  const validRegionIds = new Set(regions.map((region) => region.id))
+  for (const cell of Object.values(grid.cells)) {
+    if (cell.regionId && !validRegionIds.has(cell.regionId)) cell.regionId = undefined
+  }
+
+  const defaultArmies = createDefaultArmies(normalizedLocations, grid)
   const armies = normalizeArmies(Array.isArray(source.armies) ? source.armies : defaultArmies, unitTypes, heroes, captains, (source.version ?? 0) < 13)
   for (const army of armies) {
-    army.name = generateArmyName(army, armies, factions, locations, heroes, grid.config)
+    army.name = generateArmyName(army, armies, factions, normalizedLocations, heroes, grid.config)
     const cap = armyMovementCap(army, heroes, captains, unitTypes)
     army.movementRemaining = (source.version ?? 0) < 13 ? cap : Math.min(army.movementRemaining, cap)
   }
-  const campaign = normalizeCampaign(source.campaign, factions, locations, heroes)
+  const campaign = normalizeCampaign(source.campaign, factions, normalizedLocations, heroes)
   enforceCaptainHierarchy(armies, campaign)
-  for (const army of armies) army.name = generateArmyName(army, armies, factions, locations, heroes, grid.config)
+  for (const army of armies) army.name = generateArmyName(army, armies, factions, normalizedLocations, heroes, grid.config)
   if ((source.version ?? 0) < 16) {
     campaign.phase = 'planning_good'
     campaign.firstMoverThisRound = campaign.round % 2 === 1 ? 'good' : 'evil'
@@ -518,7 +587,7 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
 
   return {
     version: WORLD_DATA_VERSION,
-    locations,
+    locations: normalizedLocations,
     grid,
     factions,
     unitTypes,
@@ -527,7 +596,7 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     armies,
     regions,
     campaign: { ...campaign, turnOrder: [...campaign.turnOrder], log: [...campaign.log] },
-    battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
+    battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
   }
 }
 
@@ -650,7 +719,25 @@ async function listStoredRtsMapCaches(modId:string):Promise<Array<{scope:'locati
   const raw:any[]=isTauriRuntime()?await invoke<any[]>('list_rts_map_caches',{modId}):await(async()=>{const response=await fetch(`/api/rts-map-caches?modId=${encodeURIComponent(modId)}&t=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(await parseError(response,'Не удалось прочитать каталог MapCache'));return response.json()})()
   return raw.map((item)=>({scope:item.scope,entityId:item.entityId,asset:{assetId:item.assetId??item.entityId,originalFileName:item.originalFileName??`${item.entityId}.big`,storageName:item.storageName,size:Number(item.size??0),cacheKey:item.cacheKey??'',mapPath:item.mapPath??'',mapName:item.mapName??'',numPlayers:Number(item.numPlayers??0),playerStarts:Array.isArray(item.playerStarts)?item.playerStarts:[]}}))
 }
-function refreshCampaignRts(campaign:CampaignState,armies:Army[],locations:MapLocation[],regions:Region[]){for(const conflict of campaign.conflicts){const direct=conflict.locationId?locations.find((item)=>item.id===conflict.locationId):null;const region=conflict.regionId?regions.find((item)=>item.id===conflict.regionId):null;const owner=locations.find((item)=>item.id===(conflict.rtsLocationId??direct?.id??region?.locationId));conflict.rtsLocationId=owner?.id??null;conflict.rtsMapSource='location';conflict.rtsMapId=owner?.rtsMapCache?.mapPath??'';const position=direct?.rtsFortress?.defenderStartPosition;conflict.rtsDefenderStartPosition=conflict.battleType==='siege'&&Number.isFinite(position?.x)&&Number.isFinite(position?.y)?{x:Number(position!.x),y:Number(position!.y)}:null;updateConflictRtsCompatibility(conflict,armies,locations)}}
+function refreshCampaignRts(campaign: CampaignState, armies: Army[], locations: MapLocation[], regions: Region[]) {
+  for (const conflict of campaign.conflicts) {
+    const direct = conflict.locationId ? locations.find((item) => item.id === conflict.locationId) : null
+    const regionObjects = conflict.regionId ? locations.filter((item) => item.regionId === conflict.regionId) : []
+    const owner = locations.find((item) => item.id === (conflict.rtsLocationId ?? direct?.id))
+      ?? regionObjects.find((item) => item.rtsMapCache)
+      ?? regionObjects.find((item) => item.structuralType === 'domain')
+      ?? regionObjects[0]
+      ?? null
+    conflict.rtsLocationId = owner?.id ?? null
+    conflict.rtsMapSource = 'location'
+    conflict.rtsMapId = owner?.rtsMapCache?.mapPath ?? ''
+    const position = direct?.rtsFortress?.defenderStartPosition
+    conflict.rtsDefenderStartPosition = conflict.battleType === 'siege' && Number.isFinite(position?.x) && Number.isFinite(position?.y)
+      ? { x: Number(position!.x), y: Number(position!.y) }
+      : null
+    updateConflictRtsCompatibility(conflict, armies, locations)
+  }
+}
 export async function loadWorld(modId: string) {
   const rawWorld = await readModJson(modId, 'world')
   let rawRoster: unknown = { version: ROSTER_DATA_VERSION, unitTypes: [], heroes: [], captains: [] }

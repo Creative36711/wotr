@@ -37,7 +37,7 @@ npm run desktop:portable
 The one-file build is copied to:
 
 ```text
-portable\War-of-the-Ring_0.43.0_windows_x64.exe
+portable\War-of-the-Ring_0.44.0_windows_x64.exe
 ```
 
 Send only this EXE to the tester. On first launch it creates `portable_data` directly beside the executable. All settings, mods, maps, logs and per-mod saves live in that folder; AppData is never used. Keep the EXE and `portable_data` together when moving the application. If the EXE is placed in a protected folder such as Program Files, move it to a writable folder like `D:\Games\WOTR` or Documents.

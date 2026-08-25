@@ -13,7 +13,7 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.41.0";
+const GAME_VERSION: &str = "0.44.0";
 const SAVE_VERSION: u64 = 28;
 
 fn executable_dir() -> Result<PathBuf, String> {

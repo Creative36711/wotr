@@ -1,0 +1,932 @@
+{
+  "version": 1,
+  "note": "Approved geographic catalog. Hexes must be filled by vision AI using the game map + grid formula.",
+  "regions": [
+    {
+      "id": "region-lindon",
+      "name": "Lindon",
+      "nameTranslations": {
+        "ru": "Линдон"
+      },
+      "domains": [
+        {
+          "id": "forlindon",
+          "name": "Forlindon",
+          "nameTranslations": {
+            "ru": "Форлиндон"
+          }
+        },
+        {
+          "id": "harlindon",
+          "name": "Harlindon",
+          "nameTranslations": {
+            "ru": "Харлиндон"
+          }
+        },
+        {
+          "id": "tower-hills",
+          "name": "Tower Hills",
+          "nameTranslations": {
+            "ru": "Тауэр-Хиллз (Эмин Берайд)"
+          }
+        },
+        {
+          "id": "gulf-of-lhun",
+          "name": "Gulf of Lhûn",
+          "nameTranslations": {
+            "ru": "Залив Лун"
+          }
+        },
+        {
+          "id": "ered-luin",
+          "name": "Ered Luin",
+          "nameTranslations": {
+            "ru": "Синие Горы (Эред Луин)"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "mithlond",
+          "name": "Mithlond",
+          "nameTranslations": {
+            "ru": "Митлонд (Серые Гавани)"
+          },
+          "economicType": "port"
+        }
+      ]
+    },
+    {
+      "id": "region-eriador",
+      "name": "Eriador",
+      "nameTranslations": {
+        "ru": "Эриадор"
+      },
+      "domains": [
+        {
+          "id": "arthedain",
+          "name": "Arthedain",
+          "nameTranslations": {
+            "ru": "Артедайн"
+          }
+        },
+        {
+          "id": "cardolan",
+          "name": "Cardolan",
+          "nameTranslations": {
+            "ru": "Кардолан"
+          }
+        },
+        {
+          "id": "rhudaur",
+          "name": "Rhudaur",
+          "nameTranslations": {
+            "ru": "Рудаур"
+          }
+        },
+        {
+          "id": "shire",
+          "name": "The Shire",
+          "nameTranslations": {
+            "ru": "Шир (Хоббитания)"
+          }
+        },
+        {
+          "id": "buckland",
+          "name": "Buckland",
+          "nameTranslations": {
+            "ru": "Бакленд (Забрендия)"
+          }
+        },
+        {
+          "id": "bree-land",
+          "name": "Bree-land",
+          "nameTranslations": {
+            "ru": "Пригорье (Бри-ланд)"
+          }
+        },
+        {
+          "id": "old-forest",
+          "name": "Old Forest",
+          "nameTranslations": {
+            "ru": "Вековечный Лес"
+          }
+        },
+        {
+          "id": "barrow-downs",
+          "name": "Barrow-downs",
+          "nameTranslations": {
+            "ru": "Могильные Холмы"
+          }
+        },
+        {
+          "id": "hills-of-evendim",
+          "name": "Hills of Evendim",
+          "nameTranslations": {
+            "ru": "Холмы Эвендим"
+          }
+        },
+        {
+          "id": "weather-hills",
+          "name": "Weather Hills",
+          "nameTranslations": {
+            "ru": "Заветерные Холмы"
+          }
+        },
+        {
+          "id": "lone-lands",
+          "name": "Lone-lands",
+          "nameTranslations": {
+            "ru": "Пустоши (Одинокие Земли)"
+          }
+        },
+        {
+          "id": "trollshaws",
+          "name": "Trollshaws",
+          "nameTranslations": {
+            "ru": "Тролльское Нагорье"
+          }
+        },
+        {
+          "id": "ettenmoors",
+          "name": "Ettenmoors",
+          "nameTranslations": {
+            "ru": "Эттенмурз"
+          }
+        },
+        {
+          "id": "eregion",
+          "name": "Eregion",
+          "nameTranslations": {
+            "ru": "Эрегион"
+          }
+        },
+        {
+          "id": "minhiriath",
+          "name": "Minhiriath",
+          "nameTranslations": {
+            "ru": "Минхириат"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "rivendell",
+          "name": "Rivendell",
+          "nameTranslations": {
+            "ru": "Ривенделл"
+          },
+          "economicType": "capital"
+        },
+        {
+          "id": "annuminas",
+          "name": "Annúminas",
+          "nameTranslations": {
+            "ru": "Аннуминас"
+          },
+          "economicType": "ruins"
+        },
+        {
+          "id": "fornost",
+          "name": "Fornost",
+          "nameTranslations": {
+            "ru": "Форност Эрайн"
+          },
+          "economicType": "ruins"
+        },
+        {
+          "id": "weathertop",
+          "name": "Weathertop",
+          "nameTranslations": {
+            "ru": "Амон-Сул (Заверть)"
+          },
+          "economicType": "ruins"
+        },
+        {
+          "id": "hobbiton",
+          "name": "Hobbiton",
+          "nameTranslations": {
+            "ru": "Хоббитон"
+          },
+          "economicType": "village"
+        },
+        {
+          "id": "bree",
+          "name": "Bree",
+          "nameTranslations": {
+            "ru": "Бри"
+          },
+          "economicType": "village"
+        },
+        {
+          "id": "michel-delving",
+          "name": "Michel Delving",
+          "nameTranslations": {
+            "ru": "Мичел Делвинг"
+          },
+          "economicType": "village"
+        }
+      ]
+    },
+    {
+      "id": "region-angmar",
+      "name": "Angmar",
+      "nameTranslations": {
+        "ru": "Ангмар"
+      },
+      "domains": [
+        {
+          "id": "angmar-foothills",
+          "name": "Angmar Foothills",
+          "nameTranslations": {
+            "ru": "Предгорья Ангмара"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "carn-dum",
+          "name": "Carn Dûm",
+          "nameTranslations": {
+            "ru": "Карн Дум"
+          },
+          "economicType": "capital"
+        },
+        {
+          "id": "gundabad",
+          "name": "Mount Gundabad",
+          "nameTranslations": {
+            "ru": "Гундабад"
+          },
+          "economicType": "fortress"
+        }
+      ]
+    },
+    {
+      "id": "region-forodwaith",
+      "name": "Forodwaith",
+      "nameTranslations": {
+        "ru": "Фородвайт"
+      },
+      "domains": [
+        {
+          "id": "northern-waste",
+          "name": "Northern Waste",
+          "nameTranslations": {
+            "ru": "Северные Пустоши"
+          }
+        },
+        {
+          "id": "icebay-forochel",
+          "name": "Icebay of Forochel",
+          "nameTranslations": {
+            "ru": "Залив Форохел"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "cape-forochel",
+          "name": "Cape Forochel",
+          "nameTranslations": {
+            "ru": "Мыс Форохел"
+          },
+          "economicType": "camp"
+        }
+      ]
+    },
+    {
+      "id": "region-misty-mountains",
+      "name": "Misty Mountains",
+      "nameTranslations": {
+        "ru": "Мглистые Горы"
+      },
+      "domains": [
+        {
+          "id": "high-pass",
+          "name": "High Pass",
+          "nameTranslations": {
+            "ru": "Высокий Перевал"
+          }
+        },
+        {
+          "id": "redhorn-pass",
+          "name": "Redhorn Pass",
+          "nameTranslations": {
+            "ru": "Перевал Карадрас"
+          }
+        },
+        {
+          "id": "dimrill-dale",
+          "name": "Dimrill Dale",
+          "nameTranslations": {
+            "ru": "Димрилл-Дейл"
+          }
+        },
+        {
+          "id": "gap-of-rohan",
+          "name": "Gap of Rohan",
+          "nameTranslations": {
+            "ru": "Врата Рохана"
+          }
+        },
+        {
+          "id": "nan-curunir",
+          "name": "Nan Curunír",
+          "nameTranslations": {
+            "ru": "Нан Курунир"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "moria",
+          "name": "Moria",
+          "nameTranslations": {
+            "ru": "Мория"
+          },
+          "economicType": "mine"
+        },
+        {
+          "id": "goblin-town",
+          "name": "Goblin-town",
+          "nameTranslations": {
+            "ru": "Гоблинский Город"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "isengard",
+          "name": "Isengard",
+          "nameTranslations": {
+            "ru": "Изенгард"
+          },
+          "economicType": "capital"
+        }
+      ]
+    },
+    {
+      "id": "region-enedwaith",
+      "name": "Enedwaith",
+      "nameTranslations": {
+        "ru": "Энедвайт"
+      },
+      "domains": [
+        {
+          "id": "enedwaith-plains",
+          "name": "Enedwaith Plains",
+          "nameTranslations": {
+            "ru": "Равнины Энедвайта"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "tharbad",
+          "name": "Tharbad",
+          "nameTranslations": {
+            "ru": "Тарбад"
+          },
+          "economicType": "ruins"
+        },
+        {
+          "id": "lond-daer",
+          "name": "Lond Daer",
+          "nameTranslations": {
+            "ru": "Лонд Даэр"
+          },
+          "economicType": "ruins"
+        }
+      ]
+    },
+    {
+      "id": "region-dunland",
+      "name": "Dunland",
+      "nameTranslations": {
+        "ru": "Дунланд"
+      },
+      "domains": [
+        {
+          "id": "dunland",
+          "name": "Dunland",
+          "nameTranslations": {
+            "ru": "Дунландские нагорья"
+          }
+        },
+        {
+          "id": "druwaith-iaur",
+          "name": "Drúwaith Iaur",
+          "nameTranslations": {
+            "ru": "Друвайт Йаур"
+          }
+        }
+      ],
+      "strongholds": []
+    },
+    {
+      "id": "region-rohan",
+      "name": "Rohan",
+      "nameTranslations": {
+        "ru": "Рохан"
+      },
+      "domains": [
+        {
+          "id": "westfold",
+          "name": "Westfold",
+          "nameTranslations": {
+            "ru": "Вестфолд"
+          }
+        },
+        {
+          "id": "eastfold",
+          "name": "Eastfold",
+          "nameTranslations": {
+            "ru": "Истфолд"
+          }
+        },
+        {
+          "id": "westemnet",
+          "name": "Westemnet",
+          "nameTranslations": {
+            "ru": "Вестемнет"
+          }
+        },
+        {
+          "id": "eastemnet",
+          "name": "Eastemnet",
+          "nameTranslations": {
+            "ru": "Истемнет"
+          }
+        },
+        {
+          "id": "fangorn",
+          "name": "Fangorn",
+          "nameTranslations": {
+            "ru": "Фангорн"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "edoras",
+          "name": "Edoras",
+          "nameTranslations": {
+            "ru": "Эдорас"
+          },
+          "economicType": "capital"
+        },
+        {
+          "id": "helms-deep",
+          "name": "Helm's Deep",
+          "nameTranslations": {
+            "ru": "Хельмова Падь"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "dunharrow",
+          "name": "Dunharrow",
+          "nameTranslations": {
+            "ru": "Дунхарроу"
+          },
+          "economicType": "village"
+        },
+        {
+          "id": "aldburg",
+          "name": "Aldburg",
+          "nameTranslations": {
+            "ru": "Алдбург"
+          },
+          "economicType": "village"
+        },
+        {
+          "id": "fords-of-isen",
+          "name": "Fords of Isen",
+          "nameTranslations": {
+            "ru": "Изенские Броды"
+          },
+          "economicType": "ford"
+        }
+      ]
+    },
+    {
+      "id": "region-gondor",
+      "name": "Gondor",
+      "nameTranslations": {
+        "ru": "Гондор"
+      },
+      "domains": [
+        {
+          "id": "anorien",
+          "name": "Anórien",
+          "nameTranslations": {
+            "ru": "Анориэн"
+          }
+        },
+        {
+          "id": "ithilien-north",
+          "name": "North Ithilien",
+          "nameTranslations": {
+            "ru": "Северный Итилиэн"
+          }
+        },
+        {
+          "id": "ithilien-south",
+          "name": "South Ithilien",
+          "nameTranslations": {
+            "ru": "Южный Итилиэн"
+          }
+        },
+        {
+          "id": "lebennin",
+          "name": "Lebennin",
+          "nameTranslations": {
+            "ru": "Лебеннин"
+          }
+        },
+        {
+          "id": "lossarnach",
+          "name": "Lossarnach",
+          "nameTranslations": {
+            "ru": "Лоссарнах"
+          }
+        },
+        {
+          "id": "belfalas",
+          "name": "Belfalas",
+          "nameTranslations": {
+            "ru": "Белфалас"
+          }
+        },
+        {
+          "id": "anfalas",
+          "name": "Anfalas",
+          "nameTranslations": {
+            "ru": "Анфалас"
+          }
+        },
+        {
+          "id": "pinnath-gelin",
+          "name": "Pinnath Gelin",
+          "nameTranslations": {
+            "ru": "Пиннат Гелин"
+          }
+        },
+        {
+          "id": "andrast",
+          "name": "Andrast",
+          "nameTranslations": {
+            "ru": "Андраст"
+          }
+        },
+        {
+          "id": "harondor",
+          "name": "Harondor",
+          "nameTranslations": {
+            "ru": "Харондор"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "minas-tirith",
+          "name": "Minas Tirith",
+          "nameTranslations": {
+            "ru": "Минас Тирит"
+          },
+          "economicType": "capital"
+        },
+        {
+          "id": "osgiliath",
+          "name": "Osgiliath",
+          "nameTranslations": {
+            "ru": "Осгилиат"
+          },
+          "economicType": "city"
+        },
+        {
+          "id": "dol-amroth",
+          "name": "Dol Amroth",
+          "nameTranslations": {
+            "ru": "Дол Амрот"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "pelargir",
+          "name": "Pelargir",
+          "nameTranslations": {
+            "ru": "Пеларгир"
+          },
+          "economicType": "port"
+        },
+        {
+          "id": "cair-andros",
+          "name": "Cair Andros",
+          "nameTranslations": {
+            "ru": "Каир Андрос"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "henneth-annun",
+          "name": "Henneth Annûn",
+          "nameTranslations": {
+            "ru": "Хеннет Аннун"
+          },
+          "economicType": "camp"
+        }
+      ]
+    },
+    {
+      "id": "region-mordor",
+      "name": "Mordor",
+      "nameTranslations": {
+        "ru": "Мордор"
+      },
+      "domains": [
+        {
+          "id": "udun",
+          "name": "Udûn",
+          "nameTranslations": {
+            "ru": "Удун"
+          }
+        },
+        {
+          "id": "gorgoroth",
+          "name": "Gorgoroth",
+          "nameTranslations": {
+            "ru": "Горгорот"
+          }
+        },
+        {
+          "id": "nurn",
+          "name": "Nurn",
+          "nameTranslations": {
+            "ru": "Нурн"
+          }
+        },
+        {
+          "id": "lithlad",
+          "name": "Lithlad",
+          "nameTranslations": {
+            "ru": "Литлад"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "barad-dur",
+          "name": "Barad-dûr",
+          "nameTranslations": {
+            "ru": "Барад-дур"
+          },
+          "economicType": "capital"
+        },
+        {
+          "id": "minas-morgul",
+          "name": "Minas Morgul",
+          "nameTranslations": {
+            "ru": "Минас Моргул"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "black-gate",
+          "name": "Morannon",
+          "nameTranslations": {
+            "ru": "Мораннон (Чёрные Врата)"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "cirith-ungol",
+          "name": "Cirith Ungol",
+          "nameTranslations": {
+            "ru": "Кирит-Унгол"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "orodruin",
+          "name": "Mount Doom",
+          "nameTranslations": {
+            "ru": "Ородруин"
+          },
+          "economicType": "wilderness"
+        }
+      ]
+    },
+    {
+      "id": "region-rhovanion",
+      "name": "Rhovanion",
+      "nameTranslations": {
+        "ru": "Рованион"
+      },
+      "domains": [
+        {
+          "id": "anduin-vales",
+          "name": "Anduin Vales",
+          "nameTranslations": {
+            "ru": "Долина Андуина"
+          }
+        },
+        {
+          "id": "brown-lands",
+          "name": "Brown Lands",
+          "nameTranslations": {
+            "ru": "Бурые Равнины"
+          }
+        },
+        {
+          "id": "dagorlad",
+          "name": "Dagorlad",
+          "nameTranslations": {
+            "ru": "Дагорлад"
+          }
+        },
+        {
+          "id": "dead-marshes",
+          "name": "Dead Marshes",
+          "nameTranslations": {
+            "ru": "Мёртвые Болота"
+          }
+        },
+        {
+          "id": "emyn-muil",
+          "name": "Emyn Muil",
+          "nameTranslations": {
+            "ru": "Эмин-Муиль"
+          }
+        },
+        {
+          "id": "lorien",
+          "name": "Lothlórien",
+          "nameTranslations": {
+            "ru": "Лотлориэн"
+          }
+        },
+        {
+          "id": "iron-hills",
+          "name": "Iron Hills",
+          "nameTranslations": {
+            "ru": "Железные Холмы"
+          }
+        },
+        {
+          "id": "grey-mountains",
+          "name": "Ered Mithrin",
+          "nameTranslations": {
+            "ru": "Серые Горы"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "erebor",
+          "name": "Erebor",
+          "nameTranslations": {
+            "ru": "Эребор"
+          },
+          "economicType": "capital"
+        },
+        {
+          "id": "dale",
+          "name": "Dale",
+          "nameTranslations": {
+            "ru": "Дейл"
+          },
+          "economicType": "city"
+        },
+        {
+          "id": "esgaroth",
+          "name": "Esgaroth",
+          "nameTranslations": {
+            "ru": "Эсгарот"
+          },
+          "economicType": "port"
+        },
+        {
+          "id": "caras-galadhon",
+          "name": "Caras Galadhon",
+          "nameTranslations": {
+            "ru": "Карас Галадон"
+          },
+          "economicType": "capital"
+        }
+      ]
+    },
+    {
+      "id": "region-mirkwood",
+      "name": "Mirkwood",
+      "nameTranslations": {
+        "ru": "Лихолесье"
+      },
+      "domains": [
+        {
+          "id": "north-mirkwood",
+          "name": "North Mirkwood",
+          "nameTranslations": {
+            "ru": "Северное Лихолесье"
+          }
+        },
+        {
+          "id": "south-mirkwood",
+          "name": "South Mirkwood",
+          "nameTranslations": {
+            "ru": "Южное Лихолесье"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "thranduil-halls",
+          "name": "Halls of Thranduil",
+          "nameTranslations": {
+            "ru": "Чертоги Трандуила"
+          },
+          "economicType": "fortress"
+        },
+        {
+          "id": "dol-guldur",
+          "name": "Dol Guldur",
+          "nameTranslations": {
+            "ru": "Дол Гулдур"
+          },
+          "economicType": "fortress"
+        }
+      ]
+    },
+    {
+      "id": "region-harad",
+      "name": "Harad",
+      "nameTranslations": {
+        "ru": "Харад"
+      },
+      "domains": [
+        {
+          "id": "near-harad",
+          "name": "Near Harad",
+          "nameTranslations": {
+            "ru": "Ближний Харад"
+          }
+        },
+        {
+          "id": "far-harad",
+          "name": "Far Harad",
+          "nameTranslations": {
+            "ru": "Дальний Харад"
+          }
+        },
+        {
+          "id": "khand",
+          "name": "Khand",
+          "nameTranslations": {
+            "ru": "Кханд"
+          }
+        }
+      ],
+      "strongholds": [
+        {
+          "id": "umbar",
+          "name": "Umbar",
+          "nameTranslations": {
+            "ru": "Умбар"
+          },
+          "economicType": "port"
+        }
+      ]
+    },
+    {
+      "id": "region-rhun",
+      "name": "Rhûn",
+      "nameTranslations": {
+        "ru": "Рун"
+      },
+      "domains": [
+        {
+          "id": "dorwinion",
+          "name": "Dorwinion",
+          "nameTranslations": {
+            "ru": "Дорвинион"
+          }
+        },
+        {
+          "id": "sea-of-rhun",
+          "name": "Sea of Rhûn",
+          "nameTranslations": {
+            "ru": "Море Рун"
+          }
+        },
+        {
+          "id": "easterling-lands",
+          "name": "Easterling Lands",
+          "nameTranslations": {
+            "ru": "Земли Истерлингов"
+          }
+        }
+      ],
+      "strongholds": []
+    }
+  ]
+}

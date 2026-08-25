@@ -8,8 +8,17 @@ import { createDefaultCampaign } from '../game/defaultData'
 import { heroIsDeployed, heroSummonLocation, heroUnlockSatisfied } from '../game/heroes'
 import { refreshFogIntel } from '../game/fogOfWar'
 import { OCCUPATION_COUNTER_ON_CAPTURE, recruitableUnitsAtLocation } from '../game/recruitment'
+import { createDefaultEconomicTypes, economicDefaultsPatch, getEconomicType, setActiveEconomicTypes } from '../game/economicTypes'
 import { applySaveGame, createNewSaveGame, extractSaveGame } from '../game/saveGame'
 import { hexDistance, locationHexId, neighborIds, parseHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
+import {
+  emptyRegion,
+  makeRegionId,
+  regenerateDomainHexes,
+  refreshRegionOwners,
+  regionIdForHex,
+  syncMapObjectRegionIds,
+} from '../game/regions'
 import { WORLD_DATA_VERSION } from '../version'
 import type {
   Army,
@@ -21,7 +30,9 @@ import type {
   Hero,
   HexCellOverride,
   HexGridData,
+  SettlementType,
   StructuralType,
+  EconomicTypeDefinition,
   MapLocation,
   MapViewMode,
   Region,
@@ -39,6 +50,7 @@ interface WorldSnapshot {
   locations: MapLocation[]
   grid: HexGridData
   factions: FactionDefinition[]
+  economicTypes: EconomicTypeDefinition[]
   unitTypes: UnitType[]
   heroes: Hero[]
   captains: CaptainType[]
@@ -103,6 +115,12 @@ interface MapState extends WorldSnapshot {
   updateArmy: (id: string, patch: Partial<Army>) => void
   removeArmy: (id: string) => void
   updateRegion: (id: string, patch: Partial<Region>) => void
+  updateEconomicType: (id: SettlementType, patch: Partial<EconomicTypeDefinition>) => void
+  applyEconomicTypeDefaults: (locationId: string) => void
+  addRegion: () => void
+  removeRegion: (id: string) => void
+  setRegionHexes: (id: string, hexes: string[], mode?: 'replace' | 'add' | 'remove') => void
+  paintRegionHexes: (id: string, hexes: string[]) => void
   advancePhase: () => void
   moveArmy: (armyId: string, destinationId: string, path: string[], cost: number, terrain: TerrainType, locationId: string | null) => void
   cancelArmyOrder:(armyId:string)=>void
@@ -152,16 +170,17 @@ const cloneSnapshot = (snapshot: WorldSnapshot): WorldSnapshot => ({
   locations: cloneLocations(snapshot.locations),
   grid: cloneGrid(snapshot.grid),
   factions: snapshot.factions.map((item) => ({ ...item })),
+  economicTypes: (snapshot.economicTypes?.length ? snapshot.economicTypes : createDefaultEconomicTypes()).map((item) => ({ ...item, nameTranslations: { ...(item.nameTranslations ?? {}) } })),
   unitTypes: snapshot.unitTypes.map((item) => ({ ...item })),
   heroes: snapshot.heroes.map((item) => ({ ...item })),
   captains: snapshot.captains.map((item) => ({ ...item })),
   armies: cloneArmies(snapshot.armies),
-  regions: snapshot.regions.map((item) => ({ ...item })),
+  regions: snapshot.regions.map((item) => ({ ...item, hexes: [...(item.hexes ?? [])] })),
   campaign: cloneCampaign(snapshot.campaign),
   battles: cloneBattles(snapshot.battles),
 })
 const currentSnapshot = (state: MapState): WorldSnapshot => ({
-  locations: state.locations, grid: state.grid, factions: state.factions, unitTypes: state.unitTypes,
+  locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes,
   heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions, campaign: state.campaign, battles: state.battles,
 })
 const snapshotToWorld = (snapshot: WorldSnapshot): WorldData => ({ version: WORLD_DATA_VERSION, ...cloneSnapshot(snapshot) })
@@ -174,7 +193,14 @@ const cloneSaveGame = (save: SaveGameData): SaveGameData => ({
   campaign: cloneCampaign(save.campaign),
   battles: cloneBattles(save.battles),
 })
-function rebuildRegions(locations:MapLocation[],regions:Region[]){return locations.filter((location)=>location.structuralType==='domain').map((location)=>{const existing=regions.find((region)=>region.locationId===location.id);return{id:`region-${location.id}`,name:location.name,nameTranslations:{...location.nameTranslations},locationId:location.id,ownerFactionId:location.side==='civilian'?null:location.side,description:existing?.description??'',descriptionTranslations:{...(existing?.descriptionTranslations??{})}}})}
+/** Keep map-object regionIds and domain hex sets consistent with authored regions. */
+function rebuildTerritory(locations: MapLocation[], regions: Region[]) {
+  const withRegionIds = syncMapObjectRegionIds(locations, regions)
+  const withDomainHexes = regenerateDomainHexes(withRegionIds, regions)
+  const nextRegions = refreshRegionOwners(regions, withDomainHexes)
+  return { locations: withDomainHexes, regions: nextRegions }
+}
+
 const makeId = (base: string, used: string[]) => {
   const root = base.toLowerCase().trim().replace(/[^a-z0-9а-яё]+/gi, '-').replace(/^-|-$/g, '') || 'item'
   let id = root
@@ -433,7 +459,9 @@ function captureLocation(locations: MapLocation[], regions: Region[], campaign: 
   const previousOwner = location.side
   location.side = factionId
   if (previousOwner !== factionId) factionCampaignState(campaign, factionId).statistics.locationsCaptured += 1
-  if(location.structuralType==='domain'){const region=regions.find((candidate)=>candidate.locationId===location.id);if(region)region.ownerFactionId=factionId}
+  // Region control is derived from all domains/strongholds inside it — refresh after capture.
+  const refreshed = refreshRegionOwners(regions, locations)
+  for (let index = 0; index < regions.length; index += 1) regions[index] = refreshed[index]
   campaign.locationStates[location.id] = { locationId: location.id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: previousOwner !== factionId ? OCCUPATION_COUNTER_ON_CAPTURE : 0 }
 }
 
@@ -486,7 +514,7 @@ function enterConflictPhase(state: MapState, campaign: CampaignState, sourceArmi
   let armies = cloneArmies(sourceArmies)
   let battles = cloneBattles(sourceBattles)
   const locations = cloneLocations(sourceLocations)
-  const regions = sourceRegions.map((region) => ({ ...region }))
+  const regions = sourceRegions.map((region) => ({ ...region, hexes: [...(region.hexes ?? [])] }))
   const heroes = sourceHeroes.map((hero) => ({ ...hero }))
   campaign.phase = 'conflicts'
   campaign.activeFactionId = campaign.playerFactionId ?? firstFactionForSide(state.factions, campaign.playerSide, campaign)
@@ -645,7 +673,7 @@ function recordHeroBattleOutcome(battles: AutoBattleReport[], conflict: Campaign
 function processAftermath(state: MapState, campaign: CampaignState, sourceArmies: Army[], sourceLocations: MapLocation[], sourceRegions: Region[], sourceHeroes: Hero[], sourceBattles: AutoBattleReport[]) {
   let armies = cloneArmies(sourceArmies)
   const locations = cloneLocations(sourceLocations)
-  const regions = sourceRegions.map((region) => ({ ...region }))
+  const regions = sourceRegions.map((region) => ({ ...region, hexes: [...(region.hexes ?? [])] }))
   const heroes = sourceHeroes.map((hero) => ({ ...hero }))
   const battles = cloneBattles(sourceBattles)
   campaign.phase = 'aftermath'
@@ -740,12 +768,14 @@ function processAftermath(state: MapState, campaign: CampaignState, sourceArmies
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  locations: [], grid: { config: { ...DEFAULT_GRID_CONFIG }, cells: {} }, factions: [], unitTypes: [], heroes: [], captains: [], armies: [], regions: [],
+  locations: [], grid: { config: { ...DEFAULT_GRID_CONFIG }, cells: {} }, factions: [], economicTypes: createDefaultEconomicTypes(), unitTypes: [], heroes: [], captains: [], armies: [], regions: [],
   campaign: createDefaultCampaign([]), battles: [], editorTemplate: null, gameSave: null, selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null,
   mode: 'edit', viewMode: 'cinematic', hexEdit: false, addKind: null, history: [], future: [], revision: 0,
 
   initialize: (world, saveGame) => {
-    const template = cloneSnapshot(world)
+    const withEconomy = { ...world, economicTypes: world.economicTypes?.length ? world.economicTypes : createDefaultEconomicTypes() }
+    setActiveEconomicTypes(withEconomy.economicTypes)
+    const template = cloneSnapshot(withEconomy)
     set({ ...cloneSnapshot(template), editorTemplate: template, gameSave: cloneSaveGame(saveGame), mode: 'edit', selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null, history: [], future: [], revision: 0 })
   },
 
@@ -763,7 +793,7 @@ export const useMapStore = create<MapState>((set) => ({
     const initialSave = createNewSaveGame(snapshotToWorld(template), modId)
     const gameWorld = applySaveGame(snapshotToWorld(template), initialSave)
     gameWorld.locations = gameWorld.locations.map((location) => inactiveFactionIds.has(location.side) ? { ...location, side: 'civilian' } : location)
-    gameWorld.regions = gameWorld.regions.map((region) => region.ownerFactionId && inactiveFactionIds.has(region.ownerFactionId) ? { ...region, ownerFactionId: null } : region)
+    gameWorld.regions = gameWorld.regions.map((region) => ({ ...region, hexes: [...(region.hexes ?? [])], ownerFactionId: region.ownerFactionId && inactiveFactionIds.has(region.ownerFactionId) ? null : region.ownerFactionId }))
     gameWorld.armies = gameWorld.armies.filter((army) => activeFactionIds.has(army.factionId))
     gameWorld.grid = cloneGrid(gameWorld.grid)
     for (const cell of Object.values(gameWorld.grid.cells)) {
@@ -861,10 +891,12 @@ export const useMapStore = create<MapState>((set) => ({
       const template = cloneSnapshot(currentSnapshot(state))
       const saveGame = state.gameSave ? cloneSaveGame(state.gameSave) : createNewSaveGame(snapshotToWorld(template))
       const gameWorld = applySaveGame(snapshotToWorld(template), saveGame)
-      return { ...cloneSnapshot(gameWorld), editorTemplate: template, gameSave: saveGame, mode, addKind: null, hexEdit: false, viewMode: 'cinematic', selectedId: null, selectedArmyId: null, selectedHexId: null, selectedHexIds: [], history: [], future: [] }
+      setActiveEconomicTypes(gameWorld.economicTypes ?? createDefaultEconomicTypes())
+      return { ...cloneSnapshot({ ...gameWorld, economicTypes: gameWorld.economicTypes ?? createDefaultEconomicTypes() }), editorTemplate: template, gameSave: saveGame, mode, addKind: null, hexEdit: false, viewMode: 'cinematic', selectedId: null, selectedArmyId: null, selectedHexId: null, selectedHexIds: [], history: [], future: [] }
     }
     const gameSave = state.mode === 'game' ? extractSaveGame(snapshotToWorld(currentSnapshot(state)), state.gameSave) : state.gameSave
     const template = state.editorTemplate ? cloneSnapshot(state.editorTemplate) : cloneSnapshot(currentSnapshot(state))
+    setActiveEconomicTypes(template.economicTypes ?? createDefaultEconomicTypes())
     return { ...cloneSnapshot(template), editorTemplate: template, gameSave, mode, addKind: null, hexEdit: false, viewMode: 'cinematic', selectedId: null, selectedArmyId: null, selectedHexId: null, selectedHexIds: [], latestBattleId: null, history: [], future: [] }
   }),
   setViewMode: (viewMode) => set({ viewMode }),
@@ -872,33 +904,87 @@ export const useMapStore = create<MapState>((set) => ({
   setAddKind: (addKind) => set({ addKind, hexEdit: false, selectedHexId: null, selectedHexIds: [] }),
 
   updateLocation: (id, patch) => set((state) => {
-    if(state.mode!=='edit')return state
-    const locations=cloneLocations(state.locations);const index=locations.findIndex((item)=>item.id===id);if(index<0)return state
-    const next={...locations[index],...patch,id}
-    if(patch.hex&&locations.some((item)=>item.id!==id&&item.hex===patch.hex))return state
-    locations[index]=next
-    const regions=rebuildRegions(locations,state.regions)
-    return pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),locations,regions})
+    if (state.mode !== 'edit') return state
+    const locations = cloneLocations(state.locations)
+    const index = locations.findIndex((item) => item.id === id)
+    if (index < 0) return state
+    const next = { ...locations[index], ...patch, id }
+    if (patch.hex && locations.some((item) => item.id !== id && item.hex === patch.hex)) return state
+    if (patch.hex) next.regionId = regionIdForHex(state.regions, patch.hex) ?? next.regionId
+    if (patch.structuralType === 'stronghold') delete next.hexes
+    locations[index] = next
+    const territory = rebuildTerritory(locations, state.regions.map((region) => ({ ...region, hexes: [...region.hexes] })))
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory })
   }),
   moveLocation: (id, hex) => set((state) => {
-    if(state.mode!=='edit'||state.hexEdit||state.locations.some((item)=>item.id!==id&&item.hex===hex))return state
-    const locations=cloneLocations(state.locations);const index=locations.findIndex((item)=>item.id===id);if(index<0)return state
-    locations[index]={...locations[index],hex};const regions=rebuildRegions(locations,state.regions)
-    return pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),locations,regions})
+    if (state.mode !== 'edit' || state.hexEdit || state.locations.some((item) => item.id !== id && item.hex === hex)) return state
+    const locations = cloneLocations(state.locations)
+    const index = locations.findIndex((item) => item.id === id)
+    if (index < 0) return state
+    locations[index] = {
+      ...locations[index],
+      hex,
+      regionId: regionIdForHex(state.regions, hex) ?? locations[index].regionId,
+    }
+    const territory = rebuildTerritory(locations, state.regions.map((region) => ({ ...region, hexes: [...region.hexes] })))
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory })
   }),
   addLocation: (structuralType, hex) => set((state) => {
-    if(state.mode!=='edit'||state.hexEdit||state.locations.some((item)=>item.hex===hex))return state
-    const id=makeId(`location-${Date.now().toString(36)}`,state.locations.map((item)=>item.id));const stronghold=structuralType==='stronghold'
-    const name=stronghold?'New Stronghold':'New Domain';const nameTranslations={ru:stronghold?'Новый оплот':'Новое владение'}
-    const location:MapLocation={id,name,nameTranslations,side:'civilian',structuralType,hex,image:'',economicType:stronghold?'fortress':'village',income:stronghold?{gold:100,materials:20}:{gold:30,materials:0},recruitmentSlots:stronghold?3:1,reserveLimit:stronghold?15:5,recruitment:[],locationTags:[],culture:null,extraRecruitables:[],blockedRecruitables:[],rtsMapId:'',rtsMapCache:null,rtsFortress:null,armyLimitBonus:0}
-    const locations=[...cloneLocations(state.locations),location];const regions=rebuildRegions(locations,state.regions);const campaign=cloneCampaign(state.campaign);campaign.locationStates[id]={locationId:id,recruitmentQueue:[],reserve:[],occupationTurnsLeft:0}
-    return{...pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),locations,regions,campaign}),selectedId:id,addKind:null}
+    if (state.mode !== 'edit' || state.hexEdit || state.locations.some((item) => item.hex === hex)) return state
+    const regionId = regionIdForHex(state.regions, hex) ?? ''
+    if (!regionId) return state
+    const id = makeId(`map-object-${Date.now().toString(36)}`, state.locations.map((item) => item.id))
+    const stronghold = structuralType === 'stronghold'
+    const name = stronghold ? 'New Stronghold' : 'New Domain'
+    const nameTranslations = { ru: stronghold ? 'Новый оплот' : 'Новое владение' }
+    const location: MapLocation = {
+      id, name, nameTranslations, side: 'civilian', structuralType, hex, regionId,
+      ...(stronghold ? {} : { hexes: [hex] }),
+      image: '', economicType: stronghold ? 'fortress' : 'village',
+      income: stronghold ? { gold: 100, materials: 20 } : { gold: 30, materials: 0 },
+      recruitmentSlots: stronghold ? 3 : 1, reserveLimit: stronghold ? 15 : 5,
+      recruitment: [], locationTags: [], culture: null, extraRecruitables: [], blockedRecruitables: [],
+      rtsMapId: '', rtsMapCache: null, rtsFortress: null, armyLimitBonus: 0,
+    }
+    const locations = [...cloneLocations(state.locations), location]
+    const territory = rebuildTerritory(locations, state.regions.map((region) => ({ ...region, hexes: [...region.hexes] })))
+    const campaign = cloneCampaign(state.campaign)
+    campaign.locationStates[id] = { locationId: id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
+    return { ...pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory, campaign }), selectedId: id, addKind: null }
   }),
   duplicateLocation: (id) => set((state) => {
-    if(state.mode!=='edit')return state
-    const source=state.locations.find((item)=>item.id===id);if(!source)return state
-    const origin=source.hex.split(':').map(Number);let target='';for(let radius=1;radius<20&&!target;radius++){for(let dq=-radius;dq<=radius&&!target;dq++){for(let dr=-radius;dr<=radius&&!target;dr++){const candidate=`${origin[0]+dq}:${origin[1]+dr}`;if(!state.locations.some((item)=>item.hex===candidate))target=candidate}}}if(!target)return state
-    const duplicateId=makeId(`${id}-copy`,state.locations.map((item)=>item.id));const duplicateTranslations=Object.fromEntries(Object.entries(source.nameTranslations??{}).map(([language,value])=>[language,`${value} — ${language==='ru'?'копия':'copy'}`]));const duplicate={...source,id:duplicateId,name:`${source.name} — copy`,nameTranslations:duplicateTranslations,hex:target,rtsMapId:'',rtsMapCache:null,rtsFortress:null};const locations=[...cloneLocations(state.locations),duplicate];const regions=rebuildRegions(locations,state.regions);const campaign=cloneCampaign(state.campaign);campaign.locationStates[duplicateId]={locationId:duplicateId,recruitmentQueue:[],reserve:[],occupationTurnsLeft:0};return{...pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),locations,regions,campaign}),selectedId:duplicateId}
+    if (state.mode !== 'edit') return state
+    const source = state.locations.find((item) => item.id === id)
+    if (!source) return state
+    const origin = source.hex.split(':').map(Number)
+    let target = ''
+    for (let radius = 1; radius < 20 && !target; radius++) {
+      for (let dq = -radius; dq <= radius && !target; dq++) {
+        for (let dr = -radius; dr <= radius && !target; dr++) {
+          const candidate = `${origin[0] + dq}:${origin[1] + dr}`
+          if (!state.locations.some((item) => item.hex === candidate) && regionIdForHex(state.regions, candidate)) target = candidate
+        }
+      }
+    }
+    if (!target) return state
+    const duplicateId = makeId(`${id}-copy`, state.locations.map((item) => item.id))
+    const duplicateTranslations = Object.fromEntries(Object.entries(source.nameTranslations ?? {}).map(([language, value]) => [language, `${value} — ${language === 'ru' ? 'копия' : 'copy'}`]))
+    const duplicate: MapLocation = {
+      ...source,
+      id: duplicateId,
+      name: `${source.name} — copy`,
+      nameTranslations: duplicateTranslations,
+      hex: target,
+      regionId: regionIdForHex(state.regions, target) ?? source.regionId,
+      rtsMapId: '',
+      rtsMapCache: null,
+      rtsFortress: null,
+    }
+    const locations = [...cloneLocations(state.locations), duplicate]
+    const territory = rebuildTerritory(locations, state.regions.map((region) => ({ ...region, hexes: [...region.hexes] })))
+    const campaign = cloneCampaign(state.campaign)
+    campaign.locationStates[duplicateId] = { locationId: duplicateId, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
+    return { ...pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory, campaign }), selectedId: duplicateId }
   }),
   removeLocation: (id) => set((state) => {
     if (state.mode !== 'edit') return state
@@ -907,11 +993,11 @@ export const useMapStore = create<MapState>((set) => ({
     const grid = cloneGrid(state.grid)
     const campaign = cloneCampaign(state.campaign)
     delete campaign.locationStates[id]
-    const locations=state.locations.filter((item)=>item.id!==id)
+    const locations = state.locations.filter((item) => item.id !== id)
+    const territory = rebuildTerritory(locations, state.regions.map((region) => ({ ...region, hexes: [...region.hexes] })))
     return pushHistory(state, {
       ...cloneSnapshot(currentSnapshot(state)),
-      locations,
-      regions:rebuildRegions(locations,state.regions),
+      ...territory,
       grid,
       campaign,
       battles: state.battles.filter((battle) => battle.locationId !== id),
@@ -920,15 +1006,51 @@ export const useMapStore = create<MapState>((set) => ({
 
   updateHex: (id, patch) => set((state) => {
     if (state.mode !== 'edit') return state
-    const grid = cloneGrid(state.grid); const coordinates = parseHexId(id)
+    const grid = cloneGrid(state.grid)
+    const coordinates = parseHexId(id)
     grid.cells[id] = { q: coordinates.q, r: coordinates.r, ...(grid.cells[id] ?? {}), ...patch }
-    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), grid })
+    let regions = state.regions.map((region) => ({ ...region, hexes: [...region.hexes] }))
+    if (patch.regionId !== undefined) {
+      const target = patch.regionId
+      regions = regions.map((region) => {
+        const without = region.hexes.filter((hex) => hex !== id)
+        if (target && region.id === target) return { ...region, hexes: [...new Set([...without, id])].sort() }
+        return { ...region, hexes: without }
+      })
+      // Authored region.hexes is the source of truth — drop per-cell override after paint.
+      if (grid.cells[id]) {
+        const { regionId: _drop, ...rest } = grid.cells[id]
+        grid.cells[id] = rest
+      }
+    }
+    const territory = rebuildTerritory(cloneLocations(state.locations), regions)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), grid, ...territory })
   }),
   updateHexes: (ids, patch) => set((state) => {
     if (state.mode !== 'edit' || !ids.length) return state
+    const unique = [...new Set(ids)]
     const grid = cloneGrid(state.grid)
-    for (const id of new Set(ids)) { const coordinates = parseHexId(id); grid.cells[id] = { q: coordinates.q, r: coordinates.r, ...(grid.cells[id] ?? {}), ...patch } }
-    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), grid })
+    for (const id of unique) {
+      const coordinates = parseHexId(id)
+      grid.cells[id] = { q: coordinates.q, r: coordinates.r, ...(grid.cells[id] ?? {}), ...patch }
+    }
+    let regions = state.regions.map((region) => ({ ...region, hexes: [...region.hexes] }))
+    if (patch.regionId !== undefined) {
+      const target = patch.regionId
+      const painted = new Set(unique)
+      regions = regions.map((region) => {
+        const without = region.hexes.filter((hex) => !painted.has(hex))
+        if (target && region.id === target) return { ...region, hexes: [...new Set([...without, ...unique])].sort() }
+        return { ...region, hexes: without }
+      })
+      for (const id of unique) {
+        if (!grid.cells[id]) continue
+        const { regionId: _drop, ...rest } = grid.cells[id]
+        grid.cells[id] = rest
+      }
+    }
+    const territory = rebuildTerritory(cloneLocations(state.locations), regions)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), grid, ...territory })
   }),
   setHexTerrain: (id, terrain) => set((state) => {
     if (state.mode !== 'edit') return state
@@ -995,7 +1117,7 @@ export const useMapStore = create<MapState>((set) => ({
       extraRecruitables: location.extraRecruitables.filter((unitId) => !removedUnitIds.has(unitId)),
       blockedRecruitables: location.blockedRecruitables.filter((unitId) => !removedUnitIds.has(unitId)),
     }))
-    const regions = state.regions.map((region) => ({ ...region, ownerFactionId: region.ownerFactionId === id ? null : region.ownerFactionId }))
+    const regions = state.regions.map((region) => ({ ...region, hexes: [...region.hexes], ownerFactionId: region.ownerFactionId === id ? null : region.ownerFactionId }))
     const grid = cloneGrid(state.grid)
     for (const cell of Object.values(grid.cells)) {
       if (cell.owner === id) cell.owner = null
@@ -1062,7 +1184,7 @@ export const useMapStore = create<MapState>((set) => ({
 
   addHero: () => set((state) => {
     const factionId = state.factions.find((item) => item.playable)?.id ?? 'gondor'; const id = makeId('new-hero', state.heroes.map((item) => item.id))
-    const startingLocationId = state.locations.find((location) => location.side === factionId && location.economicType === 'capital')?.id ?? state.locations.find((location) => location.side === factionId)?.id ?? null
+    const startingLocationId = state.locations.find((location) => location.side === factionId && getEconomicType(location.economicType).isCapital)?.id ?? state.locations.find((location) => location.side === factionId)?.id ?? null
     const hero: Hero = { id, objectId: 'NewHeroObject', factionId, name: 'New Hero',nameTranslations:{ru:'Новый полководец'}, title: '',titleTranslations:{}, battlePower: 180, command: 5, movementBonus: 0, alive: true, portrait: '', unlockType: 'starting', requiredTurn: 1, requiredLocationId: startingLocationId, summonCostGold: 0 }
     const campaign = cloneCampaign(state.campaign); campaign.heroStates[id] = { status: 'active', summoned: true, availableSinceRound: null, summonLocationId: startingLocationId, healTurnsLeft: 0, recoveryLocationId: null, diedRound: null, diedLocationId: null }
     return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), heroes: [...state.heroes.map((item) => ({ ...item })), hero], campaign })
@@ -1172,10 +1294,107 @@ export const useMapStore = create<MapState>((set) => ({
   removeArmy:(id)=>set((state)=>{const campaign=cloneCampaign(state.campaign);campaign.pendingOrders=campaign.pendingOrders.filter((order)=>order.armyId!==id);campaign.alliedPlans=campaign.alliedPlans.filter((plan)=>plan.armyId!==id);return{...pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),armies:state.armies.filter((item)=>item.id!==id),campaign}),selectedArmyId:state.selectedArmyId===id?null:state.selectedArmyId}}),
 
 
-  updateRegion: (id, patch) => set((state) => pushHistory(state, {
-    ...cloneSnapshot(currentSnapshot(state)),
-    regions: state.regions.map((item) => item.id === id ? { ...item, ...patch, id, name: item.name, locationId: item.locationId } : { ...item }),
-  })),
+
+  updateEconomicType: (id, patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const economicTypes = (state.economicTypes?.length ? state.economicTypes : createDefaultEconomicTypes()).map((item) => {
+      if (item.id !== id) return { ...item, nameTranslations: { ...(item.nameTranslations ?? {}) } }
+      return {
+        ...item,
+        ...patch,
+        id: item.id,
+        nameTranslations: patch.nameTranslations ? { ...patch.nameTranslations } : { ...(item.nameTranslations ?? {}) },
+        gold: Math.max(0, Number(patch.gold ?? item.gold)),
+        materials: Math.max(0, Number(patch.materials ?? item.materials)),
+        recruitmentSlots: Math.max(0, Math.min(20, Number(patch.recruitmentSlots ?? item.recruitmentSlots))),
+        reserveLimit: Math.max(0, Math.min(100, Number(patch.reserveLimit ?? item.reserveLimit))),
+        visionRadius: Math.max(0, Math.min(12, Number(patch.visionRadius ?? item.visionRadius))),
+        defenseBonus: Math.max(0, Math.min(1, Number(patch.defenseBonus ?? item.defenseBonus))),
+        battleType: (patch.battleType === 'siege' || patch.battleType === 'settlement') ? patch.battleType : item.battleType,
+        allowsCaptainHire: patch.allowsCaptainHire !== undefined ? Boolean(patch.allowsCaptainHire) : item.allowsCaptainHire,
+        isCapital: patch.isCapital !== undefined ? Boolean(patch.isCapital) : item.isCapital,
+        allowedForDomain: patch.allowedForDomain !== undefined ? Boolean(patch.allowedForDomain) : item.allowedForDomain,
+        allowedForStronghold: patch.allowedForStronghold !== undefined ? Boolean(patch.allowedForStronghold) : item.allowedForStronghold,
+      }
+    })
+    setActiveEconomicTypes(economicTypes)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), economicTypes })
+  }),
+  applyEconomicTypeDefaults: (locationId) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const location = state.locations.find((item) => item.id === locationId)
+    if (!location) return state
+    const defaults = economicDefaultsPatch(location.economicType)
+    const locations = state.locations.map((item) => item.id === locationId ? {
+      ...item,
+      income: { ...defaults.income },
+      recruitmentSlots: defaults.recruitmentSlots,
+      reserveLimit: defaults.reserveLimit,
+    } : item)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), locations })
+  }),
+  updateRegion: (id, patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const regions = state.regions.map((item) => {
+      if (item.id !== id) return { ...item, hexes: [...item.hexes] }
+      const next = { ...item, ...patch, id, hexes: patch.hexes ? [...patch.hexes] : [...item.hexes] }
+      return next
+    })
+    const territory = rebuildTerritory(cloneLocations(state.locations), regions)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory })
+  }),
+
+  addRegion: () => set((state) => {
+    if (state.mode !== 'edit') return state
+    const id = makeRegionId('new-region', state.regions.map((region) => region.id))
+    const region = emptyRegion(id)
+    return pushHistory(state, {
+      ...cloneSnapshot(currentSnapshot(state)),
+      regions: [...state.regions.map((item) => ({ ...item, hexes: [...item.hexes] })), region],
+    })
+  }),
+
+  removeRegion: (id) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const occupied = state.locations.filter((location) => location.regionId === id)
+    if (occupied.length) return state
+    const regions = state.regions.filter((region) => region.id !== id).map((region) => ({ ...region, hexes: [...region.hexes] }))
+    const territory = rebuildTerritory(cloneLocations(state.locations), regions)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory })
+  }),
+
+  setRegionHexes: (id, hexes, mode = 'replace') => set((state) => {
+    if (state.mode !== 'edit') return state
+    const unique = [...new Set(hexes)]
+    let regions = state.regions.map((region) => ({ ...region, hexes: [...region.hexes] }))
+    if (mode === 'replace') {
+      regions = regions.map((region) => {
+        if (region.id === id) return { ...region, hexes: unique.sort() }
+        return { ...region, hexes: region.hexes.filter((hex) => !unique.includes(hex)) }
+      })
+    } else if (mode === 'add') {
+      regions = regions.map((region) => {
+        if (region.id === id) return { ...region, hexes: [...new Set([...region.hexes, ...unique])].sort() }
+        return { ...region, hexes: region.hexes.filter((hex) => !unique.includes(hex)) }
+      })
+    } else {
+      const remove = new Set(unique)
+      regions = regions.map((region) => region.id === id ? { ...region, hexes: region.hexes.filter((hex) => !remove.has(hex)) } : region)
+    }
+    const territory = rebuildTerritory(cloneLocations(state.locations), regions)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory })
+  }),
+
+  paintRegionHexes: (id, hexes) => set((state) => {
+    if (state.mode !== 'edit' || !hexes.length) return state
+    const unique = [...new Set(hexes)]
+    const regions = state.regions.map((region) => {
+      if (region.id === id) return { ...region, hexes: [...new Set([...region.hexes, ...unique])].sort() }
+      return { ...region, hexes: region.hexes.filter((hex) => !unique.includes(hex)) }
+    })
+    const territory = rebuildTerritory(cloneLocations(state.locations), regions)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), ...territory })
+  }),
 
   advancePhase: () => set((state) => {
     if (state.mode !== 'game' || !state.campaign.playerFactionId) return state
@@ -1183,7 +1402,7 @@ export const useMapStore = create<MapState>((set) => ({
     let armies = cloneArmies(state.armies)
     let heroes = state.heroes.map((hero) => ({ ...hero }))
     let locations = cloneLocations(state.locations)
-    let regions = state.regions.map((region) => ({ ...region }))
+    let regions = state.regions.map((region) => ({ ...region, hexes: [...(region.hexes ?? [])] }))
     let battles = cloneBattles(state.battles)
     const refreshIntel = () => refreshFogIntel(campaign, armies, locations, state.factions, state.grid, regions)
 
@@ -1524,7 +1743,7 @@ export const useMapStore = create<MapState>((set) => ({
       campaign.freeCaptains[faction.id] = pool.filter((captain) => captain.instanceId !== instance.instanceId)
       commander = createCaptainCommander(captain, instance.displayName, instance.instanceId)
     } else if (kind === 'new-captain' || kind === 'captain') {
-      if (hasAvailableHero || campaign.locationStates[locationId].occupationTurnsLeft > 0 || !['city', 'fortress', 'capital'].includes(location.economicType)) return state
+      if (hasAvailableHero || campaign.locationStates[locationId].occupationTurnsLeft > 0 || !getEconomicType(location.economicType).allowsCaptainHire) return state
       const captain = state.captains.find((item) => item.id === value && item.factionId === faction.id)
       const captainLimit = factionCaptainLimit(faction.id, state.locations)
       const captainCount = factionCaptainCount(faction.id, state.armies, campaign.freeCaptains)
@@ -1576,11 +1795,15 @@ export const useMapStore = create<MapState>((set) => ({
   undo: () => set((state) => {
     if (state.mode !== 'edit' || !state.history.length) return state
     const previous = state.history[state.history.length - 1]
-    return { ...cloneSnapshot(previous), history: state.history.slice(0, -1), future: [cloneSnapshot(currentSnapshot(state)), ...state.future].slice(0, HISTORY_LIMIT), revision: state.revision + 1 }
+    const snap = cloneSnapshot(previous)
+    setActiveEconomicTypes(snap.economicTypes)
+    return { ...snap, history: state.history.slice(0, -1), future: [cloneSnapshot(currentSnapshot(state)), ...state.future].slice(0, HISTORY_LIMIT), revision: state.revision + 1 }
   }),
   redo: () => set((state) => {
     if (state.mode !== 'edit' || !state.future.length) return state
     const next = state.future[0]
-    return { ...cloneSnapshot(next), history: [...state.history, cloneSnapshot(currentSnapshot(state))].slice(-HISTORY_LIMIT), future: state.future.slice(1), revision: state.revision + 1 }
+    const snap = cloneSnapshot(next)
+    setActiveEconomicTypes(snap.economicTypes)
+    return { ...snap, history: [...state.history, cloneSnapshot(currentSnapshot(state))].slice(-HISTORY_LIMIT), future: state.future.slice(1), revision: state.revision + 1 }
   }),
 }))

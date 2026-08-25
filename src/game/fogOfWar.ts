@@ -1,16 +1,7 @@
 import { factionSide } from './campaign'
+import { getEconomicType } from './economicTypes'
 import { hexDistance, locationHexId, resolveGrid } from '../hex/hexGrid'
 import type { Army, ArmyIntelSize, CampaignState, FactionDefinition, HexGridData, LastSeenArmyIntel, LastSeenLocationIntel, MapLocation, Region } from '../types'
-
-const LOCATION_VISION: Record<MapLocation['economicType'], number> = {
-  village: 2,
-  city: 3,
-  fortress: 4,
-  capital: 5,
-  port: 3,
-  mine: 2,
-  farm:2,wilderness:2,swamp:2,forest:3,mountains:3,ruins:2,crossroads:2,ford:2,pass:2,signal_tower:4,camp:2,
-}
 
 export function armyIntelSize(army: Army): ArmyIntelSize {
   const count = army.unitSlots.length
@@ -47,7 +38,19 @@ export function calculateVisibleHexes(
   if (!campaign.fogOfWar.enabled || !campaign.playerFactionId) return new Set(resolved.cells.map((cell) => cell.id))
   const visible = new Set<string>()
   const sources: Array<{ hexId: string; radius: number }> = []
-  for(const location of locations.filter((candidate)=>candidate.side===campaign.playerFactionId)){sources.push({hexId:locationHexId(location,grid.config),radius:location.structuralType==='stronghold'?2:LOCATION_VISION[location.economicType]});if(location.structuralType==='domain'){const region=regions.find((item)=>item.locationId===location.id);if(region)for(const cell of resolved.cells)if(cell.regionId===region.id)visible.add(cell.id)}}
+  for (const location of locations.filter((candidate) => candidate.side === campaign.playerFactionId)) {
+    sources.push({
+      hexId: locationHexId(location, grid.config),
+      radius: location.structuralType === 'stronghold' ? 2 : getEconomicType(location.economicType).visionRadius,
+    })
+    // Domain vision covers the domain's own hexes (not the whole top-level region).
+    if (location.structuralType === 'domain') {
+      const owned = location.hexes?.length
+        ? location.hexes
+        : resolved.cells.filter((cell) => cell.domainId === location.id).map((cell) => cell.id)
+      for (const hex of owned) visible.add(hex)
+    }
+  }
   for (const army of armies.filter((candidate) => candidate.factionId === campaign.playerFactionId)) {
     const cell = resolved.byId.get(army.hexId)
     const radius = Math.max(1, 2 + (cell?.terrain === 'hills' || cell?.terrain === 'mountains' ? 1 : 0) - (cell?.terrain === 'forest' ? 1 : 0))

@@ -99,17 +99,60 @@ let cachedResult: ResolvedGrid | null = null
 export function resolveGrid(grid: HexGridData, locations: MapLocation[], regions: Region[] = []): ResolvedGrid {
   if (cachedGrid === grid && cachedLocations === locations && cachedRegions === regions && cachedResult) return cachedResult
   const { config } = grid
-  const regionById = new Map(regions.map((region) => [region.id, region]))
-  const regionForLocation = new Map(regions.map((region) => [region.locationId, region.id]))
+
+  // Top-level region membership comes from authored region.hexes.
+  const regionByHex = new Map<string, string>()
+  for (const region of regions) {
+    for (const hex of region.hexes) regionByHex.set(hex, region.id)
+  }
+
+  // Domain territory is stored on the domain (or derived as nearest domain in-region).
+  const domainByHex = new Map<string, MapLocation>()
+  const strongholdByHex = new Map<string, MapLocation>()
   const locationIds = new Map<string, string[]>()
-  const locationHexes = locations.map((location) => {
+  const locationAnchors = locations.map((location) => {
     const id = locationHexId(location, config)
     const coordinates = parseHexId(id)
     locationIds.set(id, [...(locationIds.get(id) ?? []), location.id])
-    return { id: location.id, structuralType:location.structuralType, side:location.side, ...coordinates }
+    if (location.structuralType === 'stronghold') strongholdByHex.set(id, location)
+    return { location, id, ...coordinates }
   })
-  const domainHexes=locationHexes.filter((location)=>location.structuralType==='domain')
-  const strongholdByHex=new Map(locationHexes.filter((location)=>location.structuralType==='stronghold').map((location)=>[hexId(location.q,location.r),location]))
+
+  const domains = locations.filter((location) => location.structuralType === 'domain')
+  for (const domain of domains) {
+    const owned = domain.hexes?.length ? domain.hexes : [domain.hex]
+    for (const hex of owned) {
+      if (strongholdByHex.has(hex)) continue
+      domainByHex.set(hex, domain)
+    }
+  }
+
+  // Fill any region hex not yet claimed by a stored domain hex list.
+  const domainsByRegion = new Map<string, MapLocation[]>()
+  for (const domain of domains) {
+    if (!domain.regionId) continue
+    const list = domainsByRegion.get(domain.regionId) ?? []
+    list.push(domain)
+    domainsByRegion.set(domain.regionId, list)
+  }
+  for (const region of regions) {
+    const regionDomains = domainsByRegion.get(region.id) ?? []
+    if (!regionDomains.length) continue
+    for (const hex of region.hexes) {
+      if (domainByHex.has(hex) || strongholdByHex.has(hex)) continue
+      const coords = parseHexId(hex)
+      let nearest = regionDomains[0]
+      let nearestDistance = Number.POSITIVE_INFINITY
+      for (const domain of regionDomains) {
+        const distance = hexDistance(coords, parseHexId(domain.hex))
+        if (distance < nearestDistance) {
+          nearestDistance = distance
+          nearest = domain
+        }
+      }
+      domainByHex.set(hex, nearest)
+    }
+  }
 
   const cells: LogicalHex[] = []
   const minimumR = Math.floor((-config.originY) / (1.5 * config.size)) - 1
@@ -133,13 +176,25 @@ export function resolveGrid(grid: HexGridData, locations: MapLocation[], regions
       const terrainDefinition = TERRAIN_BY_ID[terrain]
       let nearestLocationId: string | null = null
       let nearestDistance = Number.POSITIVE_INFINITY
-      for (const location of locationHexes) { const distance=hexDistance({q,r},location);if(distance<nearestDistance){nearestDistance=distance;nearestLocationId=location.id} }
-      let nearestDomainId:string|null=null;let nearestDomainDistance=Number.POSITIVE_INFINITY
-      for(const location of domainHexes){const distance=hexDistance({q,r},location);if(distance<nearestDomainDistance){nearestDomainDistance=distance;nearestDomainId=location.id}}
-      const stronghold=strongholdByHex.get(id)
-      const defaultRegionId = stronghold?null:nearestDomainId?regionForLocation.get(nearestDomainId)??null:null
-      const regionId = stronghold?null:override?.regionId !== undefined ? override.regionId : defaultRegionId
-      const regionOwner = stronghold?.side??(regionId ? regionById.get(regionId)?.ownerFactionId ?? null : null)
+      for (const anchor of locationAnchors) {
+        const distance = hexDistance({ q, r }, anchor)
+        if (distance < nearestDistance) {
+          nearestDistance = distance
+          nearestLocationId = anchor.location.id
+        }
+      }
+
+      const stronghold = strongholdByHex.get(id)
+      const domain = domainByHex.get(id) ?? null
+      const regionId = override?.regionId !== undefined && override.regionId !== null
+        ? override.regionId
+        : regionByHex.get(id) ?? stronghold?.regionId ?? domain?.regionId ?? null
+      const territoryOwner = stronghold
+        ? (stronghold.side === 'civilian' ? null : stronghold.side)
+        : domain
+          ? (domain.side === 'civilian' ? null : domain.side)
+          : null
+
       cells.push({
         id,
         q,
@@ -148,9 +203,10 @@ export function resolveGrid(grid: HexGridData, locations: MapLocation[], regions
         y: position.y,
         terrain,
         moveCost: override?.moveCost ?? terrainDefinition.moveCost,
-        owner: override?.owner !== undefined ? override.owner : regionOwner,
+        owner: override?.owner !== undefined ? override.owner : territoryOwner,
         zoneOfControl: override?.zoneOfControl ?? null,
         regionId,
+        domainId: stronghold ? null : domain?.id ?? null,
         passable: override?.passable ?? terrainDefinition.passable,
         road: override?.road ?? false,
         river: override?.river ?? false,

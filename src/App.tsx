@@ -21,7 +21,7 @@ import type { AppLanguage } from './i18n'
 
 function currentWorld(): WorldData {
   const state = useMapStore.getState()
-  return { version: WORLD_DATA_VERSION, locations: state.locations, grid: state.grid, factions: state.factions, unitTypes: state.unitTypes, heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions, campaign: state.campaign, battles: state.battles }
+  return { version: WORLD_DATA_VERSION, locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes, heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions, campaign: state.campaign, battles: state.battles }
 }
 
 export default function App() {
@@ -43,7 +43,7 @@ export default function App() {
   const [modError,setModError]=useState<string|null>(null)
   const saveSequence=useRef(0)
 
-  const locations=useMapStore((s)=>s.locations),grid=useMapStore((s)=>s.grid),factions=useMapStore((s)=>s.factions),unitTypes=useMapStore((s)=>s.unitTypes),heroes=useMapStore((s)=>s.heroes),captains=useMapStore((s)=>s.captains),armies=useMapStore((s)=>s.armies),regions=useMapStore((s)=>s.regions),campaign=useMapStore((s)=>s.campaign),battles=useMapStore((s)=>s.battles),mode=useMapStore((s)=>s.mode),gameSaveState=useMapStore((s)=>s.gameSave),revision=useMapStore((s)=>s.revision)
+  const locations=useMapStore((s)=>s.locations),grid=useMapStore((s)=>s.grid),factions=useMapStore((s)=>s.factions);const economicTypes=useMapStore((s)=>s.economicTypes),unitTypes=useMapStore((s)=>s.unitTypes),heroes=useMapStore((s)=>s.heroes),captains=useMapStore((s)=>s.captains),armies=useMapStore((s)=>s.armies),regions=useMapStore((s)=>s.regions),campaign=useMapStore((s)=>s.campaign),battles=useMapStore((s)=>s.battles),mode=useMapStore((s)=>s.mode),gameSaveState=useMapStore((s)=>s.gameSave),revision=useMapStore((s)=>s.revision)
   const initialize=useMapStore((s)=>s.initialize),newGame=useMapStore((s)=>s.newGame),setMode=useMapStore((s)=>s.setMode),undo=useMapStore((s)=>s.undo),redo=useMapStore((s)=>s.redo),setAddKind=useMapStore((s)=>s.setAddKind),setViewMode=useMapStore((s)=>s.setViewMode),setHexEdit=useMapStore((s)=>s.setHexEdit)
   const activeModId=activeMod?.id ?? appSettings?.activeModId ?? 'default'
 
@@ -63,7 +63,7 @@ export default function App() {
 
   const persist=useCallback(async(snapshot?:WorldData,targetMode?:AppMode)=>{if(!activeModId)return;const sequence=++saveSequence.current;setSaveState('saving');setSaveErrorDetail(null);try{const world=snapshot??currentWorld();const saveMode=targetMode??useMapStore.getState().mode;if(saveMode==='edit')await saveWorld(world,activeModId);else await saveGame(extractSaveGame(world,useMapStore.getState().gameSave,activeModId),activeModId);if(sequence===saveSequence.current)setSaveState('saved')}catch(error){console.error(error);if(sequence===saveSequence.current){setSaveErrorDetail(error instanceof Error?error.message:String(error));setSaveState('error')}}},[activeModId])
 
-  useEffect(()=>{if(loading||revision===0||!activeMod)return;setSaveState('saving');const snapshot:WorldData={version:WORLD_DATA_VERSION,locations,grid,factions,unitTypes,heroes,captains,armies,regions,campaign,battles};const timer=window.setTimeout(()=>persist(snapshot,mode),450);return()=>window.clearTimeout(timer)},[locations,grid,factions,unitTypes,heroes,captains,armies,regions,campaign,battles,mode,gameSaveState,revision,loading,persist,activeMod])
+  useEffect(()=>{if(loading||revision===0||!activeMod)return;setSaveState('saving');const snapshot:WorldData={version:WORLD_DATA_VERSION,locations,grid,factions,economicTypes,unitTypes,heroes,captains,armies,regions,campaign,battles};const timer=window.setTimeout(()=>persist(snapshot,mode),450);return()=>window.clearTimeout(timer)},[locations,grid,factions,economicTypes,unitTypes,heroes,captains,armies,regions,campaign,battles,mode,gameSaveState,revision,loading,persist,activeMod])
   useEffect(()=>{if(loading||mode!=='edit'||!gameSaveState||!saveCompatible||revision===0||!activeMod)return;void saveGame(gameSaveState,activeMod.id).catch(console.error)},[gameSaveState,loading,mode,revision,saveCompatible,activeMod])
 
   const activateMod=useCallback(async(modId:string,openEditor=false)=>{if(modId===activeModId&&!openEditor){setAppView('menu');return}setModBusy(true);setModError(null);try{if(revision>0&&activeMod)await persist();const definition=await loadModData(modId);const settings:AppSettings={activeModId:modId,lastPlayedMod:modId,appVersion:GAME_VERSION,language:appSettings?.language??language,recentMods:[modId,...(appSettings?.recentMods??[]).filter((id)=>id!==modId)].slice(0,8),rtsExecutablePath:appSettings?.rtsExecutablePath||''};await saveAppSettings(settings);setAppSettings(settings);setMods(await listMods());setDataEditorOpen(false);if(openEditor){setMode('edit');setAppView('workspace')}else setAppView('menu');setActiveMod(definition)}catch(error){setModError(error instanceof Error?error.message:String(error))}finally{setModBusy(false)}},[activeMod,activeModId,appSettings,language,loadModData,persist,revision,setMode])

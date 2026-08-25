@@ -10,6 +10,32 @@ export type UnitCategory = 'infantry' | 'archers' | 'cavalry' | 'monsters' | 'si
 export type ArmyStatus = 'ready' | 'marched' | 'retreating' | 'garrison' | 'camp'
 export type BattleType = 'field' | 'siege' | 'settlement'
 export type SettlementType = 'village' | 'city' | 'fortress' | 'capital' | 'port' | 'mine' | 'farm' | 'wilderness' | 'swamp' | 'forest' | 'mountains' | 'ruins' | 'crossroads' | 'ford' | 'pass' | 'signal_tower' | 'camp'
+
+/** Editable rules for one economic settlement type. Stored in world.json. */
+export interface EconomicTypeDefinition {
+  id: SettlementType
+  /** Canonical English display name. */
+  name: string
+  nameTranslations: LocalizedTranslations
+  /** Default gold income applied when an object switches to this type. */
+  gold: number
+  /** Default materials income applied when an object switches to this type. */
+  materials: number
+  recruitmentSlots: number
+  reserveLimit: number
+  /** Fog-of-war vision radius for domain objects of this type (strongholds use a fixed radius). */
+  visionRadius: number
+  /** Auto-battle defense bonus as a fraction, e.g. 0.4 = +40%. */
+  defenseBonus: number
+  /** Battle classification used by auto-resolve / conflict scan. */
+  battleType: 'settlement' | 'siege'
+  /** Whether a new captain can be hired at objects of this type. */
+  allowsCaptainHire: boolean
+  /** Preferred spawn / recovery anchor for heroes of the owning faction. */
+  isCapital: boolean
+  allowedForDomain: boolean
+  allowedForStronghold: boolean
+}
 export type ArmySlotKind = 'unit' | 'hero'
 export type StrategicSide = 'good' | 'evil'
 export type CampaignPhase = 'planning_good' | 'planning_evil' | 'movement_first' | 'movement_second' | 'conflicts' | 'aftermath'
@@ -216,14 +242,24 @@ export interface Army {
   exhaustedUntilRound: number | null
 }
 
+/**
+ * Top-level geographic region (e.g. Eriador, Rohan).
+ * Manually authored set of land hexes. Not 1:1 with a domain.
+ */
 export interface Region {
   id: string
   /** Canonical English name and description. */
   name: string
   nameTranslations: LocalizedTranslations
-  /** Domains alone own regions; strongholds never appear here. */
-  locationId: string
-  ownerFactionId: FactionId | null
+  /** Axial hex IDs that belong to this region. Authored in the editor. */
+  hexes: string[]
+  /** Fill / border color for region visualization. */
+  color: string
+  /**
+   * Derived full-control owner: set when every domain and stronghold inside
+   * the region belongs to the same faction. Null when split or empty.
+   */
+  ownerFactionId?: FactionId | null
   description: string
   descriptionTranslations: LocalizedTranslations
 }
@@ -455,6 +491,11 @@ export interface AutoBattleReport {
   timestamp: string
 }
 
+/**
+ * Map object: a domain (multi-hex holding) or a stronghold (single hex).
+ * Stored in world.json under the key `locations` for file stability; the UI
+ * term is «объект карты / владение / оплот».
+ */
 export interface MapLocation {
   id: string
   /** Canonical English display name. */
@@ -462,8 +503,18 @@ export interface MapLocation {
   nameTranslations: LocalizedTranslations
   side: FactionId
   structuralType: StructuralType
-  /** Stable axial hex ID; the rendered position is derived from the grid. */
+  /** Stable axial hex ID of the anchor; the rendered position is derived from the grid. */
   hex: string
+  /**
+   * Region this object belongs to. Derived from the anchor hex; required for
+   * every placed object once regions cover the land map.
+   */
+  regionId: string
+  /**
+   * Auto-generated hexes owned by a domain, always inside `regionId`.
+   * Strongholds omit this field (they only own `hex`).
+   */
+  hexes?: string[]
   image: string
   economicType: SettlementType
   income: ResourceAmount
@@ -479,7 +530,6 @@ export interface MapLocation {
   rtsMapId: string
   rtsMapCache: RtsMapAsset | null
   rtsFortress: RtsFortressSettings | null
-  regionId?: string
   /** Bonus to the faction-wide army cap while this major location is controlled. */
   armyLimitBonus?: number
 }
@@ -520,10 +570,11 @@ export interface RosterData {
 }
 
 export interface WorldData {
-  version: 30
+  version: 34
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]
+  economicTypes: EconomicTypeDefinition[]
   unitTypes: UnitType[]
   heroes: Hero[]
   captains: CaptainType[]
@@ -534,7 +585,7 @@ export interface WorldData {
 }
 
 export interface SaveGameData {
-  version: 29
+  version: 33
   gameVersion: string
   modId: string
   name: string
@@ -559,6 +610,8 @@ export interface LogicalHex {
   owner: FactionId | null
   zoneOfControl: FactionId | null
   regionId: string | null
+  /** Domain that owns this hex inside its region, if any. */
+  domainId: string | null
   passable: boolean
   road: boolean
   river: boolean

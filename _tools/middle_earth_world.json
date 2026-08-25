@@ -1,0 +1,1095 @@
+{
+  "grid": {
+    "worldWidth": 5120,
+    "worldHeight": 4115,
+    "size": 72,
+    "originX": 36,
+    "originY": 36,
+    "orientation": "pointy"
+  },
+  "calibration": [
+    {
+      "id": "minas-tirith",
+      "pixel": [3450, 3380],
+      "hex": "12:31",
+      "matchesBaseline": true
+    },
+    {
+      "id": "edoras",
+      "pixel": [2380, 3100],
+      "hex": "5:28",
+      "matchesBaseline": true
+    },
+    {
+      "id": "helms-deep",
+      "pixel": [2220, 3050],
+      "hex": "4:28",
+      "matchesBaseline": true
+    },
+    {
+      "id": "isengard",
+      "pixel": [2150, 2750],
+      "hex": "4:25",
+      "matchesBaseline": true
+    },
+    {
+      "id": "rivendell",
+      "pixel": [2350, 1350],
+      "hex": "12:12",
+      "matchesBaseline": true
+    },
+    {
+      "id": "barad-dur",
+      "pixel": [4300, 3120],
+      "hex": "20:29",
+      "matchesBaseline": true
+    }
+  ],
+  "regions": [
+    {
+      "id": "region-lindon",
+      "name": "Lindon",
+      "nameTranslations": { "ru": "Линдон" },
+      "color": "#3a7d44",
+      "hexes": ["-2:14", "-1:10", "-1:11", "-1:12", "-1:13", "0:7", "0:8", "0:9", "0:10", "0:11", "0:12", "1:8", "1:9", "1:10", "1:11", "2:9", "2:10", "3:11"]
+    },
+    {
+      "id": "region-eriador",
+      "name": "Eriador",
+      "nameTranslations": { "ru": "Эриадор" },
+      "color": "#5c9443",
+      "hexes": ["2:12", "2:13", "2:14", "2:15", "2:16", "2:17", "3:10", "3:12", "3:13", "3:14", "3:15", "3:16", "4:9", "4:10", "4:11", "4:12", "4:13", "4:14", "4:15", "4:16", "5:8", "5:9", "5:10", "5:11", "5:12", "5:13", "5:14", "5:15", "6:8", "6:9", "6:10", "6:11", "6:12", "6:13", "6:14", "7:8", "7:9", "7:10", "7:11", "7:12", "7:13", "8:9", "8:10", "8:11", "8:12", "8:13", "8:14", "8:15", "8:16", "9:10", "9:11", "9:12", "9:13", "9:14", "9:15", "10:10", "10:11", "10:12", "10:13", "10:14", "11:10", "11:11", "11:12", "11:13", "12:10", "12:11", "12:12"]
+    },
+    {
+      "id": "region-angmar",
+      "name": "Angmar",
+      "nameTranslations": { "ru": "Ангмар" },
+      "color": "#635850",
+      "hexes": ["11:3", "11:4", "12:3", "12:4", "12:5", "13:3", "13:4", "13:5", "14:3", "14:4", "15:4", "15:5"]
+    },
+    {
+      "id": "region-forodwaith",
+      "name": "Forodwaith",
+      "nameTranslations": { "ru": "Фородвайт" },
+      "color": "#e0e6ed",
+      "hexes": ["5:1", "6:1", "7:1", "7:2", "8:1", "8:2", "9:1", "10:1", "11:1", "12:1", "13:1", "14:1", "15:1", "16:1", "17:1", "18:1", "19:1", "19:2", "20:1", "21:1"]
+    },
+    {
+      "id": "region-misty-mountains",
+      "name": "Misty Mountains",
+      "nameTranslations": { "ru": "Мглистые Горы" },
+      "color": "#8c8c8c",
+      "hexes": ["13:6", "13:7", "13:8", "13:9", "14:6", "14:7", "14:8", "14:9", "14:10", "13:11", "13:12", "12:13", "12:14", "11:15", "11:16", "10:17", "10:18", "11:18", "9:19", "8:20", "7:21", "6:22", "5:23", "4:24", "4:25", "3:26"]
+    },
+    {
+      "id": "region-enedwaith",
+      "name": "Enedwaith",
+      "nameTranslations": { "ru": "Энедвайт" },
+      "color": "#a8a270",
+      "hexes": ["2:18", "2:19", "2:20", "2:21", "2:22", "3:18", "3:19", "3:20", "3:21", "3:22", "4:18", "4:19", "4:20", "4:21", "4:22", "5:18", "5:19", "5:20", "5:21", "5:22", "6:18", "6:19", "6:20"]
+    },
+    {
+      "id": "region-dunland",
+      "name": "Dunland",
+      "nameTranslations": { "ru": "Дунланд" },
+      "color": "#8f764f",
+      "hexes": ["-5:28", "-4:27", "-3:26", "6:21", "7:19", "7:20", "7:22", "8:18", "8:19", "8:21", "9:17", "9:18", "10:16"]
+    },
+    {
+      "id": "region-rohan",
+      "name": "Rohan",
+      "nameTranslations": { "ru": "Рохан" },
+      "color": "#94b056",
+      "hexes": ["4:26", "4:27", "4:28", "4:29", "5:27", "5:28", "6:25", "6:26", "6:27", "6:28", "6:29", "7:25", "7:26", "7:27", "7:28", "8:23", "8:24", "8:25", "8:26", "8:27", "9:23", "9:24", "9:25", "9:26", "10:23", "10:24", "10:25", "11:23", "11:24", "12:22", "12:23"]
+    },
+    {
+      "id": "region-gondor",
+      "name": "Gondor",
+      "nameTranslations": { "ru": "Гондор" },
+      "color": "#5285a6",
+      "hexes": ["-4:32", "-3:31", "-2:31", "-1:31", "0:30", "1:30", "2:30", "3:30", "4:30", "4:31", "4:32", "4:33", "5:30", "5:31", "5:32", "5:33", "6:30", "6:31", "7:30", "7:31", "8:30", "8:31", "9:30", "9:31", "9:32", "10:30", "10:31", "10:32", "10:33", "10:34", "10:35", "11:30", "11:31", "11:32", "12:30", "12:31", "13:30", "13:31", "13:32", "14:29", "14:30"]
+    },
+    {
+      "id": "region-mordor",
+      "name": "Mordor",
+      "nameTranslations": { "ru": "Мордор" },
+      "color": "#2e2b2a",
+      "hexes": ["14:31", "15:31", "16:27", "16:28", "16:29", "16:30", "17:27", "17:28", "17:29", "17:30", "18:28", "18:29", "18:30", "18:31", "18:32", "18:33", "19:28", "19:29", "19:30", "19:31", "19:32", "20:28", "20:29", "20:30", "20:31", "21:28", "21:29", "21:30"]
+    },
+    {
+      "id": "region-rhovanion",
+      "name": "Rhovanion",
+      "nameTranslations": { "ru": "Рованион" },
+      "color": "#a8bf6f",
+      "hexes": ["9:19", "10:19", "13:13", "13:14", "13:15", "14:13", "14:14", "14:15", "14:24", "14:25", "15:13", "15:14", "15:24", "15:25", "15:26", "16:13", "16:24", "16:25", "17:24", "17:25", "21:5", "22:5", "23:5", "24:5", "25:10", "25:11", "25:12", "30:6"]
+    },
+    {
+      "id": "region-mirkwood",
+      "name": "Mirkwood",
+      "nameTranslations": { "ru": "Лихолесье" },
+      "color": "#1f4a2b",
+      "hexes": ["14:20", "15:18", "15:19", "15:20", "16:17", "16:18", "16:19", "17:15", "17:16", "17:17", "18:13", "18:14", "18:15", "19:11", "19:12", "19:13", "20:10", "20:11", "21:9", "21:10", "22:8", "22:9", "23:8", "23:9"]
+    },
+    {
+      "id": "region-harad",
+      "name": "Harad",
+      "nameTranslations": { "ru": "Харад" },
+      "color": "#c4a35a",
+      "hexes": ["-1:37", "0:36", "0:37", "1:36", "1:37", "2:36", "3:36", "10:36", "11:36", "12:36", "13:36", "14:36", "15:36", "16:36", "17:35", "18:35", "19:35", "20:35"]
+    },
+    {
+      "id": "region-rhun",
+      "name": "Rhûn",
+      "nameTranslations": { "ru": "Рунь" },
+      "color": "#ba834c",
+      "hexes": ["26:16", "27:16", "28:16", "28:17", "28:18", "29:16", "29:17", "30:15", "30:16", "31:15", "31:16", "32:15"]
+    }
+  ],
+  "mapObjects": [
+    {
+      "id": "forlindon",
+      "structuralType": "domain",
+      "name": "Forlindon",
+      "nameTranslations": { "ru": "Форлиндон" },
+      "hex": "0:7",
+      "regionId": "region-lindon",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "harlindon",
+      "structuralType": "domain",
+      "name": "Harlindon",
+      "nameTranslations": { "ru": "Харлиндон" },
+      "hex": "-2:14",
+      "regionId": "region-lindon",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "tower-hills",
+      "structuralType": "domain",
+      "name": "Tower Hills",
+      "nameTranslations": { "ru": "Тауэр-Хиллз (Эмин Берайд)" },
+      "hex": "3:11",
+      "regionId": "region-lindon",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "gulf-of-lhun",
+      "structuralType": "domain",
+      "name": "Gulf of Lhûn",
+      "nameTranslations": { "ru": "Залив Лун" },
+      "hex": "1:11",
+      "regionId": "region-lindon",
+      "economicType": "port"
+    },
+    {
+      "id": "ered-luin",
+      "structuralType": "domain",
+      "name": "Ered Luin",
+      "nameTranslations": { "ru": "Синие Горы (Эред Луин)" },
+      "hex": "1:9",
+      "regionId": "region-lindon",
+      "economicType": "mine"
+    },
+    {
+      "id": "mithlond",
+      "structuralType": "stronghold",
+      "name": "Mithlond",
+      "nameTranslations": { "ru": "Митлонд (Серые Гавани)" },
+      "hex": "0:11",
+      "regionId": "region-lindon",
+      "economicType": "port"
+    },
+    {
+      "id": "arthedain",
+      "structuralType": "domain",
+      "name": "Arthedain",
+      "nameTranslations": { "ru": "Артедайн" },
+      "hex": "5:9",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "cardolan",
+      "structuralType": "domain",
+      "name": "Cardolan",
+      "nameTranslations": { "ru": "Кардолан" },
+      "hex": "4:14",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "rhudaur",
+      "structuralType": "domain",
+      "name": "Rhudaur",
+      "nameTranslations": { "ru": "Рудаур" },
+      "hex": "10:11",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "shire",
+      "structuralType": "domain",
+      "name": "The Shire",
+      "nameTranslations": { "ru": "Шир (Хоббитания)" },
+      "hex": "3:13",
+      "regionId": "region-eriador",
+      "economicType": "farm"
+    },
+    {
+      "id": "buckland",
+      "structuralType": "domain",
+      "name": "Buckland",
+      "nameTranslations": { "ru": "Бакленд (Забрендия)" },
+      "hex": "5:12",
+      "regionId": "region-eriador",
+      "economicType": "village"
+    },
+    {
+      "id": "bree-land",
+      "structuralType": "domain",
+      "name": "Bree-land",
+      "nameTranslations": { "ru": "Пригорье (Бри-ланд)" },
+      "hex": "6:11",
+      "regionId": "region-eriador",
+      "economicType": "crossroads"
+    },
+    {
+      "id": "old-forest",
+      "structuralType": "domain",
+      "name": "Old Forest",
+      "nameTranslations": { "ru": "Вековечный Лес" },
+      "hex": "4:13",
+      "regionId": "region-eriador",
+      "economicType": "forest"
+    },
+    {
+      "id": "barrow-downs",
+      "structuralType": "domain",
+      "name": "Barrow-downs",
+      "nameTranslations": { "ru": "Могильные Холмы" },
+      "hex": "5:13",
+      "regionId": "region-eriador",
+      "economicType": "ruins"
+    },
+    {
+      "id": "hills-of-evendim",
+      "structuralType": "domain",
+      "name": "Hills of Evendim",
+      "nameTranslations": { "ru": "Холмы Эвендим" },
+      "hex": "6:9",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "weather-hills",
+      "structuralType": "domain",
+      "name": "Weather Hills",
+      "nameTranslations": { "ru": "Заветерные Холмы" },
+      "hex": "7:11",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "lone-lands",
+      "structuralType": "domain",
+      "name": "Lone-lands",
+      "nameTranslations": { "ru": "Пустоши (Одинокие Земли)" },
+      "hex": "8:12",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "trollshaws",
+      "structuralType": "domain",
+      "name": "Trollshaws",
+      "nameTranslations": { "ru": "Тролльское Нагорье" },
+      "hex": "11:12",
+      "regionId": "region-eriador",
+      "economicType": "forest"
+    },
+    {
+      "id": "ettenmoors",
+      "structuralType": "domain",
+      "name": "Ettenmoors",
+      "nameTranslations": { "ru": "Эттенмурз" },
+      "hex": "12:8",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "eregion",
+      "structuralType": "domain",
+      "name": "Eregion",
+      "nameTranslations": { "ru": "Эрегион" },
+      "hex": "8:16",
+      "regionId": "region-eriador",
+      "economicType": "ruins"
+    },
+    {
+      "id": "minhiriath",
+      "structuralType": "domain",
+      "name": "Minhiriath",
+      "nameTranslations": { "ru": "Минхириат" },
+      "hex": "2:17",
+      "regionId": "region-eriador",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "rivendell",
+      "structuralType": "stronghold",
+      "name": "Rivendell",
+      "nameTranslations": { "ru": "Ривенделл" },
+      "hex": "12:12",
+      "regionId": "region-eriador",
+      "economicType": "capital"
+    },
+    {
+      "id": "annuminas",
+      "structuralType": "stronghold",
+      "name": "Annúminas",
+      "nameTranslations": { "ru": "Аннуминас" },
+      "hex": "5:8",
+      "regionId": "region-eriador",
+      "economicType": "ruins"
+    },
+    {
+      "id": "fornost",
+      "structuralType": "stronghold",
+      "name": "Fornost",
+      "nameTranslations": { "ru": "Форност Эрайн" },
+      "hex": "7:8",
+      "regionId": "region-eriador",
+      "economicType": "ruins"
+    },
+    {
+      "id": "weathertop",
+      "structuralType": "stronghold",
+      "name": "Weathertop",
+      "nameTranslations": { "ru": "Амон-Сул (Заверть)" },
+      "hex": "8:11",
+      "regionId": "region-eriador",
+      "economicType": "ruins"
+    },
+    {
+      "id": "hobbiton",
+      "structuralType": "stronghold",
+      "name": "Hobbiton",
+      "nameTranslations": { "ru": "Хоббитон" },
+      "hex": "4:12",
+      "regionId": "region-eriador",
+      "economicType": "village"
+    },
+    {
+      "id": "bree",
+      "structuralType": "stronghold",
+      "name": "Bree",
+      "nameTranslations": { "ru": "Бри" },
+      "hex": "6:12",
+      "regionId": "region-eriador",
+      "economicType": "village"
+    },
+    {
+      "id": "michel-delving",
+      "structuralType": "stronghold",
+      "name": "Michel Delving",
+      "nameTranslations": { "ru": "Мичел Делвинг" },
+      "hex": "3:12",
+      "regionId": "region-eriador",
+      "economicType": "village"
+    },
+    {
+      "id": "angmar-foothills",
+      "structuralType": "domain",
+      "name": "Angmar Foothills",
+      "nameTranslations": { "ru": "Предгорья Ангмара" },
+      "hex": "13:4",
+      "regionId": "region-angmar",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "carn-dum",
+      "structuralType": "stronghold",
+      "name": "Carn Dûm",
+      "nameTranslations": { "ru": "Карн Дум" },
+      "hex": "12:3",
+      "regionId": "region-angmar",
+      "economicType": "capital"
+    },
+    {
+      "id": "gundabad",
+      "structuralType": "stronghold",
+      "name": "Mount Gundabad",
+      "nameTranslations": { "ru": "Гундабад" },
+      "hex": "15:5",
+      "regionId": "region-angmar",
+      "economicType": "fortress"
+    },
+    {
+      "id": "northern-waste",
+      "structuralType": "domain",
+      "name": "Northern Waste",
+      "nameTranslations": { "ru": "Северные Пустоши" },
+      "hex": "19:2",
+      "regionId": "region-forodwaith",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "icebay-forochel",
+      "structuralType": "domain",
+      "name": "Icebay of Forochel",
+      "nameTranslations": { "ru": "Залив Форохел" },
+      "hex": "8:2",
+      "regionId": "region-forodwaith",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "cape-forochel",
+      "structuralType": "stronghold",
+      "name": "Cape Forochel",
+      "nameTranslations": { "ru": "Мыс Форохел" },
+      "hex": "7:2",
+      "regionId": "region-forodwaith",
+      "economicType": "camp"
+    },
+    {
+      "id": "high-pass",
+      "structuralType": "domain",
+      "name": "High Pass",
+      "nameTranslations": { "ru": "Высокий Перевал" },
+      "hex": "14:10",
+      "regionId": "region-misty-mountains",
+      "economicType": "pass"
+    },
+    {
+      "id": "redhorn-pass",
+      "structuralType": "domain",
+      "name": "Redhorn Pass",
+      "nameTranslations": { "ru": "Перевал Карадрас" },
+      "hex": "10:17",
+      "regionId": "region-misty-mountains",
+      "economicType": "pass"
+    },
+    {
+      "id": "dimrill-dale",
+      "structuralType": "domain",
+      "name": "Dimrill Dale",
+      "nameTranslations": { "ru": "Димрилл-Дейл" },
+      "hex": "11:18",
+      "regionId": "region-misty-mountains",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "gap-of-rohan",
+      "structuralType": "domain",
+      "name": "Gap of Rohan",
+      "nameTranslations": { "ru": "Врата Рохана" },
+      "hex": "3:26",
+      "regionId": "region-misty-mountains",
+      "economicType": "pass"
+    },
+    {
+      "id": "nan-curunir",
+      "structuralType": "domain",
+      "name": "Nan Curunír",
+      "nameTranslations": { "ru": "Нан Курунир" },
+      "hex": "4:24",
+      "regionId": "region-misty-mountains",
+      "economicType": "fortress"
+    },
+    {
+      "id": "moria",
+      "structuralType": "stronghold",
+      "name": "Moria",
+      "nameTranslations": { "ru": "Мория" },
+      "hex": "10:18",
+      "regionId": "region-misty-mountains",
+      "economicType": "mine"
+    },
+    {
+      "id": "goblin-town",
+      "structuralType": "stronghold",
+      "name": "Goblin-town",
+      "nameTranslations": { "ru": "Гоблинский Город" },
+      "hex": "14:9",
+      "regionId": "region-misty-mountains",
+      "economicType": "fortress"
+    },
+    {
+      "id": "isengard",
+      "structuralType": "stronghold",
+      "name": "Isengard",
+      "nameTranslations": { "ru": "Изенгард" },
+      "hex": "4:25",
+      "regionId": "region-misty-mountains",
+      "economicType": "capital"
+    },
+    {
+      "id": "enedwaith-plains",
+      "structuralType": "domain",
+      "name": "Enedwaith Plains",
+      "nameTranslations": { "ru": "Равнины Энедвайта" },
+      "hex": "5:22",
+      "regionId": "region-enedwaith",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "tharbad",
+      "structuralType": "stronghold",
+      "name": "Tharbad",
+      "nameTranslations": { "ru": "Тарбад" },
+      "hex": "5:18",
+      "regionId": "region-enedwaith",
+      "economicType": "ruins"
+    },
+    {
+      "id": "lond-daer",
+      "structuralType": "stronghold",
+      "name": "Lond Daer",
+      "nameTranslations": { "ru": "Лонд Даэр" },
+      "hex": "2:22",
+      "regionId": "region-enedwaith",
+      "economicType": "ruins"
+    },
+    {
+      "id": "dunland",
+      "structuralType": "domain",
+      "name": "Dunland",
+      "nameTranslations": { "ru": "Дунландские нагорья" },
+      "hex": "7:22",
+      "regionId": "region-dunland",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "druwaith-iaur",
+      "structuralType": "domain",
+      "name": "Drúwaith Iaur",
+      "nameTranslations": { "ru": "Друвайт Йаур" },
+      "hex": "-5:28",
+      "regionId": "region-dunland",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "westfold",
+      "structuralType": "domain",
+      "name": "Westfold",
+      "nameTranslations": { "ru": "Вестфолд" },
+      "hex": "4:27",
+      "regionId": "region-rohan",
+      "economicType": "farm"
+    },
+    {
+      "id": "eastfold",
+      "structuralType": "domain",
+      "name": "Eastfold",
+      "nameTranslations": { "ru": "Истфолд" },
+      "hex": "7:28",
+      "regionId": "region-rohan",
+      "economicType": "farm"
+    },
+    {
+      "id": "westemnet",
+      "structuralType": "domain",
+      "name": "Westemnet",
+      "nameTranslations": { "ru": "Вестемнет" },
+      "hex": "6:26",
+      "regionId": "region-rohan",
+      "economicType": "farm"
+    },
+    {
+      "id": "eastemnet",
+      "structuralType": "domain",
+      "name": "Eastemnet",
+      "nameTranslations": { "ru": "Истемнет" },
+      "hex": "9:26",
+      "regionId": "region-rohan",
+      "economicType": "farm"
+    },
+    {
+      "id": "fangorn",
+      "structuralType": "domain",
+      "name": "Fangorn",
+      "nameTranslations": { "ru": "Фангорн" },
+      "hex": "8:23",
+      "regionId": "region-rohan",
+      "economicType": "forest"
+    },
+    {
+      "id": "edoras",
+      "structuralType": "stronghold",
+      "name": "Edoras",
+      "nameTranslations": { "ru": "Эдорас" },
+      "hex": "5:28",
+      "regionId": "region-rohan",
+      "economicType": "capital"
+    },
+    {
+      "id": "helms-deep",
+      "structuralType": "stronghold",
+      "name": "Helm's Deep",
+      "nameTranslations": { "ru": "Хельмова Падь" },
+      "hex": "4:28",
+      "regionId": "region-rohan",
+      "economicType": "fortress"
+    },
+    {
+      "id": "dunharrow",
+      "structuralType": "stronghold",
+      "name": "Dunharrow",
+      "nameTranslations": { "ru": "Дунхарроу" },
+      "hex": "4:29",
+      "regionId": "region-rohan",
+      "economicType": "village"
+    },
+    {
+      "id": "aldburg",
+      "structuralType": "stronghold",
+      "name": "Aldburg",
+      "nameTranslations": { "ru": "Алдбург" },
+      "hex": "6:29",
+      "regionId": "region-rohan",
+      "economicType": "village"
+    },
+    {
+      "id": "fords-of-isen",
+      "structuralType": "stronghold",
+      "name": "Fords of Isen",
+      "nameTranslations": { "ru": "Изенские Броды" },
+      "hex": "4:26",
+      "regionId": "region-rohan",
+      "economicType": "ford"
+    },
+    {
+      "id": "anorien",
+      "structuralType": "domain",
+      "name": "Anórien",
+      "nameTranslations": { "ru": "Анориэн" },
+      "hex": "10:30",
+      "regionId": "region-gondor",
+      "economicType": "farm"
+    },
+    {
+      "id": "ithilien-north",
+      "structuralType": "domain",
+      "name": "North Ithilien",
+      "nameTranslations": { "ru": "Северный Итилиэн" },
+      "hex": "14:29",
+      "regionId": "region-gondor",
+      "economicType": "forest"
+    },
+    {
+      "id": "ithilien-south",
+      "structuralType": "domain",
+      "name": "South Ithilien",
+      "nameTranslations": { "ru": "Южный Итилиэн" },
+      "hex": "13:32",
+      "regionId": "region-gondor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "lebennin",
+      "structuralType": "domain",
+      "name": "Lebennin",
+      "nameTranslations": { "ru": "Лебеннин" },
+      "hex": "9:32",
+      "regionId": "region-gondor",
+      "economicType": "farm"
+    },
+    {
+      "id": "lossarnach",
+      "structuralType": "domain",
+      "name": "Lossarnach",
+      "nameTranslations": { "ru": "Лоссарнах" },
+      "hex": "11:31",
+      "regionId": "region-gondor",
+      "economicType": "farm"
+    },
+    {
+      "id": "belfalas",
+      "structuralType": "domain",
+      "name": "Belfalas",
+      "nameTranslations": { "ru": "Белфалас" },
+      "hex": "5:33",
+      "regionId": "region-gondor",
+      "economicType": "port"
+    },
+    {
+      "id": "anfalas",
+      "structuralType": "domain",
+      "name": "Anfalas",
+      "nameTranslations": { "ru": "Анфалас" },
+      "hex": "-1:31",
+      "regionId": "region-gondor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "pinnath-gelin",
+      "structuralType": "domain",
+      "name": "Pinnath Gelin",
+      "nameTranslations": { "ru": "Пиннат Гелин" },
+      "hex": "1:30",
+      "regionId": "region-gondor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "andrast",
+      "structuralType": "domain",
+      "name": "Andrast",
+      "nameTranslations": { "ru": "Андраст" },
+      "hex": "-4:32",
+      "regionId": "region-gondor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "harondor",
+      "structuralType": "domain",
+      "name": "Harondor",
+      "nameTranslations": { "ru": "Харондор" },
+      "hex": "10:35",
+      "regionId": "region-gondor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "minas-tirith",
+      "structuralType": "stronghold",
+      "name": "Minas Tirith",
+      "nameTranslations": { "ru": "Минас Тирит" },
+      "hex": "12:31",
+      "regionId": "region-gondor",
+      "economicType": "capital"
+    },
+    {
+      "id": "osgiliath",
+      "structuralType": "stronghold",
+      "name": "Osgiliath",
+      "nameTranslations": { "ru": "Осгилиат" },
+      "hex": "13:31",
+      "regionId": "region-gondor",
+      "economicType": "city"
+    },
+    {
+      "id": "dol-amroth",
+      "structuralType": "stronghold",
+      "name": "Dol Amroth",
+      "nameTranslations": { "ru": "Дол Амрот" },
+      "hex": "4:33",
+      "regionId": "region-gondor",
+      "economicType": "fortress"
+    },
+    {
+      "id": "pelargir",
+      "structuralType": "stronghold",
+      "name": "Pelargir",
+      "nameTranslations": { "ru": "Пеларгир" },
+      "hex": "10:33",
+      "regionId": "region-gondor",
+      "economicType": "port"
+    },
+    {
+      "id": "cair-andros",
+      "structuralType": "stronghold",
+      "name": "Cair Andros",
+      "nameTranslations": { "ru": "Каир Андрос" },
+      "hex": "13:30",
+      "regionId": "region-gondor",
+      "economicType": "fortress"
+    },
+    {
+      "id": "henneth-annun",
+      "structuralType": "stronghold",
+      "name": "Henneth Annûn",
+      "nameTranslations": { "ru": "Хеннет Аннун" },
+      "hex": "14:30",
+      "regionId": "region-gondor",
+      "economicType": "camp"
+    },
+    {
+      "id": "udun",
+      "structuralType": "domain",
+      "name": "Udûn",
+      "nameTranslations": { "ru": "Удун" },
+      "hex": "16:28",
+      "regionId": "region-mordor",
+      "economicType": "fortress"
+    },
+    {
+      "id": "gorgoroth",
+      "structuralType": "domain",
+      "name": "Gorgoroth",
+      "nameTranslations": { "ru": "Горгорот" },
+      "hex": "17:30",
+      "regionId": "region-mordor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "nurn",
+      "structuralType": "domain",
+      "name": "Nurn",
+      "nameTranslations": { "ru": "Нурн" },
+      "hex": "18:33",
+      "regionId": "region-mordor",
+      "economicType": "farm"
+    },
+    {
+      "id": "lithlad",
+      "structuralType": "domain",
+      "name": "Lithlad",
+      "nameTranslations": { "ru": "Литлад" },
+      "hex": "21:29",
+      "regionId": "region-mordor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "barad-dur",
+      "structuralType": "stronghold",
+      "name": "Barad-dûr",
+      "nameTranslations": { "ru": "Барад-дур" },
+      "hex": "20:29",
+      "regionId": "region-mordor",
+      "economicType": "capital"
+    },
+    {
+      "id": "minas-morgul",
+      "structuralType": "stronghold",
+      "name": "Minas Morgul",
+      "nameTranslations": { "ru": "Минас Моргул" },
+      "hex": "14:31",
+      "regionId": "region-mordor",
+      "economicType": "fortress"
+    },
+    {
+      "id": "black-gate",
+      "structuralType": "stronghold",
+      "name": "Morannon",
+      "nameTranslations": { "ru": "Мораннон (Чёрные Врата)" },
+      "hex": "16:27",
+      "regionId": "region-mordor",
+      "economicType": "fortress"
+    },
+    {
+      "id": "cirith-ungol",
+      "structuralType": "stronghold",
+      "name": "Cirith Ungol",
+      "nameTranslations": { "ru": "Кирит-Унгол" },
+      "hex": "15:31",
+      "regionId": "region-mordor",
+      "economicType": "fortress"
+    },
+    {
+      "id": "orodruin",
+      "structuralType": "stronghold",
+      "name": "Mount Doom",
+      "nameTranslations": { "ru": "Ородруин" },
+      "hex": "18:29",
+      "regionId": "region-mordor",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "anduin-vales",
+      "structuralType": "domain",
+      "name": "Anduin Vales",
+      "nameTranslations": { "ru": "Долина Андуина" },
+      "hex": "14:13",
+      "regionId": "region-rhovanion",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "brown-lands",
+      "structuralType": "domain",
+      "name": "Brown Lands",
+      "nameTranslations": { "ru": "Бурые Равнины" },
+      "hex": "15:24",
+      "regionId": "region-rhovanion",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "dagorlad",
+      "structuralType": "domain",
+      "name": "Dagorlad",
+      "nameTranslations": { "ru": "Дагорлад" },
+      "hex": "15:26",
+      "regionId": "region-rhovanion",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "dead-marshes",
+      "structuralType": "domain",
+      "name": "Dead Marshes",
+      "nameTranslations": { "ru": "Мёртвые Болота" },
+      "hex": "14:25",
+      "regionId": "region-rhovanion",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "emyn-muil",
+      "structuralType": "domain",
+      "name": "Emyn Muil",
+      "nameTranslations": { "ru": "Эмин-Муиль" },
+      "hex": "14:24",
+      "regionId": "region-rhovanion",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "lorien",
+      "structuralType": "domain",
+      "name": "Lothlórien",
+      "nameTranslations": { "ru": "Лотлориэн" },
+      "hex": "9:19",
+      "regionId": "region-rhovanion",
+      "economicType": "forest"
+    },
+    {
+      "id": "iron-hills",
+      "structuralType": "domain",
+      "name": "Iron Hills",
+      "nameTranslations": { "ru": "Железные Холмы" },
+      "hex": "30:6",
+      "regionId": "region-rhovanion",
+      "economicType": "mine"
+    },
+    {
+      "id": "grey-mountains",
+      "structuralType": "domain",
+      "name": "Ered Mithrin",
+      "nameTranslations": { "ru": "Серые Горы" },
+      "hex": "21:5",
+      "regionId": "region-rhovanion",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "erebor",
+      "structuralType": "stronghold",
+      "name": "Erebor",
+      "nameTranslations": { "ru": "Эребор" },
+      "hex": "25:10",
+      "regionId": "region-rhovanion",
+      "economicType": "capital"
+    },
+    {
+      "id": "dale",
+      "structuralType": "stronghold",
+      "name": "Dale",
+      "nameTranslations": { "ru": "Дейл" },
+      "hex": "25:11",
+      "regionId": "region-rhovanion",
+      "economicType": "city"
+    },
+    {
+      "id": "esgaroth",
+      "structuralType": "stronghold",
+      "name": "Esgaroth",
+      "nameTranslations": { "ru": "Эсгарот" },
+      "hex": "25:12",
+      "regionId": "region-rhovanion",
+      "economicType": "port"
+    },
+    {
+      "id": "caras-galadhon",
+      "structuralType": "stronghold",
+      "name": "Caras Galadhon",
+      "nameTranslations": { "ru": "Карас Галадон" },
+      "hex": "10:19",
+      "regionId": "region-rhovanion",
+      "economicType": "capital"
+    },
+    {
+      "id": "north-mirkwood",
+      "structuralType": "domain",
+      "name": "North Mirkwood",
+      "nameTranslations": { "ru": "Северное Лихолесье" },
+      "hex": "20:10",
+      "regionId": "region-mirkwood",
+      "economicType": "forest"
+    },
+    {
+      "id": "south-mirkwood",
+      "structuralType": "domain",
+      "name": "South Mirkwood",
+      "nameTranslations": { "ru": "Южное Лихолесье" },
+      "hex": "15:18",
+      "regionId": "region-mirkwood",
+      "economicType": "forest"
+    },
+    {
+      "id": "thranduil-halls",
+      "structuralType": "stronghold",
+      "name": "Halls of Thranduil",
+      "nameTranslations": { "ru": "Чертоги Трандуила" },
+      "hex": "23:9",
+      "regionId": "region-mirkwood",
+      "economicType": "fortress"
+    },
+    {
+      "id": "dol-guldur",
+      "structuralType": "stronghold",
+      "name": "Dol Guldur",
+      "nameTranslations": { "ru": "Дол Гулдур" },
+      "hex": "14:20",
+      "regionId": "region-mirkwood",
+      "economicType": "fortress"
+    },
+    {
+      "id": "near-harad",
+      "structuralType": "domain",
+      "name": "Near Harad",
+      "nameTranslations": { "ru": "Ближний Харад" },
+      "hex": "10:36",
+      "regionId": "region-harad",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "far-harad",
+      "structuralType": "domain",
+      "name": "Far Harad",
+      "nameTranslations": { "ru": "Дальний Харад" },
+      "hex": "1:37",
+      "regionId": "region-harad",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "khand",
+      "structuralType": "domain",
+      "name": "Khand",
+      "nameTranslations": { "ru": "Кханд" },
+      "hex": "19:35",
+      "regionId": "region-harad",
+      "economicType": "wilderness"
+    },
+    {
+      "id": "umbar",
+      "structuralType": "stronghold",
+      "name": "Umbar",
+      "nameTranslations": { "ru": "Умбар" },
+      "hex": "-1:37",
+      "regionId": "region-harad",
+      "economicType": "port"
+    },
+    {
+      "id": "dorwinion",
+      "structuralType": "domain",
+      "name": "Dorwinion",
+      "nameTranslations": { "ru": "Дорвинион" },
+      "hex": "26:16",
+      "regionId": "region-rhun",
+      "economicType": "farm"
+    },
+    {
+      "id": "sea-of-rhun",
+      "structuralType": "domain",
+      "name": "Sea of Rhûn",
+      "nameTranslations": { "ru": "Море Рун" },
+      "hex": "28:18",
+      "regionId": "region-rhun",
+      "economicType": "port"
+    },
+    {
+      "id": "easterling-lands",
+      "structuralType": "domain",
+      "name": "Easterling Lands",
+      "nameTranslations": { "ru": "Земли Истерлингов" },
+      "hex": "31:15",
+      "regionId": "region-rhun",
+      "economicType": "wilderness"
+    }
+  ]
+}

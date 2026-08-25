@@ -1,5 +1,6 @@
 import { locationHexId } from '../hex/hexGrid'
 import type { Army, ArmyCommander, ArmySlot, CaptainInstance, CaptainType, FactionDefinition, Hero, MapLocation, UnitType } from '../types'
+import { captainHireEconomicTypes } from './economicTypes'
 
 export function createUnitSlot(armyId: string, unit: UnitType, index: number): ArmySlot {
   return { slotId: `${armyId}-unit-${Date.now().toString(36)}-${index}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId }
@@ -65,7 +66,8 @@ export function captainInstanceFromCommander(commander: ArmyCommander | null): C
 }
 
 export function factionCaptainLimit(factionId: string, locations: MapLocation[]) {
-  return locations.filter((location) => location.side === factionId && ['city', 'fortress', 'capital'].includes(location.economicType)).length
+  const hireTypes = captainHireEconomicTypes()
+  return locations.filter((location) => location.side === factionId && hireTypes.has(location.economicType)).length
 }
 
 export function factionCaptainCount(factionId: string, armies: Army[], freeCaptains: Record<string, CaptainInstance[]> = {}) {

@@ -1082,3 +1082,21 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .region-readonly-field { display:flex; flex-direction:column; gap:3px; }
 .region-readonly-field span { color:#66747a; font-size:10px; }
 .region-readonly-field b { min-height:29px; display:flex; align-items:center; color:#c5cbc7; font-size:12px; }
+
+
+.economy-type-list { display: flex; flex-direction: column; gap: 8px; }
+.economy-type-card { padding: 10px; border: 1px solid #2c383e; border-radius: 6px; background: #10181d; }
+.economy-type-card > header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.economy-type-card > header small { display: block; color: #66747a; font-size: 10px; }
+.economy-type-card > header b { color: #d7c59a; font-size: 14px; }
+.economy-type-card > header span { color: #8a969a; font-size: 11px; }
+.economy-type-card > label > span,
+.economy-type-grid label > span { display: block; margin-bottom: 3px; color: #66747a; font-size: 10px; }
+.economy-type-card > label input,
+.economy-type-grid input,
+.economy-type-grid select { width: 100%; height: 30px; padding: 0 7px; border: 1px solid #303c42; border-radius: 4px; background: #090f13; color: #b7bcb8; font-size: 12px; }
+.economy-type-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
+.economy-type-flags { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 10px; }
+@media (max-width: 1100px) {
+  .economy-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

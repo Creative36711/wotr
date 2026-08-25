@@ -2,7 +2,8 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { getFaction } from '../constants'
 import { armyUnitSlotCap, factionArmyLimit } from '../game/army'
-import { ALL_SETTLEMENT_TYPES, SETTLEMENT_RECRUITMENT_LABELS } from '../game/recruitment'
+import { ALL_SETTLEMENT_TYPES } from '../game/recruitment'
+import { economicTypeLabel, getActiveEconomicTypes } from '../game/economicTypes'
 import { locationHexId } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
 import { ensureUniqueFactionColor } from '../utils/color'
@@ -13,9 +14,9 @@ import { createAssetId, RTS_COLORS, validBigFileName } from '../rts'
 import { deleteRtsAsset, pickAndImportRtsAsset, uploadRtsAsset } from '../dataService'
 import type { HeroUnlockType, ModDefinition, RtsStoredFile, SettlementType, UnitCategory } from '../types'
 
-type Tab = 'factions' | 'units' | 'heroes' | 'captains' | 'armies' | 'regions' | 'rts'
+type Tab = 'factions' | 'economy' | 'units' | 'heroes' | 'captains' | 'armies' | 'regions' | 'rts'
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: 'factions', label: 'Фракции', icon: '⚑' }, { id: 'units', label: 'Юниты', icon: '⚔' }, { id: 'heroes', label: 'Герои', icon: '♛' }, { id: 'captains', label: 'Капитаны', icon: '◆' }, { id: 'armies', label: 'Стартовые армии', icon: '♜' }, { id: 'regions', label: 'Регионы', icon: '⬡' }, { id: 'rts', label: 'BFME', icon: '◈' },
+  { id: 'factions', label: 'Фракции', icon: '⚑' }, { id: 'economy', label: 'Экономика', icon: '💰' }, { id: 'units', label: 'Юниты', icon: '⚔' }, { id: 'heroes', label: 'Герои', icon: '♛' }, { id: 'captains', label: 'Капитаны', icon: '◆' }, { id: 'armies', label: 'Стартовые армии', icon: '♜' }, { id: 'regions', label: 'Регионы', icon: '⬡' }, { id: 'rts', label: 'BFME', icon: '◈' },
 ]
 const CATEGORIES: Array<[UnitCategory, string]> = [['infantry', 'Пехота'], ['archers', 'Стрелки'], ['cavalry', 'Кавалерия'], ['monsters', 'Монстры'], ['siege', 'Осада']]
 /** Suggested distinct hues for global-map faction colors; any custom color is allowed via the picker. */
@@ -55,6 +56,8 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
   const addArmy = useMapStore((state) => state.addArmy)
   const removeArmy = useMapStore((state) => state.removeArmy)
   const selectArmy = useMapStore((state) => state.selectArmy)
+  const economicTypes = useMapStore((state) => state.economicTypes)
+  const updateEconomicType = useMapStore((state) => state.updateEconomicType)
   const updateRegion = useMapStore((state) => state.updateRegion)
   const addRegion = useMapStore((state) => state.addRegion)
   const removeRegion = useMapStore((state) => state.removeRegion)
@@ -137,6 +140,42 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
             })}</div>
           </>}
 
+          
+          {tab === 'economy' && <>
+            <div className="database-toolbar"><span>Экономических типов: {(economicTypes ?? getActiveEconomicTypes()).length}</span></div>
+            <p className="database-help">Эти правила задают дефолты при смене типа объекта, радиус обзора владений, бонус обороны в автобое, тип сражения (обычный/осада) и возможность найма капитанов. Доход конкретного объекта можно переопределить в инспекторе.</p>
+            <div className="economy-type-list">
+              {(economicTypes ?? getActiveEconomicTypes()).map((item) => {
+                const count = locations.filter((location) => location.economicType === item.id).length
+                return <article key={item.id} className="economy-type-card">
+                  <header>
+                    <div>
+                      <small>ID · {item.id}</small>
+                      <b>{localizedValue(item.name, item.nameTranslations, language)}</b>
+                    </div>
+                    <span>{count} на карте</span>
+                  </header>
+                  <label><span>Название</span><input value={localizedValue(item.name, item.nameTranslations, language)} onChange={(event) => { const localized = localizedTranslationsPatch(language, item.name, item.nameTranslations, event.target.value); updateEconomicType(item.id, { name: localized.canonical, nameTranslations: localized.translations }) }} /></label>
+                  <div className="economy-type-grid">
+                    <label><span>Золото / ход</span><input type="number" min="0" value={item.gold} onChange={(event) => updateEconomicType(item.id, { gold: Number(event.target.value) })} /></label>
+                    <label><span>Материалы / ход</span><input type="number" min="0" value={item.materials} onChange={(event) => updateEconomicType(item.id, { materials: Number(event.target.value) })} /></label>
+                    <label><span>Слоты очереди</span><input type="number" min="0" max="20" value={item.recruitmentSlots} onChange={(event) => updateEconomicType(item.id, { recruitmentSlots: Number(event.target.value) })} /></label>
+                    <label><span>Лимит резерва</span><input type="number" min="0" max="100" value={item.reserveLimit} onChange={(event) => updateEconomicType(item.id, { reserveLimit: Number(event.target.value) })} /></label>
+                    <label><span>Обзор (гексов)</span><input type="number" min="0" max="12" value={item.visionRadius} onChange={(event) => updateEconomicType(item.id, { visionRadius: Number(event.target.value) })} /></label>
+                    <label><span>Бонус обороны, %</span><input type="number" min="0" max="100" value={Math.round(item.defenseBonus * 100)} onChange={(event) => updateEconomicType(item.id, { defenseBonus: Number(event.target.value) / 100 })} /></label>
+                    <label><span>Тип боя</span><select value={item.battleType} onChange={(event) => updateEconomicType(item.id, { battleType: event.target.value as 'settlement' | 'siege' })}><option value="settlement">Обычный / settlement</option><option value="siege">Осада / siege</option></select></label>
+                  </div>
+                  <div className="economy-type-flags">
+                    <label className="inline-check"><input type="checkbox" checked={item.allowsCaptainHire} onChange={(event) => updateEconomicType(item.id, { allowsCaptainHire: event.target.checked })} />Найм капитанов</label>
+                    <label className="inline-check"><input type="checkbox" checked={item.isCapital} onChange={(event) => updateEconomicType(item.id, { isCapital: event.target.checked })} />Считать столицей</label>
+                    <label className="inline-check"><input type="checkbox" checked={item.allowedForDomain} onChange={(event) => updateEconomicType(item.id, { allowedForDomain: event.target.checked })} />Для владений</label>
+                    <label className="inline-check"><input type="checkbox" checked={item.allowedForStronghold} onChange={(event) => updateEconomicType(item.id, { allowedForStronghold: event.target.checked })} />Для оплотов</label>
+                  </div>
+                </article>
+              })}
+            </div>
+          </>}
+
           {tab === 'units' && <>
             {filterBar(unitTypes.length, addUnitType, 'Добавить отряд')}
             <div className="data-table unit-table-v2">
@@ -155,7 +194,7 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
                 <input type="number" min="0" value={unit.upkeep} title="Содержание в золоте за ход" onChange={(event) => updateUnitType(unit.id, { upkeep: Number(event.target.value) })} />
                 <input type="number" min="0" max="999" value={unit.siegePower} title="Помогает атакующей армии преодолеть штраф при осаде крепости. Для обычных войск обычно 0." onChange={(event) => updateUnitType(unit.id, { siegePower: Number(event.target.value) })} />
                 <button type="button" onClick={() => removeUnitType(unit.id)}>×</button>
-              </div><div className="unit-recruitment-rules"><fieldset><legend>Допустимые типы локаций</legend>{ALL_SETTLEMENT_TYPES.map((type) => <label key={type}><input type="checkbox" checked={unit.requiredLocationTypes.includes(type)} onChange={(event) => updateUnitType(unit.id, { requiredLocationTypes: event.target.checked ? [...unit.requiredLocationTypes, type] : unit.requiredLocationTypes.filter((item) => item !== type) })} />{SETTLEMENT_RECRUITMENT_LABELS[type]}</label>)}</fieldset><label className="unit-transformation-source"><span>Способ получения</span><select value={unit.transformationSourceUnitId ?? ''} onChange={(event) => updateUnitType(unit.id, { transformationSourceUnitId: event.target.value || null })}><option value="">Прямой найм</option>{orderedUnits.filter((candidate) => candidate.factionId === unit.factionId && candidate.id !== unit.id && !candidate.transformationSourceUnitId).map((candidate) => <option key={candidate.id} value={candidate.id}>Преобразование: {candidate.name}</option>)}</select><small>{unit.transformationSourceUnitId ? 'Цена выше считается доплатой за преобразование исходного объекта.' : 'Отряд доступен в обычном списке найма.'}</small></label><label className="unit-required-tags"><span>Обязательные теги локации</span><input value={unit.requiredLocationTags.join(', ')} placeholder="коневодческий регион, промышленный центр…" onChange={(event) => updateUnitType(unit.id, { requiredLocationTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} /></label><label className="unit-occupation-toggle"><input type="checkbox" checked={unit.recruitDuringOccupation} onChange={(event) => updateUnitType(unit.id, { recruitDuringOccupation: event.target.checked })} /><span><b>Найм во время оккупации</b><small>Разрешить этот отряд до полного подчинения локации</small></span></label></div></div>)}
+              </div><div className="unit-recruitment-rules"><fieldset><legend>Допустимые типы локаций</legend>{ALL_SETTLEMENT_TYPES.map((type) => <label key={type}><input type="checkbox" checked={unit.requiredLocationTypes.includes(type)} onChange={(event) => updateUnitType(unit.id, { requiredLocationTypes: event.target.checked ? [...unit.requiredLocationTypes, type] : unit.requiredLocationTypes.filter((item) => item !== type) })} />{economicTypeLabel(type, language)}</label>)}</fieldset><label className="unit-transformation-source"><span>Способ получения</span><select value={unit.transformationSourceUnitId ?? ''} onChange={(event) => updateUnitType(unit.id, { transformationSourceUnitId: event.target.value || null })}><option value="">Прямой найм</option>{orderedUnits.filter((candidate) => candidate.factionId === unit.factionId && candidate.id !== unit.id && !candidate.transformationSourceUnitId).map((candidate) => <option key={candidate.id} value={candidate.id}>Преобразование: {candidate.name}</option>)}</select><small>{unit.transformationSourceUnitId ? 'Цена выше считается доплатой за преобразование исходного объекта.' : 'Отряд доступен в обычном списке найма.'}</small></label><label className="unit-required-tags"><span>Обязательные теги локации</span><input value={unit.requiredLocationTags.join(', ')} placeholder="коневодческий регион, промышленный центр…" onChange={(event) => updateUnitType(unit.id, { requiredLocationTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} /></label><label className="unit-occupation-toggle"><input type="checkbox" checked={unit.recruitDuringOccupation} onChange={(event) => updateUnitType(unit.id, { recruitDuringOccupation: event.target.checked })} /><span><b>Найм во время оккупации</b><small>Разрешить этот отряд до полного подчинения локации</small></span></label></div></div>)}
             </div>
             <p className="database-help">Object ID можно заменить точным идентификатором из вашего мода BFME. «Сила» используется в автоматическом бою. «ОД» задаёт стратегическую скорость отряда; армия движется со скоростью самого медленного. «Осадная сила» уменьшает штраф атакующей армии при штурме крепости; для обычных отрядов можно оставить 0. В RTS объект будет создан по Object ID.</p>
           </>}

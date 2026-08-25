@@ -1,5 +1,6 @@
 import { areFactionsHostile, getFaction } from '../constants'
 import { commanderDefinition } from './army'
+import { getEconomicType } from './economicTypes'
 import { factionSide, oppositeSide } from './campaign'
 import { findPath, hexDistance, locationHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
 import type {
@@ -53,15 +54,12 @@ export interface ConflictBattleOutcome extends ConflictPreview {
 
 export function settlementDefenseBonus(location: MapLocation | null) {
   if (!location) return 0
-  if (location.economicType === 'capital') return .5
-  if (location.economicType === 'fortress') return .4
-  if (location.economicType === 'city' || location.economicType === 'port') return .2
-  return .1
+  return getEconomicType(location.economicType).defenseBonus
 }
 
 export function conflictBattleType(location: MapLocation | null) {
   if (!location) return 'field' as const
-  return location.economicType === 'fortress' ? 'siege' as const : 'settlement' as const
+  return getEconomicType(location.economicType).battleType === 'siege' ? 'siege' as const : 'settlement' as const
 }
 
 function hashSeed(value: string) {

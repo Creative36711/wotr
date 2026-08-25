@@ -18,21 +18,12 @@ import { createNewSaveGame } from './game/saveGame'
 import { updateConflictRtsCompatibility } from './game/conflicts'
 import { heroIsDeployed, heroSummonLocation } from './game/heroes'
 import { defaultLocationTypesForUnit, defaultRequiredTagsForUnit, defaultTagsForLocation } from './game/recruitment'
-import type { AppSettings, Army, ArmyCommander, ArmySlot, CampaignState, CaptainType, FactionDefinition, Hero, MapLocation, ModDefinition, ModSummary, Region, RosterData, RtsMapAsset, RtsStoredFile, SaveGameData, UnitType, WorldData } from './types'
+import { createDefaultEconomicTypes, getEconomicType, normalizeEconomicTypes, setActiveEconomicTypes } from './game/economicTypes'
+import type { AppSettings, Army, ArmyCommander, ArmySlot, CampaignState, CaptainType, EconomicTypeDefinition, FactionDefinition, Hero, MapLocation, ModDefinition, ModSummary, Region, RosterData, RtsMapAsset, RtsStoredFile, SaveGameData, UnitType, WorldData } from './types'
 import { GAME_VERSION, ROSTER_DATA_VERSION, SAVEGAME_DATA_VERSION, WORLD_DATA_VERSION } from './version'
 import { DEFAULT_NETWORK_RULES, DEFAULT_RTS_EXECUTABLE, RTS_COLORS, normalizeRtsSettings } from './rts'
 
 const MAJOR_LOCATIONS = new Set(['minas-tirith', 'arnor', 'edoras', 'lorien', 'rivendell', 'erebor', 'isengard', 'barad-dur', 'gundabad', 'harad', 'angmar', 'sea-rhun'])
-const LOCATION_ECONOMY = {
-  village: { gold: 30, materials: 0, recruitmentSlots: 1, reserveLimit: 5 },
-  city: { gold: 80, materials: 10, recruitmentSlots: 2, reserveLimit: 10 },
-  fortress: { gold: 100, materials: 20, recruitmentSlots: 3, reserveLimit: 15 },
-  capital: { gold: 150, materials: 30, recruitmentSlots: 4, reserveLimit: 20 },
-  port: { gold: 60, materials: 20, recruitmentSlots: 2, reserveLimit: 10 },
-  mine: { gold: 20, materials: 40, recruitmentSlots: 2, reserveLimit: 10 },
-  farm: { gold: 50, materials: 0, recruitmentSlots: 1, reserveLimit: 8 },
-  wilderness:{gold:0,materials:0,recruitmentSlots:0,reserveLimit:4},swamp:{gold:0,materials:5,recruitmentSlots:0,reserveLimit:4},forest:{gold:10,materials:20,recruitmentSlots:1,reserveLimit:6},mountains:{gold:5,materials:30,recruitmentSlots:1,reserveLimit:6},ruins:{gold:5,materials:5,recruitmentSlots:0,reserveLimit:4},crossroads:{gold:20,materials:0,recruitmentSlots:1,reserveLimit:5},ford:{gold:15,materials:0,recruitmentSlots:0,reserveLimit:4},pass:{gold:15,materials:5,recruitmentSlots:0,reserveLimit:4},signal_tower:{gold:20,materials:5,recruitmentSlots:0,reserveLimit:4},camp:{gold:20,materials:5,recruitmentSlots:1,reserveLimit:6},
-} as const
 
 function defaultSettlementType(location: MapLocation) {
   if (MAJOR_LOCATIONS.has(location.id)) return 'capital' as const
@@ -458,6 +449,8 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
   const unitTypes = normalizeUnits(rosterValue !== undefined ? roster?.unitTypes ?? [] : source.unitTypes)
   const heroes = normalizeHeroes(rosterValue !== undefined ? roster?.heroes ?? [] : source.heroes, (source.version ?? 0) < 5)
   const captains = normalizeCaptains(rosterValue !== undefined ? roster?.captains ?? [] : source.captains)
+  const economicTypes = normalizeEconomicTypes(source.economicTypes)
+  setActiveEconomicTypes(economicTypes)
   const looksLikeVanilla = source.locations.length === 79
     && source.locations.some((location: any) => location.id === 'helms-deep')
     && source.locations.some((location: any) => location.id === 'minas-tirith')
@@ -498,7 +491,7 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     const legacyAxial = pixelToAxial((Number(location.x ?? 0) / 100) * WORLD_WIDTH, (Number(location.y ?? 0) / 100) * WORLD_HEIGHT, grid.config)
     const hex = typeof location.hex === 'string' && /^-?\d+:-?\d+$/.test(location.hex) ? location.hex : hexId(legacyAxial.q, legacyAxial.r)
     const economicType = location.economicType ?? location.settlementType ?? defaultSettlementType(location)
-    const defaults = LOCATION_ECONOMY[economicType as keyof typeof LOCATION_ECONOMY] ?? LOCATION_ECONOMY.village
+    const defaults = getEconomicType(economicType)
     const factionRecruitment = unitTypes.filter((unit) => unit.factionId === location.side).map((unit) => unit.id)
     const recruitment = Array.isArray(location.recruitment)
       ? location.recruitment
@@ -590,13 +583,14 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     locations: normalizedLocations,
     grid,
     factions,
+    economicTypes,
     unitTypes,
     heroes,
     captains,
     armies,
     regions,
     campaign: { ...campaign, turnOrder: [...campaign.turnOrder], log: [...campaign.log] },
-    battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
+    battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
   }
 }
 

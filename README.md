@@ -13,10 +13,10 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.45.0
-world.json: 33
+Application: 0.45.1
+world.json: 34
 roster.json: 14
-savegame.json: 32
+savegame.json: 33
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
@@ -198,7 +198,7 @@ Editor rules:
 
 ### Economic types and icons
 
-Structural behavior and economic behavior are independent. `economicType` controls icon, income, recruitment, queue size, and reserve capacity.
+Structural behavior and economic behavior are independent. `economicType` selects a row from the editable `economicTypes` table in `world.json` (editor tab **Economy**). That table controls default income/slots, domain vision radius, auto-battle defense bonus, battle type (settlement/siege), captain hiring, and whether the type is offered for domains or strongholds. Per-object income can still override the defaults.
 
 Domain-oriented types:
 

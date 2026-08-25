@@ -8,6 +8,7 @@ import { createDefaultCampaign } from '../game/defaultData'
 import { heroIsDeployed, heroSummonLocation, heroUnlockSatisfied } from '../game/heroes'
 import { refreshFogIntel } from '../game/fogOfWar'
 import { OCCUPATION_COUNTER_ON_CAPTURE, recruitableUnitsAtLocation } from '../game/recruitment'
+import { createDefaultEconomicTypes, economicDefaultsPatch, getEconomicType, setActiveEconomicTypes } from '../game/economicTypes'
 import { applySaveGame, createNewSaveGame, extractSaveGame } from '../game/saveGame'
 import { hexDistance, locationHexId, neighborIds, parseHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
 import {
@@ -29,7 +30,9 @@ import type {
   Hero,
   HexCellOverride,
   HexGridData,
+  SettlementType,
   StructuralType,
+  EconomicTypeDefinition,
   MapLocation,
   MapViewMode,
   Region,
@@ -47,6 +50,7 @@ interface WorldSnapshot {
   locations: MapLocation[]
   grid: HexGridData
   factions: FactionDefinition[]
+  economicTypes: EconomicTypeDefinition[]
   unitTypes: UnitType[]
   heroes: Hero[]
   captains: CaptainType[]
@@ -111,6 +115,8 @@ interface MapState extends WorldSnapshot {
   updateArmy: (id: string, patch: Partial<Army>) => void
   removeArmy: (id: string) => void
   updateRegion: (id: string, patch: Partial<Region>) => void
+  updateEconomicType: (id: SettlementType, patch: Partial<EconomicTypeDefinition>) => void
+  applyEconomicTypeDefaults: (locationId: string) => void
   addRegion: () => void
   removeRegion: (id: string) => void
   setRegionHexes: (id: string, hexes: string[], mode?: 'replace' | 'add' | 'remove') => void
@@ -164,6 +170,7 @@ const cloneSnapshot = (snapshot: WorldSnapshot): WorldSnapshot => ({
   locations: cloneLocations(snapshot.locations),
   grid: cloneGrid(snapshot.grid),
   factions: snapshot.factions.map((item) => ({ ...item })),
+  economicTypes: (snapshot.economicTypes?.length ? snapshot.economicTypes : createDefaultEconomicTypes()).map((item) => ({ ...item, nameTranslations: { ...(item.nameTranslations ?? {}) } })),
   unitTypes: snapshot.unitTypes.map((item) => ({ ...item })),
   heroes: snapshot.heroes.map((item) => ({ ...item })),
   captains: snapshot.captains.map((item) => ({ ...item })),
@@ -173,7 +180,7 @@ const cloneSnapshot = (snapshot: WorldSnapshot): WorldSnapshot => ({
   battles: cloneBattles(snapshot.battles),
 })
 const currentSnapshot = (state: MapState): WorldSnapshot => ({
-  locations: state.locations, grid: state.grid, factions: state.factions, unitTypes: state.unitTypes,
+  locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes,
   heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions, campaign: state.campaign, battles: state.battles,
 })
 const snapshotToWorld = (snapshot: WorldSnapshot): WorldData => ({ version: WORLD_DATA_VERSION, ...cloneSnapshot(snapshot) })
@@ -761,12 +768,14 @@ function processAftermath(state: MapState, campaign: CampaignState, sourceArmies
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  locations: [], grid: { config: { ...DEFAULT_GRID_CONFIG }, cells: {} }, factions: [], unitTypes: [], heroes: [], captains: [], armies: [], regions: [],
+  locations: [], grid: { config: { ...DEFAULT_GRID_CONFIG }, cells: {} }, factions: [], economicTypes: createDefaultEconomicTypes(), unitTypes: [], heroes: [], captains: [], armies: [], regions: [],
   campaign: createDefaultCampaign([]), battles: [], editorTemplate: null, gameSave: null, selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null,
   mode: 'edit', viewMode: 'cinematic', hexEdit: false, addKind: null, history: [], future: [], revision: 0,
 
   initialize: (world, saveGame) => {
-    const template = cloneSnapshot(world)
+    const withEconomy = { ...world, economicTypes: world.economicTypes?.length ? world.economicTypes : createDefaultEconomicTypes() }
+    setActiveEconomicTypes(withEconomy.economicTypes)
+    const template = cloneSnapshot(withEconomy)
     set({ ...cloneSnapshot(template), editorTemplate: template, gameSave: cloneSaveGame(saveGame), mode: 'edit', selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null, history: [], future: [], revision: 0 })
   },
 
@@ -882,10 +891,12 @@ export const useMapStore = create<MapState>((set) => ({
       const template = cloneSnapshot(currentSnapshot(state))
       const saveGame = state.gameSave ? cloneSaveGame(state.gameSave) : createNewSaveGame(snapshotToWorld(template))
       const gameWorld = applySaveGame(snapshotToWorld(template), saveGame)
-      return { ...cloneSnapshot(gameWorld), editorTemplate: template, gameSave: saveGame, mode, addKind: null, hexEdit: false, viewMode: 'cinematic', selectedId: null, selectedArmyId: null, selectedHexId: null, selectedHexIds: [], history: [], future: [] }
+      setActiveEconomicTypes(gameWorld.economicTypes ?? createDefaultEconomicTypes())
+      return { ...cloneSnapshot({ ...gameWorld, economicTypes: gameWorld.economicTypes ?? createDefaultEconomicTypes() }), editorTemplate: template, gameSave: saveGame, mode, addKind: null, hexEdit: false, viewMode: 'cinematic', selectedId: null, selectedArmyId: null, selectedHexId: null, selectedHexIds: [], history: [], future: [] }
     }
     const gameSave = state.mode === 'game' ? extractSaveGame(snapshotToWorld(currentSnapshot(state)), state.gameSave) : state.gameSave
     const template = state.editorTemplate ? cloneSnapshot(state.editorTemplate) : cloneSnapshot(currentSnapshot(state))
+    setActiveEconomicTypes(template.economicTypes ?? createDefaultEconomicTypes())
     return { ...cloneSnapshot(template), editorTemplate: template, gameSave, mode, addKind: null, hexEdit: false, viewMode: 'cinematic', selectedId: null, selectedArmyId: null, selectedHexId: null, selectedHexIds: [], latestBattleId: null, history: [], future: [] }
   }),
   setViewMode: (viewMode) => set({ viewMode }),
@@ -1173,7 +1184,7 @@ export const useMapStore = create<MapState>((set) => ({
 
   addHero: () => set((state) => {
     const factionId = state.factions.find((item) => item.playable)?.id ?? 'gondor'; const id = makeId('new-hero', state.heroes.map((item) => item.id))
-    const startingLocationId = state.locations.find((location) => location.side === factionId && location.economicType === 'capital')?.id ?? state.locations.find((location) => location.side === factionId)?.id ?? null
+    const startingLocationId = state.locations.find((location) => location.side === factionId && getEconomicType(location.economicType).isCapital)?.id ?? state.locations.find((location) => location.side === factionId)?.id ?? null
     const hero: Hero = { id, objectId: 'NewHeroObject', factionId, name: 'New Hero',nameTranslations:{ru:'Новый полководец'}, title: '',titleTranslations:{}, battlePower: 180, command: 5, movementBonus: 0, alive: true, portrait: '', unlockType: 'starting', requiredTurn: 1, requiredLocationId: startingLocationId, summonCostGold: 0 }
     const campaign = cloneCampaign(state.campaign); campaign.heroStates[id] = { status: 'active', summoned: true, availableSinceRound: null, summonLocationId: startingLocationId, healTurnsLeft: 0, recoveryLocationId: null, diedRound: null, diedLocationId: null }
     return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), heroes: [...state.heroes.map((item) => ({ ...item })), hero], campaign })
@@ -1283,6 +1294,45 @@ export const useMapStore = create<MapState>((set) => ({
   removeArmy:(id)=>set((state)=>{const campaign=cloneCampaign(state.campaign);campaign.pendingOrders=campaign.pendingOrders.filter((order)=>order.armyId!==id);campaign.alliedPlans=campaign.alliedPlans.filter((plan)=>plan.armyId!==id);return{...pushHistory(state,{...cloneSnapshot(currentSnapshot(state)),armies:state.armies.filter((item)=>item.id!==id),campaign}),selectedArmyId:state.selectedArmyId===id?null:state.selectedArmyId}}),
 
 
+
+  updateEconomicType: (id, patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const economicTypes = (state.economicTypes?.length ? state.economicTypes : createDefaultEconomicTypes()).map((item) => {
+      if (item.id !== id) return { ...item, nameTranslations: { ...(item.nameTranslations ?? {}) } }
+      return {
+        ...item,
+        ...patch,
+        id: item.id,
+        nameTranslations: patch.nameTranslations ? { ...patch.nameTranslations } : { ...(item.nameTranslations ?? {}) },
+        gold: Math.max(0, Number(patch.gold ?? item.gold)),
+        materials: Math.max(0, Number(patch.materials ?? item.materials)),
+        recruitmentSlots: Math.max(0, Math.min(20, Number(patch.recruitmentSlots ?? item.recruitmentSlots))),
+        reserveLimit: Math.max(0, Math.min(100, Number(patch.reserveLimit ?? item.reserveLimit))),
+        visionRadius: Math.max(0, Math.min(12, Number(patch.visionRadius ?? item.visionRadius))),
+        defenseBonus: Math.max(0, Math.min(1, Number(patch.defenseBonus ?? item.defenseBonus))),
+        battleType: (patch.battleType === 'siege' || patch.battleType === 'settlement') ? patch.battleType : item.battleType,
+        allowsCaptainHire: patch.allowsCaptainHire !== undefined ? Boolean(patch.allowsCaptainHire) : item.allowsCaptainHire,
+        isCapital: patch.isCapital !== undefined ? Boolean(patch.isCapital) : item.isCapital,
+        allowedForDomain: patch.allowedForDomain !== undefined ? Boolean(patch.allowedForDomain) : item.allowedForDomain,
+        allowedForStronghold: patch.allowedForStronghold !== undefined ? Boolean(patch.allowedForStronghold) : item.allowedForStronghold,
+      }
+    })
+    setActiveEconomicTypes(economicTypes)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), economicTypes })
+  }),
+  applyEconomicTypeDefaults: (locationId) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const location = state.locations.find((item) => item.id === locationId)
+    if (!location) return state
+    const defaults = economicDefaultsPatch(location.economicType)
+    const locations = state.locations.map((item) => item.id === locationId ? {
+      ...item,
+      income: { ...defaults.income },
+      recruitmentSlots: defaults.recruitmentSlots,
+      reserveLimit: defaults.reserveLimit,
+    } : item)
+    return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), locations })
+  }),
   updateRegion: (id, patch) => set((state) => {
     if (state.mode !== 'edit') return state
     const regions = state.regions.map((item) => {
@@ -1693,7 +1743,7 @@ export const useMapStore = create<MapState>((set) => ({
       campaign.freeCaptains[faction.id] = pool.filter((captain) => captain.instanceId !== instance.instanceId)
       commander = createCaptainCommander(captain, instance.displayName, instance.instanceId)
     } else if (kind === 'new-captain' || kind === 'captain') {
-      if (hasAvailableHero || campaign.locationStates[locationId].occupationTurnsLeft > 0 || !['city', 'fortress', 'capital'].includes(location.economicType)) return state
+      if (hasAvailableHero || campaign.locationStates[locationId].occupationTurnsLeft > 0 || !getEconomicType(location.economicType).allowsCaptainHire) return state
       const captain = state.captains.find((item) => item.id === value && item.factionId === faction.id)
       const captainLimit = factionCaptainLimit(faction.id, state.locations)
       const captainCount = factionCaptainCount(faction.id, state.armies, campaign.freeCaptains)
@@ -1745,11 +1795,15 @@ export const useMapStore = create<MapState>((set) => ({
   undo: () => set((state) => {
     if (state.mode !== 'edit' || !state.history.length) return state
     const previous = state.history[state.history.length - 1]
-    return { ...cloneSnapshot(previous), history: state.history.slice(0, -1), future: [cloneSnapshot(currentSnapshot(state)), ...state.future].slice(0, HISTORY_LIMIT), revision: state.revision + 1 }
+    const snap = cloneSnapshot(previous)
+    setActiveEconomicTypes(snap.economicTypes)
+    return { ...snap, history: state.history.slice(0, -1), future: [cloneSnapshot(currentSnapshot(state)), ...state.future].slice(0, HISTORY_LIMIT), revision: state.revision + 1 }
   }),
   redo: () => set((state) => {
     if (state.mode !== 'edit' || !state.future.length) return state
     const next = state.future[0]
-    return { ...cloneSnapshot(next), history: [...state.history, cloneSnapshot(currentSnapshot(state))].slice(-HISTORY_LIMIT), future: state.future.slice(1), revision: state.revision + 1 }
+    const snap = cloneSnapshot(next)
+    setActiveEconomicTypes(snap.economicTypes)
+    return { ...snap, history: [...state.history, cloneSnapshot(currentSnapshot(state))].slice(-HISTORY_LIMIT), future: state.future.slice(1), revision: state.revision + 1 }
   }),
 }))

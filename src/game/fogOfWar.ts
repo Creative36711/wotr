@@ -1,16 +1,7 @@
 import { factionSide } from './campaign'
+import { getEconomicType } from './economicTypes'
 import { hexDistance, locationHexId, resolveGrid } from '../hex/hexGrid'
 import type { Army, ArmyIntelSize, CampaignState, FactionDefinition, HexGridData, LastSeenArmyIntel, LastSeenLocationIntel, MapLocation, Region } from '../types'
-
-const LOCATION_VISION: Record<MapLocation['economicType'], number> = {
-  village: 2,
-  city: 3,
-  fortress: 4,
-  capital: 5,
-  port: 3,
-  mine: 2,
-  farm:2,wilderness:2,swamp:2,forest:3,mountains:3,ruins:2,crossroads:2,ford:2,pass:2,signal_tower:4,camp:2,
-}
 
 export function armyIntelSize(army: Army): ArmyIntelSize {
   const count = army.unitSlots.length
@@ -50,7 +41,7 @@ export function calculateVisibleHexes(
   for (const location of locations.filter((candidate) => candidate.side === campaign.playerFactionId)) {
     sources.push({
       hexId: locationHexId(location, grid.config),
-      radius: location.structuralType === 'stronghold' ? 2 : LOCATION_VISION[location.economicType],
+      radius: location.structuralType === 'stronghold' ? 2 : getEconomicType(location.economicType).visionRadius,
     })
     // Domain vision covers the domain's own hexes (not the whole top-level region).
     if (location.structuralType === 'domain') {

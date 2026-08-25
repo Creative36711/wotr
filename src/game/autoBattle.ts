@@ -1,3 +1,4 @@
+import { getEconomicType } from './economicTypes'
 import type { Army, AutoBattleReport, BattleSlotResult, BattleType, CaptainType, Hero, MapLocation, TerrainType, UnitType } from '../types'
 
 interface BattleContext {
@@ -25,7 +26,7 @@ function hashSeed(value: string) {
   return Math.abs(hash >>> 0)
 }
 const randomFrom = (seed: number) => { const value = Math.sin(seed * 12.9898) * 43758.5453; return value - Math.floor(value) }
-const battleType = (location: MapLocation | null): BattleType => !location ? 'field' : location.economicType === 'fortress' ? 'siege' : 'settlement'
+const battleType = (location: MapLocation | null): BattleType => !location ? 'field' : getEconomicType(location.economicType).battleType === 'siege' ? 'siege' : 'settlement'
 
 function combatants(army: Army, units: UnitType[], heroes: Hero[], captains: CaptainType[]) {
   const result: Combatant[] = []

@@ -3,6 +3,7 @@ import { armyUnitSlotCap, createCaptainCommander, createHeroCommander, factionAr
 import { factionIsActive, factionSide } from './campaign'
 import { heroIsDeployed, heroUnlockSatisfied } from './heroes'
 import { recruitableUnitsAtLocation } from './recruitment'
+import { captainHireEconomicTypes } from './economicTypes'
 import { cellMovementCost, findPath, hexDistance, locationHexId, neighborIds, resolveGrid } from '../hex/hexGrid'
 import type { AlliedMovementPlan, Army, CampaignState, CaptainType, FactionDefinition, Hero, HexGridData, LogicalHex, MapLocation, Region, StrategicSide, UnitType } from '../types'
 
@@ -101,7 +102,7 @@ export function runAiPlanning(
         : captains.find((candidate) => candidate.factionId === faction.id)
       const captainLimit = factionCaptainLimit(faction.id, locations)
       const captainCount = factionCaptainCount(faction.id, nextArmies, campaign.freeCaptains)
-      const canHireCaptain = Boolean(captain && treasury.gold >= 100 && captainCount < captainLimit && locationState.occupationTurnsLeft === 0 && ['city', 'fortress', 'capital'].includes(location.economicType))
+      const canHireCaptain = Boolean(captain && treasury.gold >= 100 && captainCount < captainLimit && locationState.occupationTurnsLeft === 0 && captainHireEconomicTypes().has(location.economicType))
       if (!reserveHero && !freeInstance && !canHireCaptain) continue
       const commander = reserveHero
         ? createHeroCommander(reserveHero)

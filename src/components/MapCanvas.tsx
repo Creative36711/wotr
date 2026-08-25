@@ -288,9 +288,14 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
     const lineWidth = Math.min(7, Math.max(1.2, 1 / Math.max(camera.scale, .01)))
     const displayOwnerForCell = (cell: LogicalHex) => {
       if (!fogEnabled || visibleHexes.has(cell.id)) return cell.owner
-      const region = cell.regionId ? regions.find((item) => item.id === cell.regionId) : null
-      const intel = region?.locationId ? lastSeenLocationById.get(region.locationId) : null
-      return intel?.lastKnownOwner ?? null
+      const domainId = cell.domainId
+      if (domainId) {
+        const intel = lastSeenLocationById.get(domainId)
+        return intel?.lastKnownOwner ?? null
+      }
+      const anchorId = cell.locationIds[0]
+      if (anchorId) return lastSeenLocationById.get(anchorId)?.lastKnownOwner ?? null
+      return null
     }
 
     if (showRegions) {
@@ -299,16 +304,16 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
         if (!cell.regionId || !cell.passable) continue
         cellsByRegion.set(cell.regionId, [...(cellsByRegion.get(cell.regionId) ?? []), cell])
       }
-      const edgePairs = [[1,2],[0,1],[5,0],[4,5],[3,4],[2,3]] as const
+      const edgePairs = [[1, 2], [0, 1], [5, 0], [4, 5], [3, 4], [2, 3]] as const
       for (const [regionId, cells] of cellsByRegion) {
         const region = regions.find((item) => item.id === regionId)
-        const regionVisible = !fogEnabled || cells.some((cell) => visibleHexes.has(cell.id))
-        const knownOwner = regionVisible ? region?.ownerFactionId : region?.locationId ? lastSeenLocationById.get(region.locationId)?.lastKnownOwner : null
-        const color = getFaction(factions, knownOwner).color
+        const regionColor = region?.color ?? '#7A8B99'
+        // Layer 1: geographic region fill (low opacity, region color).
         context.beginPath()
         for (const cell of cells) traceHex(context, cell, grid.config.size * 1.005)
-        context.fillStyle = colorWithAlpha(color, .14)
+        context.fillStyle = colorWithAlpha(regionColor, .16)
         context.fill()
+        // Thick region borders.
         context.beginPath()
         for (const cell of cells) {
           const corners = hexCorners(cell, grid.config.size)
@@ -320,29 +325,88 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
             context.lineTo(corners[to].x, corners[to].y)
           })
         }
-        context.strokeStyle = colorWithAlpha(color, .9)
-        context.lineWidth = lineWidth * 2.2
+        context.strokeStyle = colorWithAlpha(regionColor, .92)
+        context.lineWidth = lineWidth * 2.6
         context.stroke()
       }
-      if (camera.scale >= .2) {
-        const fontSize = 13 / camera.scale
-        context.textAlign = 'center'; context.textBaseline = 'middle'
+
+      // Layer 2: domain fills (owner color) inside regions.
+      const cellsByDomain = new Map<string, LogicalHex[]>()
+      for (const cell of logicalGrid.cells) {
+        if (!cell.domainId || !cell.passable) continue
+        cellsByDomain.set(cell.domainId, [...(cellsByDomain.get(cell.domainId) ?? []), cell])
+      }
+      for (const [domainId, cells] of cellsByDomain) {
+        const domain = locations.find((item) => item.id === domainId)
+        if (!domain) continue
+        const domainVisible = !fogEnabled || cells.some((cell) => visibleHexes.has(cell.id))
+        const knownOwner = domainVisible
+          ? domain.side
+          : lastSeenLocationById.get(domain.id)?.lastKnownOwner ?? domain.side
+        if (!knownOwner || knownOwner === 'civilian') continue
+        const color = getFaction(factions, knownOwner).color
+        context.beginPath()
+        for (const cell of cells) traceHex(context, cell, grid.config.size * .99)
+        context.fillStyle = colorWithAlpha(color, .28)
+        context.fill()
+        context.beginPath()
+        for (const cell of cells) {
+          const corners = hexCorners(cell, grid.config.size)
+          neighborIds(cell.q, cell.r).forEach((neighborId, directionIndex) => {
+            if (logicalGrid.byId.get(neighborId)?.domainId === domainId) return
+            const [from, to] = edgePairs[directionIndex]
+            context.moveTo(corners[from].x, corners[from].y)
+            context.lineTo(corners[to].x, corners[to].y)
+          })
+        }
+        context.strokeStyle = colorWithAlpha(color, .55)
+        context.lineWidth = lineWidth * 1.1
+        context.stroke()
+      }
+
+      // Region labels at centroid (hidden when zoomed in tightly).
+      if (camera.scale >= .12 && camera.scale <= .55) {
+        const fontSize = Math.max(14, 22 / camera.scale)
+        context.textAlign = 'center'
+        context.textBaseline = 'middle'
         for (const region of regions) {
-          const location = locations.find((item) => item.id === region.locationId)
-          if (!location) continue
-          const cell = logicalGrid.byId.get(locationHexId(location, grid.config))
-          if (!cell) continue
+          if (!region.hexes.length) continue
+          let sumX = 0
+          let sumY = 0
+          let count = 0
+          for (const hex of region.hexes) {
+            const cell = logicalGrid.byId.get(hex)
+            if (!cell) continue
+            sumX += cell.x
+            sumY += cell.y
+            count += 1
+          }
+          if (!count) continue
           context.font = `700 ${fontSize}px Cinzel, Georgia, serif`
-          context.lineWidth = 4 / camera.scale
-          context.strokeStyle = 'rgba(6,10,12,.9)'; context.fillStyle = 'rgba(235,224,195,.9)'
-          const localizedRegionName=translateText(region.name)
-          context.strokeText(localizedRegionName, cell.x, cell.y + grid.config.size * .58)
-          context.fillText(localizedRegionName, cell.x, cell.y + grid.config.size * .58)
+          context.lineWidth = 5 / camera.scale
+          context.strokeStyle = 'rgba(6,10,12,.55)'
+          context.fillStyle = 'rgba(235,224,195,.55)'
+          const localizedRegionName = translateText(region.name)
+          context.strokeText(localizedRegionName, sumX / count, sumY / count)
+          context.fillText(localizedRegionName, sumX / count, sumY / count)
         }
       }
     }
 
-    if(showRegions||viewMode==='strategic'||hexEdit){for(const location of locations.filter((item)=>item.structuralType==='stronghold')){const cell=logicalGrid.byId.get(location.hex);if(!cell)continue;context.beginPath();traceHex(context,cell,grid.config.size*.97);const color=getFaction(factions,location.side).color;context.fillStyle=colorWithAlpha(color,.3);context.fill();context.strokeStyle=colorWithAlpha(color,.95);context.lineWidth=lineWidth*2.2;context.stroke()}}
+    if (showRegions || viewMode === 'strategic' || hexEdit) {
+      for (const location of locations.filter((item) => item.structuralType === 'stronghold')) {
+        const cell = logicalGrid.byId.get(location.hex)
+        if (!cell) continue
+        context.beginPath()
+        traceHex(context, cell, grid.config.size * .97)
+        const color = getFaction(factions, location.side).color
+        context.fillStyle = colorWithAlpha(color, .32)
+        context.fill()
+        context.strokeStyle = colorWithAlpha(color, .95)
+        context.lineWidth = lineWidth * 2.2
+        context.stroke()
+      }
+    }
 
     if (viewMode === 'strategic' || hexEdit) {
       const ownerGroups = new Map<string, LogicalHex[]>()
@@ -354,7 +418,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
       for (const [ownerId, cells] of ownerGroups) {
         context.beginPath()
         for (const cell of cells) traceHex(context, cell, grid.config.size)
-        context.fillStyle = colorWithAlpha(getFaction(factions, ownerId).color, showRegions ? .025 : .055)
+        context.fillStyle = colorWithAlpha(getFaction(factions, ownerId).color, showRegions ? .02 : .055)
         context.fill()
       }
       context.beginPath()
@@ -895,7 +959,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
             </button>
           ))}
         </div>
-        <button type="button" className={`region-overlay-toggle ${showRegions ? 'active' : ''}`} onClick={() => setShowRegions((value) => !value)} title="Показать границы, названия и владельцев регионов"><span>▧</span>Регионы</button>
+        <button type="button" className={`region-overlay-toggle ${showRegions ? 'active' : ''}`} onClick={() => setShowRegions((value) => !value)} title="Показать регионы, владения и их границы"><span>▧</span>Регионы</button>
         {mode === 'edit' && (
           <>
             <button

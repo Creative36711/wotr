@@ -1,3 +1,4 @@
+import { capitalEconomicTypes } from './economicTypes'
 import { factionSide } from './campaign'
 import { locationHexId, resolveGrid, hexDistance } from '../hex/hexGrid'
 import type { Army, CampaignState, FactionDefinition, Hero, HexGridData, LocationCampaignState, MapLocation, Region } from '../types'
@@ -13,7 +14,8 @@ export function heroUnlockSatisfied(hero: Hero, campaign: CampaignState, locatio
 export function heroSummonLocation(hero: Hero, locations: MapLocation[]) {
   const required = hero.requiredLocationId ? locations.find((location) => location.id === hero.requiredLocationId && location.side === hero.factionId) : null
   if (required) return required
-  return locations.find((location) => location.side === hero.factionId && location.economicType === 'capital')
+  const capitals = capitalEconomicTypes()
+  return locations.find((location) => location.side === hero.factionId && capitals.has(location.economicType))
     ?? locations.find((location) => location.side === hero.factionId)
     ?? null
 }

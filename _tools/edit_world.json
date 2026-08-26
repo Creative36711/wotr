@@ -1,5 +1,5 @@
 {
-  "version": 35,
+  "version": 37,
   "locations": [
     {
       "id": "mithlond",
@@ -8,7 +8,7 @@
         "ru": "Митлонд (Серые Гавани)"
       },
       "side": "elves",
-      "armyLimitBonus": 0,
+      "armyLimitBonus": 1,
       "image": "",
       "income": {
         "gold": 150,
@@ -92,14 +92,14 @@
         "ru": "Форност Эрайн"
       },
       "side": "civilian",
-      "armyLimitBonus": 1,
+      "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 150,
-        "materials": 30
+        "gold": 5,
+        "materials": 5
       },
-      "recruitmentSlots": 4,
-      "reserveLimit": 20,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -165,17 +165,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "4:16",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "capital",
-      "regionId": "region-new-region-3",
-      "hexes": [
-        "3:16",
-        "3:17",
-        "3:18",
-        "4:16",
-        "4:17",
-        "4:18"
-      ]
+      "regionId": "region-new-region-3"
     },
     {
       "id": "hobbiton",
@@ -201,13 +193,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "6:15",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "city",
-      "regionId": "region-new-region-3",
-      "hexes": [
-        "6:15",
-        "7:14"
-      ]
+      "regionId": "region-new-region-3"
     },
     {
       "id": "bree",
@@ -275,11 +263,11 @@
       "armyLimitBonus": 1,
       "image": "",
       "income": {
-        "gold": 150,
-        "materials": 30
+        "gold": 100,
+        "materials": 20
       },
-      "recruitmentSlots": 4,
-      "reserveLimit": 20,
+      "recruitmentSlots": 3,
+      "reserveLimit": 15,
       "recruitment": [],
       "locationTags": [],
       "culture": "goblins",
@@ -291,7 +279,7 @@
       "hex": "15:10",
       "structuralType": "stronghold",
       "economicType": "fortress",
-      "regionId": "region-angmar"
+      "regionId": "region-new-region-12"
     },
     {
       "id": "cape-forochel",
@@ -303,11 +291,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 20,
-        "materials": 5
+        "gold": 0,
+        "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 6,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -317,15 +305,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "9:8",
-      "structuralType": "domain",
-      "economicType": "camp",
-      "regionId": "region-eriador",
-      "hexes": [
-        "6:8",
-        "7:8",
-        "9:8",
-        "9:9"
-      ]
+      "structuralType": "stronghold",
+      "economicType": "wilderness",
+      "regionId": "region-eriador"
     },
     {
       "id": "moria",
@@ -351,9 +333,17 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "12:17",
-      "structuralType": "stronghold",
+      "structuralType": "domain",
       "economicType": "mine",
-      "regionId": "region-misty-mountains"
+      "regionId": "region-misty-mountains",
+      "hexes": [
+        "11:18",
+        "11:19",
+        "12:17",
+        "12:18",
+        "15:14",
+        "16:13"
+      ]
     },
     {
       "id": "goblin-town",
@@ -421,11 +411,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 5,
+        "materials": 5
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -650,11 +640,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 5,
+        "materials": 5
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -859,10 +849,10 @@
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
-      "hex": "18:22",
+      "hex": "18:23",
       "structuralType": "stronghold",
       "economicType": "fortress",
-      "regionId": "region-mordor"
+      "regionId": "region-new-region-8"
     },
     {
       "id": "cirith-ungol",
@@ -958,11 +948,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 100,
-        "materials": 20
+        "gold": 80,
+        "materials": 10
       },
-      "recruitmentSlots": 3,
-      "reserveLimit": 15,
+      "recruitmentSlots": 2,
+      "reserveLimit": 10,
       "recruitment": [],
       "locationTags": [],
       "culture": "dwarves",
@@ -982,18 +972,18 @@
       "nameTranslations": {
         "ru": "Эсгарот"
       },
-      "side": "dwarves",
+      "side": "civilian",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 60,
+        "materials": 20
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 2,
+      "reserveLimit": 10,
       "recruitment": [],
       "locationTags": [],
-      "culture": "dwarves",
+      "culture": null,
       "extraRecruitables": [],
       "blockedRecruitables": [],
       "rtsMapId": "",
@@ -1014,11 +1004,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 5,
+        "materials": 5
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -1095,7 +1085,7 @@
         "ru": "Чертоги Трандуила"
       },
       "side": "elves",
-      "armyLimitBonus": 0,
+      "armyLimitBonus": 1,
       "image": "",
       "income": {
         "gold": 150,
@@ -1122,7 +1112,7 @@
       "nameTranslations": {
         "ru": "Дол Гулдур"
       },
-      "side": "mordor",
+      "side": "goblins",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
@@ -1182,11 +1172,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "elves",
@@ -1230,11 +1220,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "elves",
@@ -1315,7 +1305,7 @@
       "rtsFortress": null,
       "hex": "0:15",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "port",
       "regionId": "region-lindon",
       "hexes": [
         "-1:15",
@@ -1332,11 +1322,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 20,
-        "materials": 40
+        "gold": 5,
+        "materials": 30
       },
-      "recruitmentSlots": 2,
-      "reserveLimit": 10,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "dwarves",
@@ -1439,6 +1429,7 @@
       "economicType": "farm",
       "regionId": "region-new-region-3",
       "hexes": [
+        "7:14",
         "7:15"
       ]
     },
@@ -1612,7 +1603,7 @@
       "nameTranslations": {
         "ru": "Тролльское Нагорье"
       },
-      "side": "angmar",
+      "side": "civilian",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
@@ -1623,7 +1614,7 @@
       "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
-      "culture": "angmar",
+      "culture": null,
       "extraRecruitables": [],
       "blockedRecruitables": [],
       "rtsMapId": "",
@@ -1640,7 +1631,7 @@
       "nameTranslations": {
         "ru": "Эттенмурз"
       },
-      "side": "angmar",
+      "side": "civilian",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
@@ -1651,7 +1642,7 @@
       "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
-      "culture": "angmar",
+      "culture": null,
       "extraRecruitables": [],
       "blockedRecruitables": [],
       "rtsMapId": "",
@@ -1662,10 +1653,7 @@
       "economicType": "wilderness",
       "regionId": "region-misty-mountains",
       "hexes": [
-        "13:12",
-        "14:11",
-        "14:12",
-        "15:11"
+        "13:12"
       ]
     },
     {
@@ -1674,15 +1662,15 @@
       "nameTranslations": {
         "ru": "Эрегион (Остранна)"
       },
-      "side": "civilian",
+      "side": "elves",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 5,
+        "materials": 5
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "elves",
@@ -1713,11 +1701,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -1774,11 +1762,8 @@
         "13:10",
         "13:8",
         "13:9",
-        "14:10",
         "14:8",
         "14:9",
-        "15:8",
-        "15:9",
         "8:10",
         "8:11",
         "9:10",
@@ -1811,23 +1796,24 @@
       "hex": "18:8",
       "structuralType": "domain",
       "economicType": "wilderness",
-      "regionId": "region-angmar",
+      "regionId": "region-new-region-12",
       "hexes": [
-        "16:7",
+        "14:10",
+        "14:11",
+        "14:12",
+        "15:11",
+        "15:8",
+        "15:9",
+        "16:10",
         "16:8",
         "16:9",
-        "17:5",
-        "17:6",
-        "17:7",
+        "17:10",
         "17:8",
         "17:9",
         "18:10",
-        "18:6",
-        "18:7",
         "18:8",
         "18:9",
-        "19:6",
-        "19:7"
+        "19:9"
       ]
     },
     {
@@ -1840,11 +1826,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "angmar",
@@ -1860,10 +1846,13 @@
       "hexes": [
         "5:10",
         "6:10",
+        "6:8",
         "6:9",
         "7:10",
+        "7:8",
         "7:9",
-        "8:9"
+        "8:9",
+        "9:9"
       ]
     },
     {
@@ -1922,15 +1911,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "14:15",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "pass",
-      "regionId": "region-misty-mountains",
-      "hexes": [
-        "14:15",
-        "15:14",
-        "15:15",
-        "16:13"
-      ]
+      "regionId": "region-misty-mountains"
     },
     {
       "id": "dimrill-dale",
@@ -1942,11 +1925,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 5,
+        "materials": 30
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "goblins",
@@ -1957,13 +1940,10 @@
       "rtsFortress": null,
       "hex": "13:18",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "mountains",
       "regionId": "region-misty-mountains",
       "hexes": [
-        "11:18",
-        "11:19",
         "11:20",
-        "12:18",
         "12:19",
         "13:18"
       ]
@@ -1978,11 +1958,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 15,
+        "materials": 5
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -1996,8 +1976,6 @@
       "economicType": "pass",
       "regionId": "region-rohan",
       "hexes": [
-        "5:25",
-        "5:26",
         "6:24",
         "7:23",
         "7:24",
@@ -2010,15 +1988,15 @@
       "nameTranslations": {
         "ru": "Нан Курунир"
       },
-      "side": "isengard",
+      "side": "goblins",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 100,
-        "materials": 20
+        "gold": 0,
+        "materials": 0
       },
-      "recruitmentSlots": 3,
-      "reserveLimit": 15,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "goblins",
@@ -2046,8 +2024,8 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 5,
+        "materials": 5
       },
       "recruitmentSlots": 0,
       "reserveLimit": 4,
@@ -2060,9 +2038,23 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "5:23",
-      "structuralType": "stronghold",
-      "economicType": "wilderness",
-      "regionId": "region-enedwaith"
+      "structuralType": "domain",
+      "economicType": "ruins",
+      "regionId": "region-enedwaith",
+      "hexes": [
+        "2:23",
+        "3:23",
+        "4:20",
+        "4:21",
+        "4:22",
+        "5:19",
+        "5:20",
+        "5:21",
+        "5:23",
+        "6:18",
+        "6:19",
+        "6:20"
+      ]
     },
     {
       "id": "dunland-highlands",
@@ -2074,11 +2066,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 5,
+        "materials": 30
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "isengard",
@@ -2089,7 +2081,7 @@
       "rtsFortress": null,
       "hex": "8:20",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "mountains",
       "regionId": "region-dunland",
       "hexes": [
         "10:20",
@@ -2122,11 +2114,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -2137,7 +2129,7 @@
       "rtsFortress": null,
       "hex": "2:27",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "forest",
       "regionId": "region-gondor",
       "hexes": [
         "0:28",
@@ -2150,7 +2142,9 @@
         "2:29",
         "3:26",
         "3:27",
-        "4:26"
+        "3:28",
+        "4:26",
+        "4:27"
       ]
     },
     {
@@ -2181,8 +2175,6 @@
       "economicType": "farm",
       "regionId": "region-rohan",
       "hexes": [
-        "5:27",
-        "6:26",
         "8:24",
         "8:25",
         "8:26",
@@ -2255,6 +2247,7 @@
         "10:23",
         "10:24",
         "10:25",
+        "11:22",
         "11:23",
         "11:24",
         "12:22"
@@ -2303,11 +2296,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -2322,7 +2315,10 @@
       "regionId": "region-rohan",
       "hexes": [
         "10:21",
-        "10:22"
+        "10:22",
+        "12:20",
+        "12:21",
+        "13:20"
       ]
     },
     {
@@ -2367,11 +2363,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -2401,11 +2397,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 50,
         "materials": 0
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -2436,11 +2432,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 50,
         "materials": 0
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -2554,14 +2550,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "4:28",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "farm",
-      "regionId": "region-gondor",
-      "hexes": [
-        "3:28",
-        "4:27",
-        "4:28"
-      ]
+      "regionId": "region-gondor"
     },
     {
       "id": "andrast",
@@ -2573,11 +2564,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -2610,11 +2601,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -2639,15 +2630,15 @@
       "nameTranslations": {
         "ru": "Харондор"
       },
-      "side": "civilian",
+      "side": "mordor",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "mordor",
@@ -2699,11 +2690,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "mordor",
@@ -2722,6 +2713,7 @@
         "17:19",
         "18:18",
         "18:19",
+        "18:22",
         "19:23",
         "20:23",
         "21:22",
@@ -2837,11 +2829,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 50,
         "materials": 0
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
       "culture": "mordor",
@@ -2942,7 +2934,8 @@
         "18:21",
         "19:20",
         "19:21",
-        "20:20"
+        "20:20",
+        "20:21"
       ]
     },
     {
@@ -2955,11 +2948,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "mordor",
@@ -2974,7 +2967,9 @@
       "regionId": "region-new-region-8",
       "hexes": [
         "17:22",
-        "17:23"
+        "17:23",
+        "19:22",
+        "20:22"
       ]
     },
     {
@@ -2987,11 +2982,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 0,
+        "materials": 5
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "mordor",
@@ -3052,11 +3047,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 50,
         "materials": 0
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -3109,11 +3104,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 5,
+        "materials": 30
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "dwarves",
@@ -3124,7 +3119,7 @@
       "rtsFortress": null,
       "hex": "25:9",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "mountains",
       "regionId": "region-new-region-5",
       "hexes": [
         "23:10",
@@ -3149,11 +3144,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 5,
+        "materials": 30
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "dwarves",
@@ -3264,11 +3259,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "elves",
@@ -3298,7 +3293,7 @@
         "ru": "Ближний Харад"
       },
       "side": "mordor",
-      "armyLimitBonus": 1,
+      "armyLimitBonus": 0,
       "image": "",
       "income": {
         "gold": 0,
@@ -3408,11 +3403,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 30,
+        "gold": 0,
         "materials": 0
       },
-      "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "mordor",
@@ -3482,14 +3477,14 @@
         "ru": "Море Рун"
       },
       "side": "mordor",
-      "armyLimitBonus": 1,
+      "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 150,
-        "materials": 30
+        "gold": 0,
+        "materials": 0
       },
-      "recruitmentSlots": 4,
-      "reserveLimit": 20,
+      "recruitmentSlots": 0,
+      "reserveLimit": 4,
       "recruitment": [],
       "locationTags": [],
       "culture": "mordor",
@@ -3580,7 +3575,7 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 15,
+        "gold": 0,
         "materials": 0
       },
       "recruitmentSlots": 0,
@@ -3595,9 +3590,12 @@
       "rtsFortress": null,
       "hex": "6:17",
       "structuralType": "domain",
-      "economicType": "ford",
+      "economicType": "wilderness",
       "regionId": "region-new-region-3",
       "hexes": [
+        "3:18",
+        "4:17",
+        "4:18",
         "5:17",
         "5:18",
         "6:17"
@@ -3822,7 +3820,7 @@
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
-      "hex": "18:24",
+      "hex": "18:25",
       "structuralType": "stronghold",
       "economicType": "fortress",
       "regionId": "region-mordor"
@@ -3935,14 +3933,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "16:11",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "ruins",
-      "regionId": "region-angmar",
-      "hexes": [
-        "16:10",
-        "16:11",
-        "17:10"
-      ]
+      "regionId": "region-new-region"
     },
     {
       "id": "iron-hills-halls",
@@ -4024,12 +4017,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "5:16",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "fortress",
-      "regionId": "region-new-region-3",
-      "hexes": [
-        "5:16"
-      ]
+      "regionId": "region-new-region-3"
     },
     {
       "id": "far-downs",
@@ -4059,6 +4049,8 @@
       "economicType": "farm",
       "regionId": "region-new-region-3",
       "hexes": [
+        "3:16",
+        "3:17",
         "4:15",
         "5:14"
       ]
@@ -4073,11 +4065,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
+        "gold": 50,
         "materials": 0
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -4088,7 +4080,7 @@
       "rtsFortress": null,
       "hex": "5:15",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "farm",
       "regionId": "region-new-region-3",
       "hexes": [
         "5:15"
@@ -4265,21 +4257,10 @@
         "2:19",
         "2:20",
         "2:22",
-        "2:23",
         "3:19",
         "3:20",
         "3:21",
-        "3:23",
-        "4:19",
-        "4:20",
-        "4:21",
-        "4:22",
-        "5:19",
-        "5:20",
-        "5:21",
-        "6:18",
-        "6:19",
-        "6:20"
+        "4:19"
       ]
     },
     {
@@ -4306,12 +4287,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "14:16",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "mountains",
-      "regionId": "region-misty-mountains",
-      "hexes": [
-        "14:16"
-      ]
+      "regionId": "region-misty-mountains"
     },
     {
       "id": "peak-celebdil",
@@ -4337,12 +4315,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "13:16",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "mountains",
-      "regionId": "region-misty-mountains",
-      "hexes": [
-        "13:16"
-      ]
+      "regionId": "region-misty-mountains"
     },
     {
       "id": "kheled-zaram",
@@ -4354,11 +4329,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 5,
+        "materials": 30
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "goblins",
@@ -4368,12 +4343,9 @@
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "13:17",
-      "structuralType": "domain",
-      "economicType": "wilderness",
-      "regionId": "region-misty-mountains",
-      "hexes": [
-        "13:17"
-      ]
+      "structuralType": "stronghold",
+      "economicType": "mountains",
+      "regionId": "region-misty-mountains"
     },
     {
       "id": "fold",
@@ -4646,7 +4618,7 @@
       "nameTranslations": {
         "ru": "Южный Итилиэн"
       },
-      "side": "civilian",
+      "side": "men-of-the-west",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
@@ -4862,7 +4834,6 @@
       "economicType": "pass",
       "regionId": "region-mordor",
       "hexes": [
-        "18:25",
         "19:24"
       ]
     },
@@ -4930,15 +4901,12 @@
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
-      "hex": "18:23",
+      "hex": "18:24",
       "structuralType": "domain",
       "economicType": "pass",
-      "regionId": "region-new-region-8",
+      "regionId": "region-mordor",
       "hexes": [
-        "18:23",
-        "19:22",
-        "20:21",
-        "20:22"
+        "18:24"
       ]
     },
     {
@@ -5102,7 +5070,7 @@
       "nameTranslations": {
         "ru": "Дубовая Роща"
       },
-      "side": "dwarves",
+      "side": "civilian",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
@@ -5113,25 +5081,16 @@
       "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
-      "culture": "dwarves",
+      "culture": null,
       "extraRecruitables": [],
       "blockedRecruitables": [],
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
       "hex": "23:12",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "economicType": "forest",
-      "regionId": "region-new-region-4",
-      "hexes": [
-        "22:12",
-        "23:11",
-        "23:12",
-        "24:11",
-        "25:11",
-        "25:12",
-        "26:12"
-      ]
+      "regionId": "region-new-region-4"
     },
     {
       "id": "nindalf",
@@ -5201,7 +5160,7 @@
       "nameTranslations": {
         "ru": "Долина Дейла"
       },
-      "side": "dwarves",
+      "side": "civilian",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
@@ -5212,7 +5171,7 @@
       "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
-      "culture": "dwarves",
+      "culture": null,
       "extraRecruitables": [],
       "blockedRecruitables": [],
       "rtsMapId": "",
@@ -5229,8 +5188,11 @@
         "24:13",
         "24:14",
         "24:15",
+        "25:11",
+        "25:12",
         "25:13",
         "25:14",
+        "26:12",
         "26:13"
       ]
     },
@@ -5240,18 +5202,18 @@
       "nameTranslations": {
         "ru": "Долгое Озеро"
       },
-      "side": "dwarves",
+      "side": "civilian",
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 60,
+        "materials": 20
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 2,
+      "reserveLimit": 10,
       "recruitment": [],
       "locationTags": [],
-      "culture": "dwarves",
+      "culture": null,
       "extraRecruitables": [],
       "blockedRecruitables": [],
       "rtsMapId": "",
@@ -5259,11 +5221,14 @@
       "rtsFortress": null,
       "hex": "22:13",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "port",
       "regionId": "region-new-region-4",
       "hexes": [
         "21:14",
-        "22:13"
+        "22:12",
+        "22:13",
+        "23:11",
+        "24:11"
       ]
     },
     {
@@ -5294,6 +5259,7 @@
       "economicType": "forest",
       "regionId": "region-misty-mountains",
       "hexes": [
+        "15:15",
         "15:17"
       ]
     },
@@ -5404,11 +5370,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "elves",
@@ -5419,7 +5385,7 @@
       "rtsFortress": null,
       "hex": "18:17",
       "structuralType": "domain",
-      "economicType": "wilderness",
+      "economicType": "forest",
       "regionId": "region-mirkwood",
       "hexes": [
         "18:17",
@@ -5436,11 +5402,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 20,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "elves",
@@ -5451,7 +5417,7 @@
       "rtsFortress": null,
       "hex": "18:14",
       "structuralType": "domain",
-      "economicType": "crossroads",
+      "economicType": "forest",
       "regionId": "region-mirkwood",
       "hexes": [
         "18:14"
@@ -5467,11 +5433,11 @@
       "armyLimitBonus": 0,
       "image": "",
       "income": {
-        "gold": 20,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": "elves",
@@ -5482,7 +5448,7 @@
       "rtsFortress": null,
       "hex": "19:14",
       "structuralType": "domain",
-      "economicType": "crossroads",
+      "economicType": "forest",
       "regionId": "region-mirkwood",
       "hexes": [
         "19:14"
@@ -5533,10 +5499,10 @@
       "id": "map-object-mt9c3y3r",
       "name": "Harlond",
       "nameTranslations": {
-        "ru": "Новый оплот"
+        "ru": "Харлонд"
       },
       "side": "elves",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "hex": "-1:17",
       "regionId": "region-lindon",
       "image": "",
@@ -5555,16 +5521,13 @@
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
-      "armyLimitBonus": 0,
-      "hexes": [
-        "-1:17"
-      ]
+      "armyLimitBonus": 0
     },
     {
       "id": "map-object-mt9c5oa3",
       "name": "Forlond",
       "nameTranslations": {
-        "ru": "Фарлонд"
+        "ru": "Форлонд"
       },
       "side": "elves",
       "structuralType": "stronghold",
@@ -5725,20 +5688,17 @@
         "ru": "Последний мост"
       },
       "side": "civilian",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "hex": "11:15",
       "regionId": "region-new-region-2",
-      "hexes": [
-        "11:15"
-      ],
       "image": "",
-      "economicType": "pass",
+      "economicType": "crossroads",
       "income": {
-        "gold": 15,
-        "materials": 5
+        "gold": 20,
+        "materials": 0
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 5,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -5765,13 +5725,13 @@
         "13:14"
       ],
       "image": "",
-      "economicType": "wilderness",
+      "economicType": "forest",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 10,
+        "materials": 20
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -5789,12 +5749,9 @@
         "ru": "Бруиненский брод"
       },
       "side": "civilian",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "hex": "13:15",
       "regionId": "region-new-region-9",
-      "hexes": [
-        "13:15"
-      ],
       "image": "",
       "economicType": "crossroads",
       "income": {
@@ -5880,20 +5837,20 @@
       "id": "map-object-mt9dwn6z",
       "name": "Fenmarch",
       "nameTranslations": {
-        "ru": "Фенмарк"
+        "ru": "Фенмарка"
       },
       "side": "men-of-the-west",
       "structuralType": "stronghold",
       "hex": "12:26",
       "regionId": "region-rohan",
       "image": "",
-      "economicType": "wilderness",
+      "economicType": "farm",
       "income": {
-        "gold": 0,
+        "gold": 50,
         "materials": 0
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -5911,17 +5868,17 @@
         "ru": "Западная марка"
       },
       "side": "men-of-the-west",
-      "structuralType": "stronghold",
+      "structuralType": "domain",
       "hex": "6:25",
       "regionId": "region-rohan",
       "image": "",
-      "economicType": "village",
+      "economicType": "farm",
       "income": {
-        "gold": 30,
+        "gold": 50,
         "materials": 0
       },
       "recruitmentSlots": 1,
-      "reserveLimit": 5,
+      "reserveLimit": 8,
       "recruitment": [],
       "locationTags": [],
       "culture": "men-of-the-west",
@@ -5930,23 +5887,30 @@
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
-      "armyLimitBonus": 0
+      "armyLimitBonus": 0,
+      "hexes": [
+        "5:25",
+        "5:26",
+        "5:27",
+        "6:25",
+        "6:26"
+      ]
     },
     {
       "id": "map-object-mt9e41m0",
       "name": "Forodwaith",
       "nameTranslations": {
-        "ru": "Новый оплот"
+        "ru": "Фородвайт"
       },
       "side": "civilian",
       "structuralType": "domain",
       "hex": "13:7",
       "regionId": "region-angmar",
       "image": "",
-      "economicType": "pass",
+      "economicType": "wilderness",
       "income": {
-        "gold": 15,
-        "materials": 5
+        "gold": 0,
+        "materials": 0
       },
       "recruitmentSlots": 0,
       "reserveLimit": 4,
@@ -5974,7 +5938,15 @@
         "15:6",
         "15:7",
         "16:5",
-        "16:6"
+        "16:6",
+        "16:7",
+        "17:5",
+        "17:6",
+        "17:7",
+        "18:6",
+        "18:7",
+        "19:6",
+        "19:7"
       ]
     },
     {
@@ -6014,17 +5986,17 @@
       "id": "map-object-mt9eo9q3",
       "name": "Eastern desolation",
       "nameTranslations": {
-        "ru": "Новый оплот"
+        "ru": "Восточная пустошь"
       },
       "side": "mordor",
       "structuralType": "stronghold",
       "hex": "25:26",
       "regionId": "region-mordor",
       "image": "",
-      "economicType": "ruins",
+      "economicType": "wilderness",
       "income": {
-        "gold": 5,
-        "materials": 5
+        "gold": 0,
+        "materials": 0
       },
       "recruitmentSlots": 0,
       "reserveLimit": 4,
@@ -6077,10 +6049,10 @@
       "hex": "12:32",
       "regionId": "region-new-region-6",
       "image": "",
-      "economicType": "pass",
+      "economicType": "ford",
       "income": {
         "gold": 15,
-        "materials": 5
+        "materials": 0
       },
       "recruitmentSlots": 0,
       "reserveLimit": 4,
@@ -6164,13 +6136,13 @@
       "hex": "13:13",
       "regionId": "region-new-region-9",
       "image": "",
-      "economicType": "wilderness",
+      "economicType": "mountains",
       "income": {
-        "gold": 0,
-        "materials": 0
+        "gold": 5,
+        "materials": 30
       },
-      "recruitmentSlots": 0,
-      "reserveLimit": 4,
+      "recruitmentSlots": 1,
+      "reserveLimit": 6,
       "recruitment": [],
       "locationTags": [],
       "culture": null,
@@ -6189,10 +6161,10 @@
       "id": "map-object-mt9gcugk",
       "name": "Treebeard's Hill",
       "nameTranslations": {
-        "ru": "Дом Древоборода"
+        "ru": "Холм Древоборода"
       },
       "side": "civilian",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "hex": "11:21",
       "regionId": "region-rohan",
       "image": "",
@@ -6211,20 +6183,13 @@
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
-      "armyLimitBonus": 0,
-      "hexes": [
-        "11:21",
-        "11:22",
-        "12:20",
-        "12:21",
-        "13:20"
-      ]
+      "armyLimitBonus": 0
     },
     {
       "id": "map-object-mt9gkcpf",
       "name": "Crossroads",
       "nameTranslations": {
-        "ru": "Перекресток"
+        "ru": "Перекрёсток"
       },
       "side": "civilian",
       "structuralType": "domain",
@@ -10083,7 +10048,6 @@
         "r": 21,
         "terrain": "mountains",
         "moveCost": 3,
-        "owner": "isengard",
         "passable": true
       },
       "10:20": {
@@ -10105,7 +10069,6 @@
         "r": 19,
         "terrain": "mountains",
         "moveCost": 3,
-        "owner": null,
         "passable": true
       },
       "9:20": {
@@ -11066,7 +11029,6 @@
         "r": 22,
         "terrain": "hills",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "15:22": {
@@ -11074,7 +11036,6 @@
         "r": 22,
         "terrain": "hills",
         "moveCost": 2,
-        "owner": null,
         "passable": true,
         "river": true
       },
@@ -11275,7 +11236,6 @@
         "r": 18,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "11:17": {
@@ -11283,7 +11243,6 @@
         "r": 17,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "11:16": {
@@ -11299,7 +11258,6 @@
         "r": 16,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true,
         "river": true
       },
@@ -11559,7 +11517,6 @@
         "r": 19,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": "mordor",
         "passable": true
       },
       "16:19": {
@@ -11567,7 +11524,6 @@
         "r": 19,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": "mordor",
         "passable": true
       },
       "15:19": {
@@ -11575,7 +11531,6 @@
         "r": 19,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": "mordor",
         "passable": true
       },
       "16:18": {
@@ -11590,7 +11545,6 @@
         "r": 18,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": "mordor",
         "passable": true
       },
       "18:17": {
@@ -11665,7 +11619,6 @@
         "r": 16,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "14:17": {
@@ -11673,7 +11626,6 @@
         "r": 17,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": "elves",
         "passable": true
       },
       "15:17": {
@@ -11709,7 +11661,6 @@
         "r": 19,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "11:20": {
@@ -11717,7 +11668,6 @@
         "r": 20,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": "goblins",
         "passable": true
       },
       "12:20": {
@@ -11725,7 +11675,6 @@
         "r": 20,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "13:20": {
@@ -11733,7 +11682,6 @@
         "r": 20,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "10:21": {
@@ -11755,7 +11703,6 @@
         "r": 21,
         "terrain": "forest",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "13:21": {
@@ -12607,7 +12554,6 @@
         "r": 37,
         "terrain": "desert",
         "moveCost": 2,
-        "owner": null,
         "passable": true
       },
       "13:37": {
@@ -13018,7 +12964,6 @@
       "6:10": {
         "q": 6,
         "r": 10,
-        "owner": null,
         "river": true
       },
       "6:12": {
@@ -13036,7 +12981,6 @@
         "r": 9,
         "terrain": "water",
         "moveCost": 99,
-        "owner": "angmar",
         "passable": false
       },
       "8:8": {
@@ -13288,7 +13232,6 @@
       "9:32": {
         "q": 9,
         "r": 32,
-        "owner": null,
         "river": true
       },
       "9:31": {
@@ -13309,13 +13252,11 @@
       "12:31": {
         "q": 12,
         "r": 31,
-        "owner": null,
         "river": true
       },
       "13:30": {
         "q": 13,
         "r": 30,
-        "owner": null,
         "river": true
       },
       "13:29": {
@@ -13351,7 +13292,6 @@
       "13:32": {
         "q": 13,
         "r": 32,
-        "owner": null,
         "river": true
       },
       "14:31": {
@@ -13377,7 +13317,6 @@
       "9:35": {
         "q": 9,
         "r": 35,
-        "owner": null,
         "river": false,
         "ford": false,
         "bridge": false
@@ -13395,7 +13334,6 @@
       "12:34": {
         "q": 12,
         "r": 34,
-        "owner": null,
         "river": true
       },
       "15:25": {
@@ -13416,13 +13354,11 @@
       "14:23": {
         "q": 14,
         "r": 23,
-        "owner": null,
         "river": true
       },
       "15:21": {
         "q": 15,
         "r": 21,
-        "owner": null,
         "river": true
       },
       "16:20": {
@@ -13433,13 +13369,11 @@
       "15:20": {
         "q": 15,
         "r": 20,
-        "owner": null,
         "river": true
       },
       "14:20": {
         "q": 14,
         "r": 20,
-        "owner": null,
         "river": true
       },
       "14:19": {
@@ -13455,8 +13389,6 @@
       "16:16": {
         "q": 16,
         "r": 16,
-        "owner": "elves",
-        "zoneOfControl": "elves",
         "river": true
       },
       "16:14": {
@@ -13645,18 +13577,15 @@
       },
       "6:23": {
         "q": 6,
-        "r": 23,
-        "owner": "isengard"
+        "r": 23
       },
       "6:22": {
         "q": 6,
-        "r": 22,
-        "owner": "isengard"
+        "r": 22
       },
       "7:22": {
         "q": 7,
-        "r": 22,
-        "owner": "isengard"
+        "r": 22
       },
       "7:23": {
         "q": 7,
@@ -13672,8 +13601,7 @@
       },
       "10:23": {
         "q": 10,
-        "r": 23,
-        "owner": "men-of-the-west"
+        "r": 23
       },
       "13:25": {
         "q": 13,
@@ -13689,8 +13617,7 @@
       },
       "6:9": {
         "q": 6,
-        "r": 9,
-        "owner": null
+        "r": 9
       },
       "7:8": {
         "q": 7,
@@ -13710,8 +13637,7 @@
       },
       "14:7": {
         "q": 14,
-        "r": 7,
-        "owner": null
+        "r": 7
       },
       "18:28": {
         "q": 18,
@@ -13727,18 +13653,15 @@
       },
       "16:12": {
         "q": 16,
-        "r": 12,
-        "owner": "goblins"
+        "r": 12
       },
       "7:10": {
         "q": 7,
-        "r": 10,
-        "owner": null
+        "r": 10
       },
       "5:10": {
         "q": 5,
-        "r": 10,
-        "owner": null
+        "r": 10
       },
       "2:27": {
         "q": 2,
@@ -13778,8 +13701,7 @@
       },
       "13:33": {
         "q": 13,
-        "r": 33,
-        "owner": null
+        "r": 33
       },
       "14:33": {
         "q": 14,
@@ -13795,18 +13717,15 @@
       },
       "11:34": {
         "q": 11,
-        "r": 34,
-        "owner": null
+        "r": 34
       },
       "10:35": {
         "q": 10,
-        "r": 35,
-        "owner": null
+        "r": 35
       },
       "9:34": {
         "q": 9,
-        "r": 34,
-        "owner": null
+        "r": 34
       },
       "8:34": {
         "q": 8,
@@ -13814,8 +13733,7 @@
       },
       "7:34": {
         "q": 7,
-        "r": 34,
-        "owner": null
+        "r": 34
       },
       "8:33": {
         "q": 8,
@@ -13823,53 +13741,43 @@
       },
       "10:32": {
         "q": 10,
-        "r": 32,
-        "owner": null
+        "r": 32
       },
       "11:32": {
         "q": 11,
-        "r": 32,
-        "owner": null
+        "r": 32
       },
       "13:31": {
         "q": 13,
-        "r": 31,
-        "owner": null
+        "r": 31
       },
       "13:15": {
         "q": 13,
-        "r": 15,
-        "owner": "elves"
+        "r": 15
       },
       "14:12": {
         "q": 14,
-        "r": 12,
-        "owner": "goblins"
+        "r": 12
       },
       "14:11": {
         "q": 14,
-        "r": 11,
-        "owner": "goblins"
+        "r": 11
       },
       "9:22": {
         "q": 9,
-        "r": 22,
-        "owner": "isengard"
+        "r": 22
       },
       "9:33": {
         "q": 9,
-        "r": 33,
-        "owner": null
+        "r": 33
       },
       "14:22": {
         "q": 14,
-        "r": 22,
-        "owner": null
+        "r": 22
       },
       "14:21": {
         "q": 14,
-        "r": 21,
-        "owner": "men-of-the-west"
+        "r": 21
       },
       "13:22": {
         "q": 13,
@@ -14806,6 +14714,206 @@
       "21:6": {
         "q": 21,
         "r": 6
+      },
+      "6:14": {
+        "q": 6,
+        "r": 14
+      },
+      "9:12": {
+        "q": 9,
+        "r": 12
+      },
+      "9:26": {
+        "q": 9,
+        "r": 26
+      },
+      "7:25": {
+        "q": 7,
+        "r": 25
+      },
+      "14:27": {
+        "q": 14,
+        "r": 27
+      },
+      "5:30": {
+        "q": 5,
+        "r": 30
+      },
+      "21:24": {
+        "q": 21,
+        "r": 24
+      },
+      "17:27": {
+        "q": 17,
+        "r": 27
+      },
+      "18:22": {
+        "q": 18,
+        "r": 22
+      },
+      "18:26": {
+        "q": 18,
+        "r": 26
+      },
+      "20:25": {
+        "q": 20,
+        "r": 25
+      },
+      "-2:13": {
+        "q": -2,
+        "r": 13
+      },
+      "7:12": {
+        "q": 7,
+        "r": 12
+      },
+      "13:12": {
+        "q": 13,
+        "r": 12
+      },
+      "2:21": {
+        "q": 2,
+        "r": 21
+      },
+      "5:23": {
+        "q": 5,
+        "r": 23
+      },
+      "8:20": {
+        "q": 8,
+        "r": 20
+      },
+      "8:25": {
+        "q": 8,
+        "r": 25
+      },
+      "11:26": {
+        "q": 11,
+        "r": 26
+      },
+      "10:24": {
+        "q": 10,
+        "r": 24
+      },
+      "13:26": {
+        "q": 13,
+        "r": 26
+      },
+      "11:30": {
+        "q": 11,
+        "r": 30
+      },
+      "5:31": {
+        "q": 5,
+        "r": 31
+      },
+      "4:29": {
+        "q": 4,
+        "r": 29
+      },
+      "4:28": {
+        "q": 4,
+        "r": 28
+      },
+      "-1:30": {
+        "q": -1,
+        "r": 30
+      },
+      "5:34": {
+        "q": 5,
+        "r": 34
+      },
+      "20:24": {
+        "q": 20,
+        "r": 24
+      },
+      "23:26": {
+        "q": 23,
+        "r": 26
+      },
+      "19:30": {
+        "q": 19,
+        "r": 30
+      },
+      "22:34": {
+        "q": 22,
+        "r": 34
+      },
+      "29:18": {
+        "q": 29,
+        "r": 18
+      },
+      "33:14": {
+        "q": 33,
+        "r": 14
+      },
+      "6:30": {
+        "q": 6,
+        "r": 30
+      },
+      "24:28": {
+        "q": 24,
+        "r": 28
+      },
+      "9:13": {
+        "q": 9,
+        "r": 13
+      },
+      "10:26": {
+        "q": 10,
+        "r": 26
+      },
+      "13:23": {
+        "q": 13,
+        "r": 23
+      },
+      "14:26": {
+        "q": 14,
+        "r": 26
+      },
+      "8:28": {
+        "q": 8,
+        "r": 28
+      },
+      "7:30": {
+        "q": 7,
+        "r": 30
+      },
+      "19:24": {
+        "q": 19,
+        "r": 24
+      },
+      "21:30": {
+        "q": 21,
+        "r": 30
+      },
+      "19:25": {
+        "q": 19,
+        "r": 25
+      },
+      "30:18": {
+        "q": 30,
+        "r": 18
+      },
+      "-2:16": {
+        "q": -2,
+        "r": 16
+      },
+      "6:13": {
+        "q": 6,
+        "r": 13
+      },
+      "13:7": {
+        "q": 13,
+        "r": 7
+      },
+      "16:10": {
+        "q": 16,
+        "r": 10
+      },
+      "18:10": {
+        "q": 18,
+        "r": 10
       }
     }
   },
@@ -16282,37 +16390,23 @@
         "13:7",
         "13:8",
         "13:9",
-        "14:10",
         "14:5",
         "14:6",
         "14:7",
         "14:8",
         "14:9",
-        "15:10",
         "15:4",
         "15:5",
         "15:6",
         "15:7",
-        "15:8",
-        "15:9",
-        "16:10",
-        "16:11",
         "16:5",
         "16:6",
         "16:7",
-        "16:8",
-        "16:9",
-        "17:10",
         "17:5",
         "17:6",
         "17:7",
-        "17:8",
-        "17:9",
-        "18:10",
         "18:6",
         "18:7",
-        "18:8",
-        "18:9",
         "19:6",
         "19:7",
         "8:10",
@@ -16344,12 +16438,9 @@
         "13:16",
         "13:17",
         "13:18",
-        "14:11",
-        "14:12",
         "14:15",
         "14:16",
         "14:18",
-        "15:11",
         "15:12",
         "15:14",
         "15:15",
@@ -16368,7 +16459,7 @@
     },
     {
       "id": "region-enedwaith",
-      "name": "Enedwaith",
+      "name": "Minhiriath",
       "nameTranslations": {
         "ru": "Энедвайт"
       },
@@ -16404,7 +16495,7 @@
       ],
       "color": "#8B7D5B",
       "ownerFactionId": null,
-      "description": "Sparsely peopled lands between Greyflood and Isen.",
+      "description": "Minhiriath is the area between the Rivers Baranduin and Gwathló in the the southern regions of Eriador.",
       "descriptionTranslations": {
         "ru": "Малонаселённые земли между Гватло и Изеном."
       }
@@ -16743,7 +16834,6 @@
       "hexes": [
         "19:18",
         "19:19",
-        "19:9",
         "20:17",
         "20:18",
         "20:19",
@@ -16997,7 +17087,7 @@
       "id": "region-new-region",
       "name": "Anduin",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Андоин"
       },
       "hexes": [
         "13:19",
@@ -17013,6 +17103,7 @@
         "15:21",
         "15:22",
         "15:23",
+        "16:11",
         "16:12",
         "16:14",
         "16:15",
@@ -17028,15 +17119,17 @@
         "17:16"
       ],
       "color": "#71b1e5",
+      "ownerFactionId": null,
       "description": "The vale of great river Anduin.",
-      "descriptionTranslations": {},
-      "ownerFactionId": null
+      "descriptionTranslations": {
+        "ru": "Долина великой реки Андуин."
+      }
     },
     {
       "id": "region-new-region-2",
       "name": "Lone-lands",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Одинокие Земли"
       },
       "hexes": [
         "10:13",
@@ -17057,15 +17150,17 @@
         "9:17"
       ],
       "color": "#d5d75b",
+      "ownerFactionId": null,
       "description": "Wilderness territory east of Bree-land. ",
-      "descriptionTranslations": {},
-      "ownerFactionId": null
+      "descriptionTranslations": {
+        "ru": "Дикая территория к востоку от Пригорья."
+      }
     },
     {
       "id": "region-new-region-3",
       "name": "The Shire",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Шир"
       },
       "hexes": [
         "3:16",
@@ -17089,15 +17184,17 @@
         "8:15"
       ],
       "color": "#43f910",
+      "ownerFactionId": null,
       "description": "A land of hobbits.",
-      "descriptionTranslations": {},
-      "ownerFactionId": null
+      "descriptionTranslations": {
+        "ru": "Земля хоббитов."
+      }
     },
     {
       "id": "region-new-region-4",
       "name": "Lonely Mountain",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Одинокая гора"
       },
       "hexes": [
         "21:14",
@@ -17123,15 +17220,17 @@
         "26:13"
       ],
       "color": "#7A8B99",
+      "ownerFactionId": null,
       "description": "Land of dwarves and men of Dale.",
-      "descriptionTranslations": {},
-      "ownerFactionId": "dwarves"
+      "descriptionTranslations": {
+        "ru": "Земля гномов и людей Дейла."
+      }
     },
     {
       "id": "region-new-region-5",
       "name": "Iron hills",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Железные Холмы"
       },
       "hexes": [
         "20:10",
@@ -17161,15 +17260,17 @@
         "29:12"
       ],
       "color": "#a34729",
+      "ownerFactionId": "dwarves",
       "description": "Settlements of the Dwarves of Durin's Folk.",
-      "descriptionTranslations": {},
-      "ownerFactionId": "dwarves"
+      "descriptionTranslations": {
+        "ru": "Поселения гномов из народа Дурина."
+      }
     },
     {
       "id": "region-new-region-6",
       "name": "Harondor",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Харондор"
       },
       "hexes": [
         "10:32",
@@ -17201,15 +17302,17 @@
         "9:35"
       ],
       "color": "#d06ad7",
+      "ownerFactionId": null,
       "description": "Harondor, a disputed region between the rivers Poros and Harnen.",
-      "descriptionTranslations": {},
-      "ownerFactionId": null
+      "descriptionTranslations": {
+        "ru": "Спорная область между реками Порос и Харнен."
+      }
     },
     {
       "id": "region-new-region-7",
       "name": "Ithilien",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Итилиэн"
       },
       "hexes": [
         "12:31",
@@ -17230,15 +17333,17 @@
         "17:25"
       ],
       "color": "#7A8B99",
+      "ownerFactionId": null,
       "description": "Region and fiefdom of Gondor bordering Mordor in western Middle-earth.",
-      "descriptionTranslations": {},
-      "ownerFactionId": null
+      "descriptionTranslations": {
+        "ru": "Область и фьеф Гондора на границе с Мордором в западной части Средиземья."
+      }
     },
     {
       "id": "region-new-region-8",
       "name": "Dagorlad",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Дагорлад"
       },
       "hexes": [
         "16:23",
@@ -17257,15 +17362,17 @@
         "20:22"
       ],
       "color": "#15291e",
+      "ownerFactionId": "mordor",
       "description": "The location of the Battle of Dagorlad.",
-      "descriptionTranslations": {},
-      "ownerFactionId": "mordor"
+      "descriptionTranslations": {
+        "ru": "Место битвы Дагорлада."
+      }
     },
     {
       "id": "region-new-region-9",
       "name": "Eregion",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Эрегион"
       },
       "hexes": [
         "10:17",
@@ -17286,15 +17393,17 @@
         "9:19"
       ],
       "color": "#2b8869",
+      "ownerFactionId": null,
       "description": "Fallen realm of Noldor.",
-      "descriptionTranslations": {},
-      "ownerFactionId": null
+      "descriptionTranslations": {
+        "ru": "Павшее королевство нолдор."
+      }
     },
     {
       "id": "region-new-region-10",
       "name": "Ered Luin",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Эред Луин"
       },
       "hexes": [
         "0:14",
@@ -17325,15 +17434,17 @@
         "5:9"
       ],
       "color": "#5536f2",
+      "ownerFactionId": "dwarves",
       "description": "A mountain range at the far west of Eriador.",
-      "descriptionTranslations": {},
-      "ownerFactionId": "dwarves"
+      "descriptionTranslations": {
+        "ru": "Горный хребет на крайнем западе Эриадора."
+      }
     },
     {
       "id": "region-new-region-11",
       "name": "Dorwinion",
       "nameTranslations": {
-        "ru": "Новый регион"
+        "ru": "Дорвинион"
       },
       "hexes": [
         "25:15",
@@ -17365,9 +17476,41 @@
         "31:12"
       ],
       "color": "#bb63a3",
+      "ownerFactionId": null,
       "description": "A land in the vales of the Celduin.",
-      "descriptionTranslations": {},
-      "ownerFactionId": null
+      "descriptionTranslations": {
+        "ru": "Земля в долинах Келдуина."
+      }
+    },
+    {
+      "id": "region-new-region-12",
+      "name": "Gundabad",
+      "nameTranslations": {
+        "ru": "Гундабад"
+      },
+      "hexes": [
+        "14:10",
+        "14:11",
+        "14:12",
+        "15:10",
+        "15:11",
+        "15:8",
+        "15:9",
+        "16:10",
+        "16:8",
+        "16:9",
+        "17:10",
+        "17:8",
+        "17:9",
+        "18:10",
+        "18:8",
+        "18:9",
+        "19:9"
+      ],
+      "color": "#0e0f11",
+      "ownerFactionId": null,
+      "description": "Gundabad is a Northern Orc stronghold and the North End of the Misty Mountains.",
+      "descriptionTranslations": {}
     }
   ],
   "campaign": {

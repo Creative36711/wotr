@@ -715,6 +715,20 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
 
   const renderedLocations=useMemo(()=>locations.map((location)=>{const displayHex=dragPreview[location.id]??location.hex;return{...location,displayHex,cell:logicalGrid.byId.get(displayHex)??null,invalid:locations.some((item)=>item.id!==location.id&&item.hex===displayHex)}}),[locations,dragPreview,logicalGrid])
 
+  const regionLabels = useMemo(() => regions.map((region) => {
+    let sumX = 0
+    let sumY = 0
+    let count = 0
+    for (const hex of region.hexes) {
+      const cell = logicalGrid.byId.get(hex)
+      if (!cell) continue
+      sumX += cell.x
+      sumY += cell.y
+      count += 1
+    }
+    return count ? { region, x: sumX / count, y: sumY / count } : null
+  }).filter(Boolean) as Array<{ region: typeof regions[number]; x: number; y: number }>, [logicalGrid, regions])
+
   const changeView = (nextMode: MapViewMode) => {
     if (hexEdit) setHexEdit(false)
     setViewMode(nextMode)
@@ -919,6 +933,14 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
           })}
           {fogEnabled && campaign.fogOfWar.lastSeenArmies.filter((intel) => !visibleHexes.has(intel.hexId)).map((intel) => { const cell = logicalGrid.byId.get(intel.hexId); if (!cell) return null; const faction = getFaction(factions, intel.factionId); return <div key={`ghost-${intel.armyId}`} className="ghost-army-marker" style={{ left: `${cell.x + 24 / Math.max(camera.scale,.001)}px`, top: `${cell.y + 24 / Math.max(camera.scale,.001)}px`, '--army-scale': pinScale, '--army-color': faction.color } as CSSProperties} title={`${armyIntelLabel(intel.sizeCategory)} · ${faction.label} · последний раз замечена в раунде ${intel.lastSeenRound}`}><span className="army-banner"><i>?</i></span><b>{intel.lastSeenRound}</b><span className="army-label"><strong>{armyIntelLabel(intel.sizeCategory)}: {faction.label}</strong><small>Последний раз замечена: раунд {intel.lastSeenRound}</small></span></div> })}
         </div>
+
+        {showRegions && camera.scale >= .12 && camera.scale <= .55 && (
+          <div className="region-label-layer" aria-hidden="true">
+            {regionLabels.map(({ region, x, y }) => (
+              <span key={region.id} style={{ left: `${x}px`, top: `${y}px`, '--region-label-scale': pinScale } as CSSProperties}>{getDisplayName(region, language)}</span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="map-view-toolbar" onPointerDown={(event) => event.stopPropagation()}>

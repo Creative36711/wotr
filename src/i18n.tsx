@@ -347,6 +347,7 @@ const UI_EN: Record<string, string> = {
   'Не назначен': 'Not assigned',
   'Чтобы захватить регион, армия должна занять центральный гекс опорной локации после победы над защитниками.': 'To capture a region, an army must occupy the anchor location’s central hex after defeating its defenders.',
   'Описание региона': 'Region Description',
+  'Вне региона': 'Outside region',
   'Локации и крепости участвуют в расчёте границ регионов одинаково — по расстоянию до каждого гекса.': 'Locations and fortresses affect region borders equally, based on distance to each hex.',
   'Координаты на карте': 'Map Coordinates',
   'По горизонтали, X': 'Horizontal, X',

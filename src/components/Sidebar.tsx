@@ -132,6 +132,7 @@ function LocationEditorSidebar({ onFocus }: SidebarProps) {
   const addKind = useMapStore((state) => state.addKind)
   const select = useMapStore((state) => state.select)
   const setAddKind = useMapStore((state) => state.setAddKind)
+  const setViewMode = useMapStore((state) => state.setViewMode)
   const orderedFactions = sortByText(factions, (item) => item.label)
 
   const filtered = useMemo(() => {
@@ -145,20 +146,20 @@ function LocationEditorSidebar({ onFocus }: SidebarProps) {
   const strongholdCount = locations.filter((location)=>location.structuralType==='stronghold').length
   return (
     <aside className="side-panel left-panel">
-      <header className="panel-heading"><div><span className="eyebrow">Картография</span><h2>Объекты карты</h2></div><span className="count-badge">{locations.length}</span></header>
-      <div className="stats-row"><div><strong>{strongholdCount}</strong><span>Оплотов</span></div><div><strong>{locations.length-strongholdCount}</strong><span>Владений</span></div></div>
-      <div className="location-create-tools"><button type="button" className={addKind === 'domain' ? 'active' : ''} onClick={() => setAddKind(addKind === 'domain' ? null : 'domain')}><span>●</span>Новое владение</button><button type="button" className={addKind === 'stronghold' ? 'active' : ''} onClick={() => setAddKind(addKind === 'stronghold' ? null : 'stronghold')}><span>♜</span>Новый оплот</button></div>
-      {addKind&&<p className="location-create-help">{addKind==='domain'?'Выберите свободный гекс внутри региона. Гексы владения сгенерируются автоматически.':'Выберите свободный гекс внутри региона. Оплот займёт только эту клетку.'}</p>}
+      <header className="panel-heading"><div><span className="eyebrow">{translateText('Картография')}</span><h2>{translateText('Объекты карты')}</h2></div><span className="count-badge">{locations.length}</span></header>
+      <div className="stats-row"><div><strong>{strongholdCount}</strong><span>{translateText('Оплотов')}</span></div><div><strong>{locations.length-strongholdCount}</strong><span>{translateText('Владений')}</span></div></div>
+      <div className="location-create-tools"><button type="button" className={addKind === 'stronghold' ? 'active' : ''} onClick={() => { setAddKind(addKind === 'stronghold' ? null : 'stronghold'); setViewMode('strategic') }}><span>♜</span>{translateText('Новый оплот')}</button><button type="button" className={addKind === 'domain' ? 'active' : ''} onClick={() => { setAddKind(addKind === 'domain' ? null : 'domain'); setViewMode('strategic') }}><span>●</span>{translateText('Новое владение')}</button></div>
+      {addKind&&<p className="location-create-help">{translateText(addKind==='domain'?'Выберите свободный гекс внутри региона. Гексы владения сгенерируются автоматически.':'Выберите свободный гекс внутри региона. Оплот займёт только эту клетку.')}</p>}
       <div className="sidebar-tools">
-        <label className="search-box"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти владение или оплот…" />{query && <button type="button" onClick={() => setQuery('')}>×</button>}</label>
-        <select className="filter-select" value={faction} onChange={(event) => setFaction(event.target.value)}><option value="all">Все фракции</option>{orderedFactions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
-        <div className="kind-tabs">{([['all', 'Все'], ['domain', 'Владения'], ['stronghold', 'Оплоты']] as const).map(([value, label]) => <button type="button" key={value} className={kind === value ? 'active' : ''} onClick={() => setKind(value)}>{label}</button>)}</div>
+        <label className="search-box"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={translateText('Найти владение или оплот…')} />{query && <button type="button" onClick={() => setQuery('')}>×</button>}</label>
+        <select className="filter-select" value={faction} onChange={(event) => setFaction(event.target.value)}><option value="all">{translateText('Все фракции')}</option>{orderedFactions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>
+        <div className="kind-tabs">{([['all', translateText('Все')], ['domain', translateText('Владения')], ['stronghold', translateText('Оплоты')]] as const).map(([value, label]) => <button type="button" key={value} className={kind === value ? 'active' : ''} onClick={() => setKind(value)}>{label}</button>)}</div>
       </div>
       <div className="location-list" role="list">
-        {filtered.map((location) => { const factionInfo = getFaction(factions, location.side); return <button type="button" key={location.id} className={`location-row ${selectedId === location.id ? 'active' : ''}`} onClick={() => select(location.id)} onDoubleClick={() => onFocus(location.id)}><span className={`row-symbol ${location.structuralType}`} style={{ '--row-color': factionInfo.color } as CSSProperties}>{location.structuralType === 'stronghold' ? '♜' : ''}</span><span className="row-copy"><b>{getDisplayName(location, language, location.structuralType === 'stronghold' ? 'Новый оплот' : 'Новое владение')}</b><small>{factionInfo.label}</small></span><span className="row-kind">{KIND_LABELS[location.structuralType]}</span></button> })}
-        {!filtered.length && <div className="empty-list"><span>⌕</span><b>Ничего не найдено</b><small>Измените запрос или фильтры</small></div>}
+        {filtered.map((location) => { const factionInfo = getFaction(factions, location.side); return <button type="button" key={location.id} className={`location-row ${selectedId === location.id ? 'active' : ''}`} onClick={() => select(location.id)} onDoubleClick={() => onFocus(location.id)}><span className={`row-symbol ${location.structuralType}`} style={{ '--row-color': factionInfo.color } as CSSProperties}>{location.structuralType === 'stronghold' ? '♜' : ''}</span><span className="row-copy"><b>{getDisplayName(location, language, translateText(location.structuralType === 'stronghold' ? 'Новый оплот' : 'Новое владение'))}</b><small>{factionInfo.label}</small></span><span className="row-kind">{translateText(KIND_LABELS[location.structuralType])}</span></button> })}
+        {!filtered.length && <div className="empty-list"><span>⌕</span><b>{translateText('Ничего не найдено')}</b><small>{translateText('Измените запрос или фильтры')}</small></div>}
       </div>
-      <footer className="panel-footnote">Двойной щелчок — перейти на карте</footer>
+      <footer className="panel-footnote">{translateText('Двойной щелчок — перейти на карте')}</footer>
     </aside>
   )
 }

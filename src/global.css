@@ -1115,3 +1115,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .translation-add-row button { min-height: 31px; padding: 0 8px; border: 1px solid #3b4d55; border-radius: 4px; background: #172229; color: #9fb5b9; font-size: 11px; cursor: pointer; }
 .translation-stats { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 6px; color: #7f8d8e; font-size: 10px; }
 .translation-stats span { padding: 2px 6px; border: 1px solid #314047; border-radius: 999px; background: #10181d; }
+.region-label-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+.region-label-layer span {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--region-label-scale));
+  transform-origin: center;
+  padding: 2px 10px;
+  border: 1px solid rgba(233, 212, 152, .22);
+  border-radius: 999px;
+  background: rgba(5, 8, 10, .38);
+  color: rgba(235, 224, 195, .82);
+  font-family: Cinzel, Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-shadow: 0 2px 4px rgba(0,0,0,.9), 0 0 14px rgba(0,0,0,.8);
+  white-space: nowrap;
+}

@@ -14,7 +14,7 @@ import type { ImportedRtsAsset } from '../dataService'
 import type { RtsMapAsset } from '../types'
 import { sortByText } from '../utils/sort'
 import { domainEconomicTypeIds, economicDefaultsPatch, economicTypeLabel, getEconomicType, strongholdEconomicTypeIds } from '../game/economicTypes'
-import { useI18n } from '../i18n'
+import { getDisplayName, translateText, useI18n } from '../i18n'
 import type { Army, FactionId, HexCellOverride, LastSeenLocationIntel, StructuralType, LogicalHex, MapLocation, ModDefinition, SettlementType } from '../types'
 
 
@@ -571,6 +571,13 @@ export default function Inspector({ activeModId, activeMod, onModChange }: { act
   const locationRegion = regions.find((region) => region.id === location.regionId) ?? null
   const regionOwner = locationRegion?.ownerFactionId ? getFaction(factions, locationRegion.ownerFactionId) : null
   const domainHexCount = location.structuralType === 'domain' ? (location.hexes?.length ?? 0) : 1
+  const regionControlLabel = regionOwner?.label ?? (language === 'en' ? 'partial / no control' : 'частичный / нет контроля')
+  const domainGeometryText = language === 'en'
+    ? `The domain occupies ${domainHexCount} hex${domainHexCount === 1 ? '' : 'es'} inside the region. Capture transfers these hexes and income.`
+    : `Владение занимает ${domainHexCount} гекс${domainHexCount === 1 ? '' : domainHexCount < 5 ? 'а' : 'ов'} внутри региона. Захват передаёт эти гексы и доход.`
+  const strongholdGeometryText = language === 'en'
+    ? 'A stronghold occupies one region hex and belongs to no domain. Capture transfers only that hex.'
+    : 'Оплот занимает один гекс региона и не входит ни в одно владение. Захват передаёт только этот гекс.'
   const readonly = mode === 'game'
   const locationCellId = locationHexId(location, grid.config)
   const locationCell = logicalGrid.byId.get(locationCellId)
@@ -676,16 +683,12 @@ export default function Inspector({ activeModId, activeMod, onModChange }: { act
           <div className="region-capture-card" style={{'--region-owner': (regionOwner?.color ?? locationRegion?.color ?? faction.color)} as CSSProperties}>
             <span>{location.structuralType === 'domain' ? '▧' : '⬢'}</span>
             <div>
-              <small>Регион</small>
-              <b>{locationRegion?.name ?? 'Вне региона'} · {regionOwner?.label ?? 'частичный / нет контроля'}</b>
-              <p>
-                {location.structuralType === 'domain'
-                  ? `Владение занимает ${domainHexCount} гекс${domainHexCount === 1 ? '' : domainHexCount < 5 ? 'а' : 'ов'} внутри региона. Захват передаёт эти гексы и доход.`
-                  : 'Оплот занимает один гекс региона и не входит ни в одно владение. Захват передаёт только этот гекс.'}
-              </p>
+              <small>{translateText('Регион')}</small>
+              <b>{locationRegion ? getDisplayName(locationRegion, language) : translateText('Вне региона')} · {translateText(regionControlLabel)}</b>
+              <p>{location.structuralType === 'domain' ? domainGeometryText : strongholdGeometryText}</p>
             </div>
           </div>
-          {locationRegion?.description && <div className="region-lore-card"><span>Описание региона</span><p>{locationRegion.description}</p></div>}
+          {locationRegion?.description && <div className="region-lore-card"><span>{translateText('Описание региона')}</span><p>{language === 'en' ? locationRegion.description : locationRegion.descriptionTranslations?.[language] ?? locationRegion.description}</p></div>}
         </section>
 
         {!readonly&&<section className="inspector-section"><h3>Привязка к гексу</h3><div className="location-hex-card"><span className="hex-card-symbol">⬡</span><div><small>Положение объекта</small><b>{location.hex}</b><i>Координаты вычисляются из центра гекса</i></div><button type="button" onClick={()=>{selectHex(location.hex);setViewMode('strategic')}}>Открыть</button></div><p className="field-help">Перетащите объект на свободный гекс. Размещение двух объектов на одном гексе запрещено.</p></section>}

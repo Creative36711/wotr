@@ -830,7 +830,7 @@
       "factionId": "isengard",
       "name": "Dunland Axe Throwers",
       "nameTranslations": {
-        "ru": "Метатели топоров Дунланда"
+        "ru": "Топорометатели"
       },
       "category": "archers",
       "battlePower": 80,
@@ -1625,7 +1625,7 @@
       "factionId": "goblins",
       "name": "Fire Drake Brood",
       "nameTranslations": {
-        "ru": "Выводок огненных драконов"
+        "ru": "Огненные драконы"
       },
       "category": "monsters",
       "battlePower": 240,
@@ -1885,7 +1885,7 @@
       "factionId": "angmar",
       "name": "Gundabad Wolf Riders",
       "nameTranslations": {
-        "ru": "Волчьи всадники Гундабада"
+        "ru": "Волчьи всадники"
       },
       "category": "cavalry",
       "battlePower": 110,
@@ -1945,7 +1945,7 @@
       "factionId": "angmar",
       "name": "Rhudaur Axe Throwers",
       "nameTranslations": {
-        "ru": "Метатели топоров Рудаура"
+        "ru": "Метатели Рудаура"
       },
       "category": "archers",
       "battlePower": 75,

@@ -5,7 +5,7 @@
       "id": "mithlond",
       "name": "Mithlond",
       "nameTranslations": {
-        "ru": "Митлонд (Серые Гавани)"
+        "ru": "Митлонд"
       },
       "side": "elves",
       "armyLimitBonus": 0,
@@ -117,7 +117,7 @@
       "id": "amon-sul",
       "name": "Weathertop",
       "nameTranslations": {
-        "ru": "Амон-Сул (Заверть)"
+        "ru": "Амон-Сул"
       },
       "side": "civilian",
       "armyLimitBonus": 0,
@@ -481,7 +481,7 @@
       "id": "helms-deep",
       "name": "Helm's Deep",
       "nameTranslations": {
-        "ru": "Хорнбург (Хельмова Падь)"
+        "ru": "Хорнбург"
       },
       "side": "men-of-the-west",
       "armyLimitBonus": 0,
@@ -881,7 +881,7 @@
       "id": "morannon",
       "name": "Morannon",
       "nameTranslations": {
-        "ru": "Мораннон (Чёрные Врата)"
+        "ru": "Мораннон"
       },
       "side": "mordor",
       "armyLimitBonus": 0,
@@ -1361,7 +1361,7 @@
       "id": "tower-hills",
       "name": "Tower Hills",
       "nameTranslations": {
-        "ru": "Тауэр-Хиллз (Эмин Берайд)"
+        "ru": "Эмин Берайд"
       },
       "side": "elves",
       "armyLimitBonus": 0,
@@ -1434,7 +1434,7 @@
       "id": "ered-luin",
       "name": "Ered Luin",
       "nameTranslations": {
-        "ru": "Синие Горы (Эред Луин)"
+        "ru": "Эред Луин"
       },
       "side": "dwarves",
       "armyLimitBonus": 0,
@@ -1593,7 +1593,7 @@
       "id": "shire",
       "name": "The Shire",
       "nameTranslations": {
-        "ru": "Шир (Хоббитания)"
+        "ru": "Шир"
       },
       "side": "civilian",
       "armyLimitBonus": 0,
@@ -1624,7 +1624,7 @@
       "id": "buckland",
       "name": "Buckland",
       "nameTranslations": {
-        "ru": "Бакленд (Забрендия)"
+        "ru": "Бакленд"
       },
       "side": "civilian",
       "armyLimitBonus": 0,
@@ -1655,7 +1655,7 @@
       "id": "bree-land",
       "name": "Bree-land",
       "nameTranslations": {
-        "ru": "Пригорье (Бри-ланд)"
+        "ru": "Пригорье"
       },
       "side": "civilian",
       "armyLimitBonus": 0,
@@ -1814,7 +1814,7 @@
       "id": "lone-lands",
       "name": "Lone-lands",
       "nameTranslations": {
-        "ru": "Пустоши (Одинокие Земли)"
+        "ru": "Одинокие Земли"
       },
       "side": "civilian",
       "armyLimitBonus": 0,
@@ -1913,7 +1913,7 @@
       "id": "eregion",
       "name": "Eregion",
       "nameTranslations": {
-        "ru": "Эрегион (Остранна)"
+        "ru": "Эрегион"
       },
       "side": "elves",
       "armyLimitBonus": 0,
@@ -3612,7 +3612,7 @@
       "id": "ered-mithrin",
       "name": "Ered Mithrin",
       "nameTranslations": {
-        "ru": "Эред Митрин (Серые Горы)"
+        "ru": "Эред Митрин"
       },
       "side": "dwarves",
       "armyLimitBonus": 0,
@@ -4630,7 +4630,7 @@
       "id": "iron-hills-halls",
       "name": "Halls of the Iron Hills",
       "nameTranslations": {
-        "ru": "Чертоги Железных Холмов"
+        "ru": "Чертоги Даина"
       },
       "side": "dwarves",
       "armyLimitBonus": 0,
@@ -4886,7 +4886,7 @@
       "id": "the-angle",
       "name": "The Angle",
       "nameTranslations": {
-        "ru": "Угол (Мыс)"
+        "ru": "Угол"
       },
       "side": "civilian",
       "armyLimitBonus": 0,
@@ -4918,7 +4918,7 @@
       "id": "swanfleet",
       "name": "Swanfleet",
       "nameTranslations": {
-        "ru": "Нин-ин-Эйлф (Лебединый Край)"
+        "ru": "Нин-ин-Эйлф"
       },
       "side": "civilian",
       "armyLimitBonus": 0,
@@ -5562,7 +5562,7 @@
       "id": "white-mountains-gondor",
       "name": "White Mountains",
       "nameTranslations": {
-        "ru": "Белые горы (гондорская сторона)"
+        "ru": "Белые горы"
       },
       "side": "men-of-the-west",
       "armyLimitBonus": 0,
@@ -5633,7 +5633,7 @@
       "id": "paths-of-the-dead-south",
       "name": "Paths of the Dead (south)",
       "nameTranslations": {
-        "ru": "Пути Мертвых (гондорская сторона)"
+        "ru": "Пути Мёртвых"
       },
       "side": "men-of-the-west",
       "armyLimitBonus": 0,

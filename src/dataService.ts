@@ -702,11 +702,18 @@ export async function openModsFolder() {
 export async function openApplicationFolder(){if(isTauriRuntime())return invoke<string>('open_application_folder');return ''}
 export async function exitApplication(){if(isTauriRuntime())await invoke('exit_application')}
 export async function portableDataDirectory(){if(isTauriRuntime())return invoke<string>('portable_data_directory');return 'public/'}
+function normalizeSupportedLocales(value: unknown) {
+  const incoming = Array.isArray(value) ? value.map((item) => String(item).trim().toLowerCase()).filter(Boolean) : []
+  return [...new Set(['en', ...incoming])]
+}
+
 export async function loadModDefinition(modId: string, factions: FactionDefinition[] = []): Promise<ModDefinition> {
   const raw = await readModJson(modId, 'mod') as ModDefinition
   const rts=normalizeRtsSettings(raw.rts,factions)
   if(modId==='default'){rts.moduleFiles=[];rts.mapsFile=null;if(rts.networkRules==='0 0 0 200 4000 -1 -1 -1 -1 -1')rts.networkRules=DEFAULT_NETWORK_RULES}
-  return { ...raw, rts }
+  const supportedLocales = normalizeSupportedLocales(raw.supportedLocales ?? (modId === 'default' ? ['en', 'ru'] : ['en']))
+  const defaultLocale = supportedLocales.includes(raw.defaultLocale) ? raw.defaultLocale : supportedLocales.includes('ru') ? 'ru' : 'en'
+  return { ...raw, rts, supportedLocales, defaultLocale }
 }
 export async function saveModDefinition(modId: string, definition: ModDefinition) { await writeModJson(modId, 'mod', definition) }
 async function listStoredRtsMapCaches(modId:string):Promise<Array<{scope:'location-cache';entityId:string;asset:RtsMapAsset}>>{

@@ -94,6 +94,8 @@ export interface ModDefinition {
   createdAt: string
   updatedAt: string
   bfmeVersion: string
+  supportedLocales: string[]
+  defaultLocale: string
   /** Optional per-mod override. Null means the shared templates/map.jpg is used. */
   mapImage: string | null
   rts: RtsIntegrationSettings
@@ -585,7 +587,7 @@ export interface WorldData {
 }
 
 export interface SaveGameData {
-  version: 33
+  version: 34
   gameVersion: string
   modId: string
   name: string

@@ -5,7 +5,7 @@ import { armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/a
 import { activeSide, factionSide, phaseIcon, phaseLabel } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import { useMapStore } from '../store/useMapStore'
-import { translateText } from '../i18n'
+import { getDisplayName, translateText, useI18n } from '../i18n'
 import { sortByText } from '../utils/sort'
 import type { FactionId, StructuralType } from '../types'
 
@@ -122,6 +122,7 @@ function CampaignSidebar({onFocus}:SidebarProps) {
 }
 
 function LocationEditorSidebar({ onFocus }: SidebarProps) {
+  const { language } = useI18n()
   const [query, setQuery] = useState('')
   const [faction, setFaction] = useState<'all' | FactionId>('all')
   const [kind, setKind] = useState<KindFilter>('all')
@@ -138,8 +139,8 @@ function LocationEditorSidebar({ onFocus }: SidebarProps) {
     return locations.filter((location) => faction === 'all' || location.side === faction)
       .filter((location) => kind === 'all' || location.structuralType === kind)
       .filter((location) => !normalizedQuery || [location.name,...Object.values(location.nameTranslations??{})].some((name)=>name.toLocaleLowerCase().includes(normalizedQuery)) || location.id.includes(normalizedQuery))
-      .sort((left, right) => left.name.localeCompare(right.name, 'ru'))
-  }, [locations, faction, kind, query])
+      .sort((left, right) => getDisplayName(left, language).localeCompare(getDisplayName(right, language), language))
+  }, [locations, faction, kind, query, language])
 
   const strongholdCount = locations.filter((location)=>location.structuralType==='stronghold').length
   return (
@@ -154,7 +155,7 @@ function LocationEditorSidebar({ onFocus }: SidebarProps) {
         <div className="kind-tabs">{([['all', 'Все'], ['domain', 'Владения'], ['stronghold', 'Оплоты']] as const).map(([value, label]) => <button type="button" key={value} className={kind === value ? 'active' : ''} onClick={() => setKind(value)}>{label}</button>)}</div>
       </div>
       <div className="location-list" role="list">
-        {filtered.map((location) => { const factionInfo = getFaction(factions, location.side); return <button type="button" key={location.id} className={`location-row ${selectedId === location.id ? 'active' : ''}`} onClick={() => select(location.id)} onDoubleClick={() => onFocus(location.id)}><span className={`row-symbol ${location.structuralType}`} style={{ '--row-color': factionInfo.color } as CSSProperties}>{location.structuralType === 'stronghold' ? '♜' : ''}</span><span className="row-copy"><b>{location.name}</b><small>{factionInfo.label}</small></span><span className="row-kind">{KIND_LABELS[location.structuralType]}</span></button> })}
+        {filtered.map((location) => { const factionInfo = getFaction(factions, location.side); return <button type="button" key={location.id} className={`location-row ${selectedId === location.id ? 'active' : ''}`} onClick={() => select(location.id)} onDoubleClick={() => onFocus(location.id)}><span className={`row-symbol ${location.structuralType}`} style={{ '--row-color': factionInfo.color } as CSSProperties}>{location.structuralType === 'stronghold' ? '♜' : ''}</span><span className="row-copy"><b>{getDisplayName(location, language, location.structuralType === 'stronghold' ? 'Новый оплот' : 'Новое владение')}</b><small>{factionInfo.label}</small></span><span className="row-kind">{KIND_LABELS[location.structuralType]}</span></button> })}
         {!filtered.length && <div className="empty-list"><span>⌕</span><b>Ничего не найдено</b><small>Измените запрос или фильтры</small></div>}
       </div>
       <footer className="panel-footnote">Двойной щелчок — перейти на карте</footer>

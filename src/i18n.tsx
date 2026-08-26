@@ -978,12 +978,24 @@ function rebuildReplacements(){
 }
 rebuildReplacements()
 
-export function localizedValue(canonical:string,translations:Record<string,string>|undefined,language:AppLanguage=currentLanguage){
-  return language==='en'?canonical:translations?.[language]?.trim()||canonical
+export function getDisplayName(obj:{name:string;nameTranslations?:Record<string,string>},locale:string=currentLanguage,fallback=''){
+  const canonical = obj.name?.trim() ?? ''
+  if (locale === 'en') return canonical || fallback
+  return obj.nameTranslations?.[locale]?.trim() || canonical || fallback
+}
+
+export function localizedValue(canonical:string,translations:Record<string,string>|undefined,language:AppLanguage=currentLanguage,fallback=''){
+  return getDisplayName({ name: canonical, nameTranslations: translations }, language, fallback)
 }
 
 export function localizedTranslationsPatch(language:AppLanguage,canonical:string,translations:Record<string,string>|undefined,value:string){
-  return language==='en'?{canonical:value,translations:{...(translations??{})}}:{canonical,translations:{...(translations??{}),[language]:value}}
+  if (language === 'en') return { canonical: value, translations: { ...(translations ?? {}) } }
+  const next = { ...(translations ?? {}) }
+  const trimmed = value.trim()
+  if (trimmed) next[language] = value
+  else delete next[language]
+  delete next.en
+  return { canonical, translations: next }
 }
 
 export function registerWorldTranslations(world: {

@@ -18,7 +18,7 @@ import {
   smoothRoutePath,
 } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
-import { translateText } from '../i18n'
+import { getDisplayName, translateText, useI18n } from '../i18n'
 import type { LogicalHex, MapLocation, MapViewMode } from '../types'
 
 interface Camera { x: number; y: number; scale: number }
@@ -124,6 +124,7 @@ const ECONOMIC_ICON_PATHS: Record<string, { paths: string[]; evenodd?: boolean }
   forest: { paths: ['M12 2 6.5 9.5h2.8L5 16h6v5h2v-5h6l-4.3-6.5h2.8L12 2Z'] },
   mountains: { paths: ['M2 20 9 6l4.2 8.4L16 9l6 11Z'] },
   ruins: { paths: ['M4.2 6h5.6v2H4.2Z', 'M5 8.6h4V21H5Z', 'M13.2 10.5h5.6v2h-5.6Z', 'M14 13.1h4V21h-4Z', 'M9.6 19.4l2.4-1.7 1.2 1.7Z'] },
+  monument: { paths: ['M12 3 18 8.4v11.1H6V8.4L12 3Z', 'M9.2 10.2h5.6v1.6H9.2Z', 'M10.4 13h3.2v4.8h-3.2Z', 'M4.5 20.2h15v1.6h-15Z'], evenodd: true },
   crossroads: { paths: ['M11.3 4.5h1.4V21h-1.4Z', 'M7.8 6.2h8.7L19 8l-2.5 1.8H7.8Z', 'M16.2 10.8H7.5L5 12.6l2.5 1.8h8.7Z'] },
   ford: { paths: ['M3 14.6c2.5-4.4 5.5-6.6 9-6.6s6.5 2.2 9 6.6h-2.4c-2-3.1-4.1-4.7-6.6-4.7s-4.6 1.6-6.6 4.7Z', 'M2.5 15h19v1.8h-19Z', 'M3 19.6c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0v1.7H3Z'] },
   pass: { paths: ['M3 21V6.5L8.5 3v18Z', 'M21 21V6.5L15.5 3v18Z', 'M10.6 21h2.8v-1.8h-2.8Z'] },
@@ -152,6 +153,7 @@ const VIEW_MODES: Array<{ id: MapViewMode; label: string; icon: string; hint: st
 ]
 
 export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) {
+  const { language } = useI18n()
   const stageRef = useRef<HTMLDivElement>(null)
   const gridCanvasRef = useRef<HTMLCanvasElement>(null)
   const gestureRef = useRef<Gesture | null>(null)
@@ -364,33 +366,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
         context.stroke()
       }
 
-      // Region labels at centroid (hidden when zoomed in tightly).
-      if (camera.scale >= .12 && camera.scale <= .55) {
-        const fontSize = Math.max(14, 22 / camera.scale)
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        for (const region of regions) {
-          if (!region.hexes.length) continue
-          let sumX = 0
-          let sumY = 0
-          let count = 0
-          for (const hex of region.hexes) {
-            const cell = logicalGrid.byId.get(hex)
-            if (!cell) continue
-            sumX += cell.x
-            sumY += cell.y
-            count += 1
-          }
-          if (!count) continue
-          context.font = `700 ${fontSize}px Cinzel, Georgia, serif`
-          context.lineWidth = 5 / camera.scale
-          context.strokeStyle = 'rgba(6,10,12,.55)'
-          context.fillStyle = 'rgba(235,224,195,.55)'
-          const localizedRegionName = translateText(region.name)
-          context.strokeText(localizedRegionName, sumX / count, sumY / count)
-          context.fillText(localizedRegionName, sumX / count, sumY / count)
-        }
-      }
+      // Region names are intentionally not painted over the strategic layer; hover tooltip shows the region name.
     }
 
     if (showRegions || viewMode === 'strategic' || hexEdit) {
@@ -749,7 +725,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
   const worldStyle: CSSProperties = { transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.scale})` }
   const tooltipTerrain = hoveredHex ? TERRAIN_BY_ID[hoveredHex.terrain] : null
   const tooltipLocationNames = hoveredHex?.locationIds
-    .map((id) => locations.find((location) => location.id === id)?.name)
+    .map((id) => { const location = locations.find((item) => item.id === id); return location ? getDisplayName(location, language) : undefined })
     .filter(Boolean) ?? []
   const tooltipNearestLocation = hoveredHex?.nearestLocationId
     ? locations.find((location) => location.id === hoveredHex.nearestLocationId)
@@ -875,11 +851,11 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
                     y:stageSize.height/2-location.cell!.y*current.scale,
                   }))
                 }}
-                aria-label={`${location.structuralType==='stronghold'?'Оплот':'Владение'}: ${location.name}`}
+                aria-label={`${location.structuralType==='stronghold'?'Оплот':'Владение'}: ${getDisplayName(location, language)}`}
               >
                 <EconomicLocationIcon type={location.economicType}/>
                 <span className="pin-label">
-                  <b>{location.name}</b>
+                  <b>{getDisplayName(location, language)}</b>
                   {!locationVisible && <i>Сведения на раунд {knownIntel?.lastSeenRound ?? 1}</i>}
                 </span>
               </button>
@@ -996,7 +972,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
       {addKind && mode === 'edit' && (
         <div className="placement-hint">
           <span>{addKind==='stronghold' ? '♜' : '●'}</span>
-          Укажите место на карте
+          {addKind==='stronghold' ? 'Новый оплот: укажите гекс' : 'Новое владение: укажите гекс'}
           <button type="button" onClick={(event) => { event.stopPropagation(); setAddKind(null) }}>Отмена</button>
         </div>
       )}
@@ -1025,8 +1001,8 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
           </div>
           {tooltipLocationNames.length > 0
             ? <p>⌖ {tooltipLocationNames.join(', ')}</p>
-            : tooltipNearestLocation && <p>Ближайшая: {tooltipNearestLocation.name}</p>}
-          {hoveredRegion && <p className="tooltip-region"><span style={{ color: hoveredCurrentlyVisible ? hoveredRegionOwner?.color : '#7b8587' }}>▧</span> Регион: {hoveredRegion.name} · {hoveredCurrentlyVisible ? hoveredRegionOwner?.label ?? 'Нейтральный' : 'владелец неизвестен'}</p>}
+            : tooltipNearestLocation && <p>Ближайшая: {getDisplayName(tooltipNearestLocation, language)}</p>}
+          {hoveredRegion && <p className="tooltip-region"><span style={{ color: hoveredCurrentlyVisible ? hoveredRegionOwner?.color : '#7b8587' }}>▧</span> Регион: {getDisplayName(hoveredRegion, language)} · {hoveredCurrentlyVisible ? hoveredRegionOwner?.label ?? 'Нейтральный' : 'владелец неизвестен'}</p>}
           {!hoveredHex.passable && <p className="blocked-reason">Проход через этот гекс запрещён</p>}
         </div>
       )}

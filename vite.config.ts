@@ -113,11 +113,15 @@ function modsApi(): Plugin {
           await fs.mkdir(destination, { recursive: true })
           let mapImage: string | null = null
           let sourceRts: any = null
+          let sourceLocales: string[] | null = null
+          let sourceDefaultLocale: string | null = null
           if (body.sourceModId) {
             const source = modPath(body.sourceModId)
             await Promise.all(['world.json','roster.json'].map((file) => fs.copyFile(path.join(source,file), path.join(destination,file))))
             const sourceMeta = JSON.parse(await fs.readFile(path.join(source,'mod.json'),'utf8'))
             sourceRts = sourceMeta.rts ?? null
+            sourceLocales = Array.isArray(sourceMeta.supportedLocales) ? sourceMeta.supportedLocales : null
+            sourceDefaultLocale = typeof sourceMeta.defaultLocale === 'string' ? sourceMeta.defaultLocale : null
             const sourceMap = typeof sourceMeta.mapImage === 'string' && /^map\.(jpg|png|webp)$/i.test(sourceMeta.mapImage) ? sourceMeta.mapImage : null
             if (sourceMap) {
               mapImage = `map${path.extname(sourceMap).toLowerCase()}`
@@ -128,7 +132,7 @@ function modsApi(): Plugin {
             await fs.copyFile(path.join(TEMPLATES_ROOT,'world_template.json'), path.join(destination,'world.json'))
             await fs.copyFile(path.join(TEMPLATES_ROOT,'roster_template.json'), path.join(destination,'roster.json'))
           }
-          const now = new Date().toISOString(); const mod = { ...metadata, createdAt: now, updatedAt: now, mapImage, rts: sourceRts ?? { enabled: true, factionOrder: [], moduleFiles: [], mapsFile: null, mapCacheTargetFileName: '__wotr_maps_cache.big', networkRules: '0 0 0 200 4000 -1 -1 -1 -1 -1' }, dataVersions: { world: WORLD_DATA_VERSION, roster: ROSTER_DATA_VERSION } }; await writeJson(path.join(destination,'mod.json'), mod)
+          const now = new Date().toISOString(); const supportedLocales = [...new Set(['en', ...(sourceLocales ?? ['ru'])])]; const mod = { ...metadata, createdAt: now, updatedAt: now, supportedLocales, defaultLocale: sourceDefaultLocale && supportedLocales.includes(sourceDefaultLocale) ? sourceDefaultLocale : supportedLocales.includes('ru') ? 'ru' : 'en', mapImage, rts: sourceRts ?? { enabled: true, factionOrder: [], moduleFiles: [], mapsFile: null, mapCacheTargetFileName: '__wotr_maps_cache.big', networkRules: '0 0 0 200 4000 -1 -1 -1 -1 -1' }, dataVersions: { world: WORLD_DATA_VERSION, roster: ROSTER_DATA_VERSION } }; await writeJson(path.join(destination,'mod.json'), mod)
           res.end(JSON.stringify({ ok: true, mod })); return
         }
         if (body.action === 'folder') { res.end(JSON.stringify({ path: MODS_ROOT })); return }

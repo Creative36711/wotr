@@ -9,12 +9,13 @@ import { locationHexId, resolveGrid } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
 import { imageFileToDataUrl } from '../utils/image'
 import { uploadRtsAsset } from '../dataService'
+import LocalizedNameFields from './LocalizedNameFields'
 import type { ImportedRtsAsset } from '../dataService'
 import type { RtsMapAsset } from '../types'
 import { sortByText } from '../utils/sort'
 import { domainEconomicTypeIds, economicDefaultsPatch, economicTypeLabel, getEconomicType, strongholdEconomicTypeIds } from '../game/economicTypes'
-import { localizedTranslationsPatch, localizedValue, useI18n } from '../i18n'
-import type { Army, FactionId, HexCellOverride, LastSeenLocationIntel, StructuralType, LogicalHex, MapLocation, SettlementType } from '../types'
+import { useI18n } from '../i18n'
+import type { Army, FactionId, HexCellOverride, LastSeenLocationIntel, StructuralType, LogicalHex, MapLocation, ModDefinition, SettlementType } from '../types'
 
 
 interface SwitchFieldProps {
@@ -471,7 +472,7 @@ function ArmyInspector({ army }: { army: Army }) {
   )
 }
 
-export default function Inspector({ activeModId }: { activeModId:string }) {
+export default function Inspector({ activeModId, activeMod, onModChange }: { activeModId:string; activeMod: ModDefinition | null; onModChange: (definition: ModDefinition) => void }) {
   const {language}=useI18n()
   const [reserveTargetArmyId, setReserveTargetArmyId] = useState('')
   const [formationCommander, setFormationCommander] = useState('')
@@ -508,6 +509,14 @@ export default function Inspector({ activeModId }: { activeModId:string }) {
   const selectHex = useMapStore((state) => state.selectHex)
   const setViewMode = useMapStore((state) => state.setViewMode)
   const setMovementBudget = useMapStore((state) => state.setMovementBudget)
+
+  const supportedLocales = activeMod?.supportedLocales?.length ? activeMod.supportedLocales : ['en']
+  const addSupportedLocale = (locale: string) => {
+    if (!activeMod) return
+    const normalized = locale.trim().toLowerCase()
+    if (!normalized || activeMod.supportedLocales?.includes(normalized)) return
+    onModChange({ ...activeMod, supportedLocales: [...new Set(['en', ...(activeMod.supportedLocales ?? []), normalized])], defaultLocale: activeMod.defaultLocale ?? 'en' })
+  }
 
   const logicalGrid = useMemo(() => resolveGrid(grid, locations, regions), [grid, locations, regions])
   const visibleHexes = useMemo(() => mode === 'game' ? calculateVisibleHexes(campaign, armies, locations, factions, grid, regions) : new Set(logicalGrid.cells.map((cell) => cell.id)), [armies, campaign, factions, grid, locations, logicalGrid, mode, regions])
@@ -601,7 +610,7 @@ export default function Inspector({ activeModId }: { activeModId:string }) {
         </section>
         <section className="inspector-section">
           <h3>Основное</h3>
-          <label className="field"><span>Название</span><input value={localizedValue(location.name,location.nameTranslations,language)} disabled={readonly} onChange={(event) => {const localized=localizedTranslationsPatch(language,location.name,location.nameTranslations,event.target.value);updateLocation(location.id,{name:localized.canonical,nameTranslations:localized.translations})}} /></label>
+          <LocalizedNameFields label="Название" canonical={location.name} translations={location.nameTranslations} language={language} supportedLocales={supportedLocales} disabled={readonly} onAddLocale={addSupportedLocale} onChange={(name, nameTranslations) => updateLocation(location.id, { name, nameTranslations })} />
         </section>
 
         <section className="inspector-section">

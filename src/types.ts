@@ -587,7 +587,7 @@ export interface WorldData {
 }
 
 export interface SaveGameData {
-  version: 35
+  version: 36
   gameVersion: string
   modId: string
   name: string

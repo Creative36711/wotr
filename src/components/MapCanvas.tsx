@@ -735,6 +735,12 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
     if (nextMode === 'cinematic') selectHex(null)
   }
 
+  const cancelPlacement = () => {
+    setAddKind(null)
+    setViewMode('cinematic')
+    selectHex(null)
+  }
+
   const pinScale = 1 / Math.max(camera.scale, 0.001)
   const worldStyle: CSSProperties = { transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.scale})` }
   const tooltipTerrain = hoveredHex ? TERRAIN_BY_ID[hoveredHex.terrain] : null
@@ -994,8 +1000,8 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
       {addKind && mode === 'edit' && (
         <div className="placement-hint">
           <span>{addKind==='stronghold' ? '♜' : '●'}</span>
-          {addKind==='stronghold' ? 'Новый оплот: укажите гекс' : 'Новое владение: укажите гекс'}
-          <button type="button" onClick={(event) => { event.stopPropagation(); setAddKind(null) }}>Отмена</button>
+          {translateText(addKind==='stronghold' ? 'Новый оплот: укажите гекс' : 'Новое владение: укажите гекс')}
+          <button type="button" onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); cancelPlacement() }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); cancelPlacement() }}>{translateText('Отмена')}</button>
         </div>
       )}
 

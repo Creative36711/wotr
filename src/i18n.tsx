@@ -245,6 +245,8 @@ const UI_EN: Record<string, string> = {
   'Выберите свободный гекс. Оплот займёт только эту клетку.':'Select a free hex. The stronghold will occupy only this cell.',
   'Выберите свободный гекс внутри региона. Гексы владения сгенерируются автоматически.':'Select a free hex inside a region. Domain hexes will be generated automatically.',
   'Выберите свободный гекс внутри региона. Оплот займёт только эту клетку.':'Select a free hex inside a region. The stronghold will occupy only that cell.',
+  'Новый оплот: укажите гекс': 'New Stronghold: choose a hex',
+  'Новое владение: укажите гекс': 'New Domain: choose a hex',
   'Перетащите объект на свободный гекс. Размещение двух объектов на одном гексе запрещено.':'Drag the object to a free hex. Two objects cannot occupy the same hex.',
   'Приказ движения ·':'Movement order ·',
   'В этом гексе': 'In this hex',

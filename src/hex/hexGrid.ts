@@ -203,8 +203,8 @@ export function resolveGrid(grid: HexGridData, locations: MapLocation[], regions
         y: position.y,
         terrain,
         moveCost: override?.moveCost ?? terrainDefinition.moveCost,
-        owner: override?.owner !== undefined ? override.owner : territoryOwner,
-        zoneOfControl: override?.zoneOfControl ?? null,
+        owner: territoryOwner,
+        zoneOfControl: null,
         regionId,
         domainId: stronghold ? null : domain?.id ?? null,
         passable: override?.passable ?? terrainDefinition.passable,
@@ -233,7 +233,6 @@ export function cellMovementCost(cell: LogicalHex, movingFaction: FactionId | nu
   let cost = Math.max(1, cell.moveCost)
   if (cell.road) cost = Math.max(1, cost - 1)
   if (cell.river) cost += cell.bridge ? 1 : cell.ford ? 2 : 3
-  if (cell.zoneOfControl && cell.zoneOfControl !== movingFaction) cost += 2
   return cost
 }
 

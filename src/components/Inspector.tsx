@@ -64,9 +64,7 @@ function BatchChoice({
 
 function MultiHexInspector({ cells }: { cells: LogicalHex[] }) {
   const grid = useMapStore((state) => state.grid)
-  const factions = useMapStore((state) => state.factions)
   const regions = useMapStore((state) => state.regions)
-  const orderedFactions = sortByText(factions, (item) => item.label)
   const orderedRegions = sortByText(regions, (item) => item.name)
   const updateHexes = useMapStore((state) => state.updateHexes)
   const setHexesTerrain = useMapStore((state) => state.setHexesTerrain)
@@ -77,8 +75,6 @@ function MultiHexInspector({ cells }: { cells: LogicalHex[] }) {
   const passable = commonValue(cells, (cell) => cell.passable)
   const road = commonValue(cells, (cell) => cell.road)
   const river = commonValue(cells, (cell) => cell.river)
-  const owner = commonValue(cells, (cell) => cell.owner)
-  const zoneOfControl = commonValue(cells, (cell) => cell.zoneOfControl)
   const regionId = commonValue(cells, (cell) => cell.regionId)
   const editedCount = ids.filter((id) => Boolean(grid.cells[id])).length
 
@@ -133,23 +129,7 @@ function MultiHexInspector({ cells }: { cells: LogicalHex[] }) {
         </section>
 
         <section className="inspector-section">
-          <h3>Контроль территории</h3>
-          <label className="field">
-            <span>Владелец</span>
-            <select value={owner === undefined ? '__mixed__' : owner ?? ''} onChange={(event) => { if (event.target.value !== '__mixed__') updateHexes(ids, { owner: (event.target.value || null) as FactionId | null }) }}>
-              {owner === undefined && <option value="__mixed__">Разные владельцы</option>}
-              <option value="">Нет владельца</option>
-              {orderedFactions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
-          </label>
-          <label className="field">
-            <span>Зона контроля</span>
-            <select value={zoneOfControl === undefined ? '__mixed__' : zoneOfControl ?? ''} onChange={(event) => { if (event.target.value !== '__mixed__') updateHexes(ids, { zoneOfControl: (event.target.value || null) as FactionId | null }) }}>
-              {zoneOfControl === undefined && <option value="__mixed__">Разные значения</option>}
-              <option value="">Нет зоны контроля</option>
-              {orderedFactions.filter((item) => item.id !== 'civilian').map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
-          </label>
+          <h3>Региональная привязка</h3>
           <label className="field">
             <span>Назначить регион</span>
             <select value={regionId === undefined ? '__mixed__' : regionId ?? ''} onChange={(event) => { if (event.target.value !== '__mixed__') updateHexes(ids, { regionId: event.target.value || null }) }}>
@@ -158,7 +138,7 @@ function MultiHexInspector({ cells }: { cells: LogicalHex[] }) {
               {orderedRegions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
             </select>
           </label>
-          <p className="field-help">Массовое назначение добавляет выбранные гексы в регион. Владение гексами пересчитается автоматически внутри границ региона.</p>
+          <p className="field-help">Владелец гекса не задаётся вручную: он автоматически берётся из владения или оплота, к которому относится гекс.</p>
         </section>
 
         <section className="inspector-actions single-action">
@@ -174,7 +154,6 @@ function HexInspector({ cell, fogged = false }: { cell: LogicalHex; fogged?: boo
   const locations = useMapStore((state) => state.locations)
   const factions = useMapStore((state) => state.factions)
   const regions = useMapStore((state) => state.regions)
-  const orderedFactions = sortByText(factions, (item) => item.label)
   const orderedRegions = sortByText(regions, (item) => item.name)
   const mode = useMapStore((state) => state.mode)
   const updateHex = useMapStore((state) => state.updateHex)
@@ -183,6 +162,9 @@ function HexInspector({ cell, fogged = false }: { cell: LogicalHex; fogged?: boo
   const readonly = mode === 'game'
   const terrain = TERRAIN_BY_ID[cell.terrain]
   const owner = cell.owner ? getFaction(factions, cell.owner) : null
+  const owningDomain = cell.domainId ? locations.find((item) => item.id === cell.domainId) : null
+  const owningStronghold = cell.locationIds.map((id) => locations.find((item) => item.id === id)).find((item) => item?.structuralType === 'stronghold') ?? null
+  const ownerSource = owningStronghold ?? owningDomain ?? null
   const region = cell.regionId ? regions.find((item) => item.id === cell.regionId) : null
   const boundLocations = cell.locationIds
     .map((id) => locations.find((location) => location.id === id))
@@ -259,21 +241,7 @@ function HexInspector({ cell, fogged = false }: { cell: LogicalHex; fogged?: boo
         </section>
 
         {!fogged && <section className="inspector-section">
-          <h3>Контроль</h3>
-          <label className="field">
-            <span>Владелец</span>
-            <select value={cell.owner ?? ''} disabled={readonly} onChange={(event) => patch({ owner: (event.target.value || null) as FactionId | null })}>
-              <option value="">Нет владельца</option>
-              {orderedFactions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
-          </label>
-          <label className="field">
-            <span>Вражеская зона контроля</span>
-            <select value={cell.zoneOfControl ?? ''} disabled={readonly} onChange={(event) => patch({ zoneOfControl: (event.target.value || null) as FactionId | null })}>
-              <option value="">Нет зоны контроля</option>
-              {orderedFactions.filter((item) => item.id !== 'civilian').map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
-          </label>
+          <h3>Региональная привязка</h3>
           <label className="field">
             <span>Регион</span>
             <select value={cell.regionId ?? ''} disabled={readonly} onChange={(event) => patch({ regionId: event.target.value || null })}>
@@ -281,7 +249,8 @@ function HexInspector({ cell, fogged = false }: { cell: LogicalHex; fogged?: boo
               {orderedRegions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
             </select>
           </label>
-          <p className="field-help">Регион — верхний уровень карты. Гекс принадлежит региону; владение (домен) внутри региона определяется автоматически. Захват идёт через объекты карты, а не через сам регион.</p>
+          <div className="region-readonly-field"><span>Владелец</span><b style={{ color: owner?.color }}>{ownerSource ? `${owner?.label ?? 'Нет'} · ${ownerSource.name}` : 'Нет — гекс вне владения/оплота'}</b></div>
+          <p className="field-help">Владелец гекса рассчитывается автоматически из принадлежности владения или оплота. Вражеская зона контроля была ручным устаревшим оверрайдом движения и больше не используется.</p>
         </section>}
 
         <section className="inspector-section">
@@ -324,6 +293,7 @@ function FoggedLocationInspector({ location, intel }: { location: MapLocation; i
 function LostArmyContactInspector({ army }: { army: Army }) {
   const factions = useMapStore((state) => state.factions)
   const campaign = useMapStore((state) => state.campaign)
+  const orderedFactions = sortByText(factions, (item) => item.label)
   const faction = getFaction(factions, army.factionId)
   const intel = campaign.fogOfWar.lastSeenArmies.find((item) => item.armyId === army.id)
   return <aside className="side-panel right-panel fogged-inspector"><header className="panel-heading inspector-title army-inspector-title"><div><span className="eyebrow">Контакт потерян</span><h2>{faction.label}</h2></div><span className="army-inspector-flag" style={{ '--flag-color': faction.color } as CSSProperties}>?</span></header><div className="inspector-body"><section className="fogged-intel-card"><span>?</span><div><small>Последняя известная информация</small><b>{intel ? armyIntelLabel(intel.sizeCategory) : 'Вражеская армия'}</b><p>Последний раз замечена: раунд {intel?.lastSeenRound ?? 'неизвестно'}</p></div></section><p className="field-help">Армия больше не находится в зоне обзора. Её текущая позиция и состав неизвестны.</p></div></aside>
@@ -361,13 +331,13 @@ function ArmyInspector({ army }: { army: Army }) {
   const mode = useMapStore((state) => state.mode)
   const factions = useMapStore((state) => state.factions)
   const grid = useMapStore((state) => state.grid)
-  const orderedFactions = sortByText(factions, (item) => item.label)
   const unitTypes = useMapStore((state) => state.unitTypes)
   const heroes = useMapStore((state) => state.heroes)
   const captains = useMapStore((state) => state.captains)
   const armies = useMapStore((state) => state.armies)
   const locations = useMapStore((state) => state.locations)
   const campaign = useMapStore((state) => state.campaign)
+  const orderedFactions = sortByText(factions, (item) => item.label)
   const updateArmy = useMapStore((state) => state.updateArmy)
   const removeArmy = useMapStore((state) => state.removeArmy)
   const transferArmyToReserve = useMapStore((state) => state.transferArmyToReserve)

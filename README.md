@@ -13,15 +13,15 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.45.5
+Application: 0.45.6
 world.json: 35
 roster.json: 14
-savegame.json: 37
+savegame.json: 38
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
-0.45.5 restores region overlay labels above all map markers, aligns the add-domain/add-stronghold controls with the counters, and improves English fallback text in the editor.
+0.45.6 restores region overlay labels above all map markers, aligns the add-domain/add-stronghold controls with the counters, and improves English fallback text in the editor.
 
 ## Development
 

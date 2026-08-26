@@ -245,6 +245,8 @@ const UI_EN: Record<string, string> = {
   'Выберите свободный гекс. Оплот займёт только эту клетку.':'Select a free hex. The stronghold will occupy only this cell.',
   'Выберите свободный гекс внутри региона. Гексы владения сгенерируются автоматически.':'Select a free hex inside a region. Domain hexes will be generated automatically.',
   'Выберите свободный гекс внутри региона. Оплот займёт только эту клетку.':'Select a free hex inside a region. The stronghold will occupy only that cell.',
+  'Новый оплот: укажите гекс': 'New Stronghold: choose a hex',
+  'Новое владение: укажите гекс': 'New Domain: choose a hex',
   'Перетащите объект на свободный гекс. Размещение двух объектов на одном гексе запрещено.':'Drag the object to a free hex. Two objects cannot occupy the same hex.',
   'Приказ движения ·':'Movement order ·',
   'В этом гексе': 'In this hex',
@@ -347,6 +349,7 @@ const UI_EN: Record<string, string> = {
   'Не назначен': 'Not assigned',
   'Чтобы захватить регион, армия должна занять центральный гекс опорной локации после победы над защитниками.': 'To capture a region, an army must occupy the anchor location’s central hex after defeating its defenders.',
   'Описание региона': 'Region Description',
+  'Вне региона': 'Outside region',
   'Локации и крепости участвуют в расчёте границ регионов одинаково — по расстоянию до каждого гекса.': 'Locations and fortresses affect region borders equally, based on distance to each hex.',
   'Координаты на карте': 'Map Coordinates',
   'По горизонтали, X': 'Horizontal, X',
@@ -978,12 +981,24 @@ function rebuildReplacements(){
 }
 rebuildReplacements()
 
-export function localizedValue(canonical:string,translations:Record<string,string>|undefined,language:AppLanguage=currentLanguage){
-  return language==='en'?canonical:translations?.[language]?.trim()||canonical
+export function getDisplayName(obj:{name:string;nameTranslations?:Record<string,string>},locale:string=currentLanguage,fallback=''){
+  const canonical = obj.name?.trim() ?? ''
+  if (locale === 'en') return canonical || fallback
+  return obj.nameTranslations?.[locale]?.trim() || canonical || fallback
+}
+
+export function localizedValue(canonical:string,translations:Record<string,string>|undefined,language:AppLanguage=currentLanguage,fallback=''){
+  return getDisplayName({ name: canonical, nameTranslations: translations }, language, fallback)
 }
 
 export function localizedTranslationsPatch(language:AppLanguage,canonical:string,translations:Record<string,string>|undefined,value:string){
-  return language==='en'?{canonical:value,translations:{...(translations??{})}}:{canonical,translations:{...(translations??{}),[language]:value}}
+  if (language === 'en') return { canonical: value, translations: { ...(translations ?? {}) } }
+  const next = { ...(translations ?? {}) }
+  const trimmed = value.trim()
+  if (trimmed) next[language] = value
+  else delete next[language]
+  delete next.en
+  return { canonical, translations: next }
 }
 
 export function registerWorldTranslations(world: {

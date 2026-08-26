@@ -13,13 +13,15 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.45.1
-world.json: 34
+Application: 0.45.7
+world.json: 35
 roster.json: 14
-savegame.json: 33
+savegame.json: 39
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
+
+0.45.7 restores region overlay labels above all map markers, aligns the add-domain/add-stronghold controls with the counters, and improves English fallback text in the editor.
 
 ## Development
 
@@ -86,7 +88,7 @@ The same architecture supports future locales without new schema fields:
 }
 ```
 
-The editor displays only the field for the currently selected language.
+The editor now shows the canonical English name plus a collapsible Translations section for every supported mod locale. Missing translations fall back to the English name instead of a generic placeholder. Mods declare supportedLocales and defaultLocale in mod.json; English is always included.
 
 ## Mods
 

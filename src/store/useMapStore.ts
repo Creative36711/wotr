@@ -867,7 +867,11 @@ export const useMapStore = create<MapState>((set) => ({
   }),
 
   select: (selectedId) => set({ selectedId, selectedArmyId: null, selectedHexId: null, selectedHexIds: [] }),
-  selectArmy: (selectedArmyId) => set((state) => ({ selectedArmyId, selectedId: null, selectedHexId: null, selectedHexIds: [], ...(selectedArmyId && state.mode === 'game' && (state.campaign.phase.startsWith('planning_') || state.campaign.phase === 'movement_first' || state.campaign.phase === 'movement_second') ? { viewMode: 'tactical' as const } : {}) })),
+  selectArmy: (selectedArmyId) => set((state) => {
+    const army = selectedArmyId ? state.armies.find((item) => item.id === selectedArmyId) : null
+    const canControl = Boolean(army && army.factionId === state.campaign.playerFactionId && state.mode === 'game' && (state.campaign.phase.startsWith('planning_') || state.campaign.phase === 'movement_first' || state.campaign.phase === 'movement_second'))
+    return { selectedArmyId, selectedId: null, selectedHexId: null, selectedHexIds: [], ...(canControl ? { viewMode: 'tactical' as const } : {}) }
+  }),
   selectHex: (id, behavior = 'replace') => set((state) => {
     if (!id) return { selectedHexId: null, selectedHexIds: [] }
     if (behavior === 'replace') return { selectedHexId: id, selectedHexIds: [id] }

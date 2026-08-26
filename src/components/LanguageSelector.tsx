@@ -5,17 +5,19 @@ interface LanguageSelectorProps {
   firstRun?: boolean
   onSelect: (language: AppLanguage) => void
   onClose?: () => void
+  supportedLocales?: string[]
 }
 
-export default function LanguageSelector({ mapImageUrl, firstRun = false, onSelect, onClose }: LanguageSelectorProps) {
+export default function LanguageSelector({ mapImageUrl, firstRun = false, onSelect, onClose, supportedLocales = ['en', 'ru'] }: LanguageSelectorProps) {
+  const locales = new Set(supportedLocales.length ? supportedLocales : ['en'])
   return <main className="language-selection-screen" style={mapImageUrl ? { backgroundImage: `url(${mapImageUrl})` } : undefined}>
     <div className="menu-vignette" />
     <section className="language-selection-card">
       {!firstRun && onClose && <button type="button" className="language-close" onClick={onClose} aria-label="Close">×</button>}
       <header><span className="menu-ring"><i /></span><small>WAR OF THE RING</small><h1>Choose your language</h1><p>Select the interface language. You can change it later from the main menu.</p></header>
       <div className="language-options">
-        <button type="button" onClick={() => onSelect('en')}><span>EN</span><div><b>English</b><small>Continue in English</small></div><i>→</i></button>
-        <button type="button" onClick={() => onSelect('ru')}><span>RU</span><div><b>Russian</b><small>Continue in Russian</small></div><i>→</i></button>
+        {locales.has('en') && <button type="button" onClick={() => onSelect('en')}><span>EN</span><div><b>English</b><small>Continue in English</small></div><i>→</i></button>}
+        {locales.has('ru') && <button type="button" onClick={() => onSelect('ru')}><span>RU</span><div><b>Russian</b><small>Continue in Russian</small></div><i>→</i></button>}
       </div>
       <footer>Interface language does not change BFME game files or mod identifiers.</footer>
     </section>

@@ -13,7 +13,7 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.45.1";
+const GAME_VERSION: &str = "0.45.7";
 const SAVE_VERSION: u64 = 28;
 
 fn executable_dir() -> Result<PathBuf, String> {
@@ -153,12 +153,16 @@ fn create_mod(app: AppHandle, metadata: Value, source_mod_id: Option<String>) ->
     fs::create_dir_all(&dest).map_err(|e| e.to_string())?;
     let mut map_image: Option<String> = None;
     let mut source_rts: Option<Value> = None;
+    let mut source_locales: Option<Value> = None;
+    let mut source_default_locale: Option<Value> = None;
     if let Some(source_id) = source_mod_id {
         let src = mod_root(&app, &source_id)?;
         fs::copy(src.join("world.json"), dest.join("world.json")).map_err(|e| e.to_string())?;
         fs::copy(src.join("roster.json"), dest.join("roster.json")).map_err(|e| e.to_string())?;
         let source_meta: Value = serde_json::from_str(&fs::read_to_string(src.join("mod.json")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
         source_rts = source_meta.get("rts").cloned();
+        source_locales = source_meta.get("supportedLocales").cloned();
+        source_default_locale = source_meta.get("defaultLocale").cloned();
         copy_dir_recursive(&src.join("rts"),&dest.join("rts"))?;
         if let Some(source_map) = custom_map_name(&source_meta) {
             fs::copy(src.join(&source_map), dest.join(&source_map)).map_err(|e| e.to_string())?;
@@ -173,9 +177,11 @@ fn create_mod(app: AppHandle, metadata: Value, source_mod_id: Option<String>) ->
     let obj = mod_data.as_object_mut().ok_or("Неверные метаданные")?;
     obj.insert("createdAt".into(), json!(now));
     obj.insert("updatedAt".into(), json!(now));
+    obj.insert("supportedLocales".into(), source_locales.unwrap_or_else(||json!(["en","ru"])));
+    obj.insert("defaultLocale".into(), source_default_locale.unwrap_or_else(||json!("ru")));
     obj.insert("mapImage".into(), json!(map_image));
     obj.insert("rts".into(), source_rts.unwrap_or_else(||json!({"enabled":true,"factionOrder":[],"moduleFiles":[],"mapsFile":null,"mapCacheTargetFileName":"__wotr_maps_cache.big","networkRules":"0 0 0 400 1000 -1 -1 -1 -1 -1"})));
-    obj.insert("dataVersions".into(), json!({"world":29,"roster":14}));
+    obj.insert("dataVersions".into(), json!({"world":35,"roster":14}));
     atomic_write(&dest.join("mod.json"), serde_json::to_string_pretty(&mod_data).map_err(|e| e.to_string())?.as_bytes())?;
     Ok(mod_data)
 }

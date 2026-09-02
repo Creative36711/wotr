@@ -13,8 +13,8 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.45.27";
-const SAVE_VERSION: u64 = 28;
+const GAME_VERSION: &str = "0.46.5";
+const SAVE_VERSION: u64 = 29;
 
 fn executable_dir() -> Result<PathBuf, String> {
     let executable = std::env::current_exe().map_err(|error| format!("Не удалось определить путь EXE: {error}"))?;
@@ -53,12 +53,34 @@ fn asset_result(path:&Path,root:&Path,id:&str,original:&str,target:&str,scope:&s
 
 fn initialize_mods(app:&AppHandle)->Result<(),String>{
  let root=data_root(app)?;
- let default=mods_root(app)?.join("default");fs::create_dir_all(&default).map_err(|e|e.to_string())?;
+ let default=mods_root(app)?.join("default");
+ fs::create_dir_all(&default).map_err(|e|e.to_string())?;
  if !default.join("world.json").exists(){atomic_write(&default.join("world.json"),DEFAULT_WORLD.as_bytes())?}
  if !default.join("roster.json").exists(){atomic_write(&default.join("roster.json"),DEFAULT_ROSTER.as_bytes())?}
  if !default.join("mod.json").exists(){atomic_write(&default.join("mod.json"),DEFAULT_MOD.as_bytes())?}
- for legacy in ["rts/modules/wotr-ini.big","rts/maps/maps.big","rts/map-caches/locations/helms-deep.big","rts/map-caches/locations/argonath.big"]{let path=default.join(legacy);if path.exists(){let _=fs::remove_file(path);}}
- let app_file=root.join("app.json");if !app_file.exists(){atomic_write(&app_file,DEFAULT_APP.as_bytes())?}Ok(())
+
+ let rts_dir = default.join("rts");
+ fs::create_dir_all(rts_dir.join("maps")).map_err(|e|e.to_string())?;
+ fs::create_dir_all(rts_dir.join("map-caches/locations")).map_err(|e|e.to_string())?;
+ fs::create_dir_all(rts_dir.join("modules")).map_err(|e|e.to_string())?;
+
+ if let Ok(exe_dir) = executable_dir() {
+     let candidate_dirs = vec![
+         exe_dir.join("../public/mods/default/rts"),
+         exe_dir.join("resources/public/mods/default/rts"),
+         exe_dir.join("public/mods/default/rts"),
+         exe_dir.join("resources/mods/default/rts"),
+     ];
+     for src_rts in candidate_dirs {
+         if src_rts.exists() {
+             copy_dir_recursive(&src_rts, &rts_dir);
+             break;
+         }
+     }
+ }
+
+ let app_file=root.join("app.json");if !app_file.exists(){atomic_write(&app_file,DEFAULT_APP.as_bytes())?}
+ Ok(())
 }
 
 #[tauri::command] fn read_app_settings(app:AppHandle)->Result<String,String>{fs::read_to_string(data_root(&app)?.join("app.json")).map_err(|e|e.to_string())}

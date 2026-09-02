@@ -1,0 +1,71 @@
+{
+  "match_status": "COMPLETED",
+  "winning_team": "evil",
+  "losing_team": "good",
+  "winning_team_label": "Зло",
+  "losing_team_label": "Добро",
+  "winners": [
+    {
+      "name": "Бот 2",
+      "slot": 2,
+      "team": "evil",
+      "color": "white",
+      "is_local_player": false
+    }
+  ],
+  "losers": [
+    {
+      "name": "Игрок",
+      "slot": 1,
+      "team": "good",
+      "color": "blue",
+      "is_local_player": true,
+      "surrendered": false
+    }
+  ],
+  "unmatched_players": [],
+  "raw_data": {
+    "victory_icons_found": 1,
+    "defeat_icons_found": 1,
+    "surrendered_found": 0,
+    "icons": [
+      {
+        "kind": "victory",
+        "cx": 1253.5,
+        "cy": 481.5,
+        "score": 0.993,
+        "player": 1,
+        "color_side": "white"
+      },
+      {
+        "kind": "defeat",
+        "cx": 1244.5,
+        "cy": 270.0,
+        "score": 0.882,
+        "player": 0,
+        "color_side": "blue"
+      }
+    ],
+    "highlight_assignments": [
+      [
+        "blue",
+        1,
+        "defeat",
+        1204,
+        270,
+        40.5
+      ],
+      [
+        "white",
+        2,
+        "victory",
+        1213,
+        481,
+        40.5
+      ]
+    ],
+    "surrendered_slots": [],
+    "click_slots": true,
+    "score_screen_detected": true
+  }
+}

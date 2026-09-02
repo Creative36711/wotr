@@ -23,6 +23,26 @@ export const RTS_COLORS: Array<{ id: RtsColorId; label: string; code: number; he
 export const DEFAULT_RTS_EXECUTABLE = ''
 export const DEFAULT_MAP_CACHE_TARGET = '__wotr_maps_cache.big'
 export const DEFAULT_NETWORK_RULES = '0 0 0 400 1000 -1 -1 -1 -1 -1'
+export const NETWORK_COMMAND_VALUES = [33, 50, 100, 200, 400, 800, 10000] as const
+export const NETWORK_RESOURCE_VALUES = [500, 750, 1000, 1200, 1400, 1600, 1800, 2000, 2500, 3000, 4000] as const
+
+export function networkRuleParts(value: string) {
+  const parts = value.trim().split(/\s+/)
+  return { command: NETWORK_COMMAND_VALUES.includes(Number(parts[3]) as typeof NETWORK_COMMAND_VALUES[number]) ? Number(parts[3]) : 400, resources: NETWORK_RESOURCE_VALUES.includes(Number(parts[4]) as typeof NETWORK_RESOURCE_VALUES[number]) ? Number(parts[4]) : 1000 }
+}
+export function withNetworkRulePart(value: string, index: 3 | 4, selected: number) {
+  const parts = value.trim().split(/\s+/); while (parts.length < 10) parts.push('-1')
+  parts[index] = String(selected)
+  return parts.join(' ')
+}
+
+export function normalizeNetworkRules(value: string) {
+  const parts = value.trim().split(/\s+/)
+  while (parts.length < 10) parts.push('-1')
+  const parsed = networkRuleParts(value)
+  parts[3] = String(parsed.command); parts[4] = String(parsed.resources)
+  return parts.slice(0, 10).join(' ')
+}
 
 export function defaultRtsSettings(factions: FactionDefinition[] = []): RtsIntegrationSettings {
   return {
@@ -50,7 +70,7 @@ export function normalizeRtsSettings(source: Partial<RtsIntegrationSettings> | n
     moduleFiles: Array.isArray(source?.moduleFiles) ? source!.moduleFiles.map(cleanFile).filter(Boolean) as RtsStoredFile[] : [],
     mapsFile: cleanFile(source?.mapsFile),
     mapCacheTargetFileName: validBigFileName(source?.mapCacheTargetFileName ?? '') ? source!.mapCacheTargetFileName : DEFAULT_MAP_CACHE_TARGET,
-    networkRules: typeof source?.networkRules === 'string' && source.networkRules.trim() ? source.networkRules.trim() : DEFAULT_NETWORK_RULES,
+    networkRules: normalizeNetworkRules(typeof source?.networkRules === 'string' && source.networkRules.trim() ? source.networkRules : DEFAULT_NETWORK_RULES),
   }
 }
 

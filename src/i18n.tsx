@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react'
 import { BUILTIN_CONTENT_EN } from './contentTranslations'
 
-export type AppLanguage = 'ru' | 'en'
+export type AppLanguage = string
 
 const UI_EN: Record<string, string> = {
   'Война за Кольцо': 'War of the Ring',
@@ -287,6 +287,11 @@ const UI_EN: Record<string, string> = {
   'Материалы / ход': 'Materials / turn',
   'Слоты очереди': 'Queue Slots',
   'Лимит резерва': 'Reserve Limit',
+  'Лимит ОК резерва': 'Reserve Command Points',
+  'Очки командования': 'Command Points',
+  'BuildCost BFME': 'BFME BuildCost',
+  'Лимит ОК армии': 'Army Command Point Limit',
+  'Вместимость армии': 'Army capacity',
   'Теги специализации': 'Specialization Tags',
   'Расчётный найм для владельца': 'Calculated Recruitment for Owner',
   'боевых слотов': 'combat slots',

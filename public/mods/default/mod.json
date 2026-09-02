@@ -25,8 +25,8 @@
     "networkRules": "0 0 0 400 1000 -1 -1 -1 -1 -1"
   },
   "dataVersions": {
-    "world": 35,
-    "roster": 14
+    "world": 42,
+    "roster": 16
   },
   "supportedLocales": [
     "en",

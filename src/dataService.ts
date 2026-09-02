@@ -84,6 +84,8 @@ function normalizeUnits(source: unknown): UnitType[] {
       name: localized.canonical,
       nameTranslations: localized.translations,
       category: old.category ?? 'infantry',
+      buildCost: Math.max(0, Number(old.buildCost ?? defaults?.buildCost ?? 0)),
+      commandPoints: Math.max(0, Number(old.commandPoints ?? defaults?.commandPoints ?? 0)),
       battlePower: Math.max(1, old.battlePower ?? defaults?.battlePower ?? calculatedPower),
       movementPoints: Math.max(1, old.movementPoints ?? defaults?.movementPoints ?? ({ infantry: 5, archers: 5, cavalry: 7, monsters: 3, siege: 3 }[old.category ?? 'infantry'])),
       siegePower: Math.max(0, old.siegePower ?? old.siege ?? defaults?.siegePower ?? 0),
@@ -116,12 +118,15 @@ function normalizeHeroes(source: unknown, rebalanceBuiltIns = false): Hero[] {
       id: old.id,
       objectId: old.objectId ?? defaults?.objectId ?? generatedObjectId(old.id, 'Hero'),
       factionId: old.factionId,
+      buildCost: Math.max(0, Number(old.buildCost ?? defaults?.buildCost ?? old.summonCostGold ?? 0)),
+      commandPoints: Math.max(0, Number(old.commandPoints ?? defaults?.commandPoints ?? 0)),
       name: localizedName.canonical,
       nameTranslations: localizedName.translations,
       title: localizedTitle.canonical,
       titleTranslations: localizedTitle.translations,
       battlePower: Math.max(1, rebalanceBuiltIns && defaults ? defaults.battlePower : old.battlePower ?? defaults?.battlePower ?? Math.round((old.combat ?? 5) * 14 + (old.defense ?? 5) * 8)),
       command: Math.max(0, old.command ?? defaults?.command ?? 5),
+      commandPointLimit: Math.max(0, Number(old.commandPointLimit ?? defaults?.commandPointLimit ?? 300)),
       movementBonus: Math.max(0, old.movementBonus ?? defaults?.movementBonus ?? 0),
       alive: old.alive ?? true,
       portrait: old.portrait ?? '',
@@ -151,6 +156,7 @@ function normalizeCaptains(source: unknown): CaptainType[] {
       nameTranslations: localized.translations,
       battlePower: Math.max(1, Math.min(50, old.battlePower ?? defaults?.battlePower ?? 40)),
       command: Math.max(0, old.command ?? defaults?.command ?? 5),
+      commandPointLimit: Math.max(0, Number(old.commandPointLimit ?? defaults?.commandPointLimit ?? 300)),
       movementBonus: Math.max(0, old.movementBonus ?? defaults?.movementBonus ?? 0),
       portrait: old.portrait ?? defaults?.portrait ?? '',
       namePool: canonicalPool,
@@ -519,7 +525,7 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
       economicType,
       income: { gold: Math.max(0, location.income?.gold ?? defaults.gold), materials: Math.max(0, location.income?.materials ?? defaults.materials) },
       recruitmentSlots: Math.max(0, location.recruitmentSlots ?? defaults.recruitmentSlots),
-      reserveLimit: Math.max(0, location.reserveLimit ?? defaults.reserveLimit),
+      commandPointLimit: Math.max(0, location.commandPointLimit ?? defaults.commandPointLimit),
       recruitment,
       locationTags: Array.isArray(location.locationTags) ? [...new Set(location.locationTags)] : defaultTagsForLocation({ id: location.id, economicType, side: location.side }),
       culture: factions.some((faction) => faction.id === location.culture)
@@ -669,13 +675,13 @@ export async function loadAppSettings(): Promise<AppSettings> {
   let storedBrowserLanguage:string|null=null
   if(!desktop){try{storedBrowserLanguage=window.localStorage.getItem(BROWSER_LANGUAGE_KEY)}catch{/* Browser storage may be unavailable in a restricted iframe. */}}
   const languageSource=desktop?raw.language:storedBrowserLanguage
-  const language=languageSource==='ru'||languageSource==='en'?languageSource:null
+  const language=typeof languageSource==='string'&&languageSource.trim()?languageSource.trim().toLowerCase():null
   return { ...raw, language, rtsExecutablePath }
 }
 export async function saveAppSettings(settings: AppSettings) {
   if (isTauriRuntime()) { const contents=JSON.stringify(settings,null,2);await invoke('write_app_settings', { contents }); return }
   try {
-    if(settings.language==='ru'||settings.language==='en')window.localStorage.setItem(BROWSER_LANGUAGE_KEY,settings.language)
+    if(settings.language)window.localStorage.setItem(BROWSER_LANGUAGE_KEY,settings.language)
     else window.localStorage.removeItem(BROWSER_LANGUAGE_KEY)
   } catch { /* The first-run selector will appear again if storage is unavailable. */ }
   // Browser-dev may be opened by several people over the LAN. Language is

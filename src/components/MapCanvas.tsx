@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
 import { areFactionsHostile, getFaction, TERRAIN_BY_ID, WORLD_HEIGHT, WORLD_WIDTH } from '../constants'
-import { armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/army'
+import { armyCommandPointLimit, armyCommandPoints, armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/army'
 import { movementTargetLabel } from '../game/ai'
 import { canPlayerMoveArmy, factionSide } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
@@ -906,7 +906,8 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
             const displayArmyName = enemyToPlayer ? `${armyIntelLabel(army.unitSlots.length <= 4 ? 'small' : army.unitSlots.length <= 8 ? 'medium' : army.unitSlots.length <= 12 ? 'large' : 'huge')}: ${faction.label}` : army.name
             const displayCommander = enemyToPlayer ? (enemyHeroPresent ? 'Замечен герой' : 'Герои не замечены') : leaderName ?? 'Нет командира'
             const occupiedSlots = army.unitSlots.length + army.heroSlots.length + (army.commander?.kind === 'hero' ? 1 : 0)
-            const totalSlotLimit = armyUnitSlotCap(army) + army.heroSlotLimit + 1
+            const armyCommandLimit = armyCommandPointLimit(army, heroes, captains)
+            const armyCommandTotal = armyCommandPoints(army, unitTypes, heroes)
             const movementCap = armyMovementCap(army, heroes, captains, unitTypes)
             const style = {
               left: `${anchor.x + visualOffset.x / Math.max(camera.scale, .001)}px`,
@@ -929,7 +930,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
                   } else selectArmy(army.id)
                 }}
                 onContextMenu={(event)=>{if(campaign.pendingOrders.some((order)=>order.armyId===army.id)){event.preventDefault();event.stopPropagation();cancelArmyOrder(army.id)}}}
-                title={enemyToPlayer ? `${displayArmyName} · ${displayCommander}${army.movedRound === campaign.round ? ' · двигалась в этом раунде' : ''}` : `${army.name} · ${occupiedSlots}/${totalSlotLimit} слотов · ${army.movementRemaining}/${movementCap} ОД · ${leaderName ?? 'Нет командира'}`}
+                title={enemyToPlayer ? `${displayArmyName} · ${displayCommander}${army.movedRound === campaign.round ? ' · двигалась в этом раунде' : ''}` : `${army.name} · ${armyCommandTotal}/${armyCommandLimit} ОК · ${army.movementRemaining}/${movementCap} ОД · ${leaderName ?? 'Нет командира'}`}
               >
                 <span className="army-banner"><i>⚔</i></span>
                 <b>{enemyToPlayer ? '?' : occupiedSlots}</b>
@@ -1019,7 +1020,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
       {hoveredHex && tooltipTerrain && (viewMode !== 'cinematic' || hexEdit || showRegions) && !isPanning && (
         <div
           className="hex-tooltip"
-          style={{ left: Math.max(8, Math.min(cursor.x + 18, stageSize.width - 235)), top: Math.max(8, Math.min(cursor.y + 18, stageSize.height - 215)) }}
+          style={{ left: Math.max(8, Math.min(cursor.x + 18, stageSize.width - 368)), top: Math.max(8, Math.min(cursor.y + 18, stageSize.height - 215)) }}
         >
           <header><span style={{ color: tooltipTerrain.color }}>{tooltipTerrain.icon}</span><b>{tooltipTerrain.label}</b>{mode === 'edit' && <code>{hoveredHex.id}</code>}</header>
           <div className="tooltip-stats">

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { getFaction, KIND_LABELS } from '../constants'
-import { armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/army'
+import { armyCommandPointLimit, armyCommandPoints, armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/army'
 import { activeSide, factionSide, phaseIcon, phaseLabel } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import { useMapStore } from '../store/useMapStore'
@@ -64,10 +64,11 @@ function CampaignSidebar({onFocus}:SidebarProps) {
     const commander = commanderDefinition(army, heroes, captains)
     const movementCap = armyMovementCap(army, heroes, captains, unitTypes)
     const slotCount = army.heroSlots.length + army.unitSlots.length + (army.commander?.kind === 'hero' ? 1 : 0)
-    const slotLimit = army.heroSlotLimit + armyUnitSlotCap(army) + 1
+    const commandPoints = armyCommandPoints(army, unitTypes, heroes)
+    const commandPointLimit = armyCommandPointLimit(army, heroes, captains)
     const commanderName = army.commander?.kind === 'captain' ? army.commander.displayName ?? commander?.name : commander?.name
     const order=campaign.pendingOrders.find((item)=>item.armyId===army.id)
-    return <button type="button" key={army.id} className={`campaign-army-row ${selectedArmyId === army.id ? 'active' : ''} ${army.engaged ? 'engaged' : ''}`} onClick={() => {selectArmy(army.id);onFocus(army.id)}} onContextMenu={(event)=>{if(order){event.preventDefault();cancelArmyOrder(army.id)}}}><span className="campaign-army-flag" style={{ '--army-color': playerFaction.color } as CSSProperties}>{army.engaged ? '⚡' : '⚔'}</span><span><b>{army.name}</b><small>{slotCount}/{slotLimit} боевых слотов · сила {Math.round(armyPower(army))}</small><i>{order?`Приказ движения · ${order.cost} ОД (ПКМ для отмены)`:army.engaged?'Связана боем':army.status==='retreating'?'Деморализована · сила −20%':commanderName??'Нет командира'}</i></span><strong>{army.movementRemaining}/{movementCap}</strong></button>
+    return <button type="button" key={army.id} className={`campaign-army-row ${selectedArmyId === army.id ? 'active' : ''} ${army.engaged ? 'engaged' : ''}`} onClick={() => {selectArmy(army.id);onFocus(army.id)}} onContextMenu={(event)=>{if(order){event.preventDefault();cancelArmyOrder(army.id)}}}><span className="campaign-army-flag" style={{ '--army-color': playerFaction.color } as CSSProperties}>{army.engaged ? '⚡' : '⚔'}</span><span><b>{army.name}</b><small>{commandPoints}/{commandPointLimit} ОК · сила {Math.round(armyPower(army))}</small><i>{order?`Приказ движения · ${order.cost} ОД (ПКМ для отмены)`:army.engaged?'Связана боем':army.status==='retreating'?'Деморализована · сила −20%':commanderName??'Нет командира'}</i></span><strong>{army.movementRemaining}/{movementCap}</strong></button>
   }
   const foreignArmyRow = (army: typeof armies[number]) => {
     const faction = getFaction(factions, army.factionId)

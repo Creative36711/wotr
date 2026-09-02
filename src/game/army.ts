@@ -105,6 +105,29 @@ export function armyMovementCap(army: Army, heroes: Hero[], captains: CaptainTyp
   return armyMovementBreakdown(army, heroes, captains, unitTypes).total
 }
 
+export const DEFAULT_ARMY_COMMAND_POINT_LIMIT = 600
+
+export function armyCommandPoints(army: Army, units: UnitType[], heroes: Hero[]) {
+  const unitPoints = army.unitSlots.reduce((total, slot) => total + (units.find((unit) => unit.id === slot.entityId)?.commandPoints ?? 0), 0)
+  const heroIds = new Set<string>()
+  if (army.commander?.kind === 'hero') heroIds.add(army.commander.entityId)
+  for (const slot of army.heroSlots) heroIds.add(slot.entityId)
+  const heroPoints = [...heroIds].reduce((total, id) => total + (heroes.find((hero) => hero.id === id)?.commandPoints ?? 0), 0)
+  return unitPoints + heroPoints
+}
+
+export function armyCommandPointLimit(army: Army, heroes: Hero[] = [], captains: CaptainType[] = []) {
+  if (army.commander?.kind === 'hero') return heroes.find((hero) => hero.id === army.commander!.entityId)?.commandPointLimit ?? DEFAULT_ARMY_COMMAND_POINT_LIMIT
+  if (army.commander?.kind === 'captain') return captains.find((captain) => captain.id === army.commander!.entityId)?.commandPointLimit ?? DEFAULT_ARMY_COMMAND_POINT_LIMIT
+  return DEFAULT_ARMY_COMMAND_POINT_LIMIT
+}
+
+export function reserveCommandPoints(reserve: ArmySlot[], units: UnitType[], heroes: Hero[]) {
+  return reserve.reduce((total, slot) => total + (slot.kind === 'unit'
+    ? (units.find((unit) => unit.id === slot.entityId)?.commandPoints ?? 0)
+    : (heroes.find((hero) => hero.id === slot.entityId)?.commandPoints ?? 0)), 0)
+}
+
 export function armyUnitSlotCap(army: Army) {
   return army.baseUnitSlotLimit
 }

@@ -22,7 +22,7 @@ export interface EconomicTypeDefinition {
   /** Default materials income applied when an object switches to this type. */
   materials: number
   recruitmentSlots: number
-  reserveLimit: number
+  commandPointLimit: number
   /** Fog-of-war vision radius for domain objects of this type (strongholds use a fixed radius). */
   visionRadius: number
   /** Auto-battle defense bonus as a fraction, e.g. 0.4 = +40%. */
@@ -113,7 +113,7 @@ export interface AppSettings {
   activeModId: string
   lastPlayedMod: string
   appVersion: string
-  language: 'ru' | 'en' | null
+  language: string | null
   recentMods: string[]
   /** Local machine setting; never exported as mod content. */
   rtsExecutablePath: string
@@ -144,6 +144,10 @@ export interface UnitType {
   name: string
   nameTranslations: LocalizedTranslations
   category: UnitCategory
+  /** Original BFME BuildCost, shown in the editor and used by auto-balance only. */
+  buildCost?: number
+  /** BFME CommandPoints used by army-capacity calculations. */
+  commandPoints?: number
   /** Strategic auto-resolve power of one BFME Horde. */
   battlePower: number
   /** Strategic movement points; the slowest unit determines army speed. */
@@ -165,6 +169,12 @@ export interface Hero {
   id: string
   objectId: string
   factionId: FactionId
+  /** Original BFME BuildCost, shown in the editor and used by auto-balance only. */
+  buildCost?: number
+  /** BFME CommandPoints used by army-capacity calculations. */
+  commandPoints?: number
+  /** Maximum BFME command points this hero can lead in an army. */
+  commandPointLimit?: number
   /** Canonical English name and title. */
   name: string
   nameTranslations: LocalizedTranslations
@@ -187,6 +197,8 @@ export interface CaptainType {
   /** Canonical English captain type name. */
   name: string
   nameTranslations: LocalizedTranslations
+  /** Maximum BFME command points this captain can lead in an army. */
+  commandPointLimit?: number
   /** Symbolic strategic contribution; captains are administrators, not combat heroes. */
   battlePower: number
   command: number
@@ -228,6 +240,7 @@ export interface Army {
   factionId: FactionId
   hexId: string
   movementRemaining: number
+  /** Legacy physical-slot cap retained for formation UI compatibility. */
   baseUnitSlotLimit: number
   heroSlotLimit: number
   commander: ArmyCommander | null
@@ -424,6 +437,10 @@ export interface TurnMovementRecord {
   action: TurnMovementAction
   targetLabel: string | null
   distance: number
+  /** Movement endpoints are retained so opposing armies cannot pass through one another. */
+  armyId?: string
+  originHexId?: string
+  destinationHexId?: string
 }
 
 export interface CampaignState {
@@ -521,7 +538,7 @@ export interface MapLocation {
   economicType: SettlementType
   income: ResourceAmount
   recruitmentSlots: number
-  reserveLimit: number
+  commandPointLimit: number
   /** Legacy manual list; derived recruitment rules and overrides are authoritative. */
   recruitment: string[]
   locationTags: string[]
@@ -565,14 +582,14 @@ export interface HexGridData {
 }
 
 export interface RosterData {
-  version: 14
+  version: 16
   unitTypes: UnitType[]
   heroes: Hero[]
   captains: CaptainType[]
 }
 
 export interface WorldData {
-  version: 35
+  version: 42
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]
@@ -587,7 +604,7 @@ export interface WorldData {
 }
 
 export interface SaveGameData {
-  version: 39
+  version: 59
   gameVersion: string
   modId: string
   name: string

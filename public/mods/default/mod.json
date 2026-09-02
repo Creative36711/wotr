@@ -19,8 +19,22 @@
       "goblins",
       "angmar"
     ],
-    "moduleFiles": [],
-    "mapsFile": null,
+    "moduleFiles": [
+      {
+        "id": "patch201ini",
+        "originalFileName": "_patch201ini.big",
+        "targetFileName": "_patch201ini.big",
+        "storageName": "rts/modules/_patch201ini.big",
+        "size": 8937131
+      }
+    ],
+    "mapsFile": {
+      "id": "maps",
+      "originalFileName": "__wotr_maps.big",
+      "targetFileName": "__wotr_maps.big",
+      "storageName": "rts/maps/maps.big",
+      "size": 66934034
+    },
     "mapCacheTargetFileName": "__wotr_maps_cache.big",
     "networkRules": "0 0 0 400 1000 -1 -1 -1 -1 -1"
   },

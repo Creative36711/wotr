@@ -13,21 +13,15 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.45.27
-world.json: 42
+Application: 0.46.0
+world.json: 43
 roster.json: 16
-savegame.json: 59
+savegame.json: 60
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
-0.45.9 rebalanced the economy and recruitment parameters for all 186 locations after the geography revision. Economic types now match the location context, per-location income and recruitment limits follow their type, specialization tags remain empty, and major capitals contribute to the global army limit. This balance revision is intentionally incompatible with previous campaign saves.
-
-0.45.27 applies the latest location update from _tools/edit_world.json. Economic types were reviewed against structural types, all per-location economy and recruitment values were recalculated from those types, and specialization tags remain empty. This data revision is intentionally incompatible with previous campaign saves.
-
-0.45.27 prevents opposing armies from passing through each other on a head-on route swap: movement endpoints are retained and direct cross-movements are consolidated into a conflict before scanning hot spots. The latest location update from `_tools/edit_world.json` is also applied. This revision is intentionally incompatible with previous campaign saves.
-
-0.45.27 recalculates location and economic-type reserve capacity as CommandPoints rather than legacy unit counts: from zero at wilderness/landmarks to 1200 at capitals. The reserve UI and recruitment flow now use the sum of unit and hero CommandPoints.
+0.46.0 integrates BFME MapCache files for 58 locations with complete 8-point coordinate setups (4 defense and 4 attack positions), adds `__wotr_maps.big` and `_patch201ini.big` to mod assets, implements automated 8-player RTS battle positioning (random attack slots, stronghold owner locked to slot 1), and adds coordinate calibration and testing tools in the world editor. This major revision is intentionally incompatible with previous campaign saves.
 
 
 

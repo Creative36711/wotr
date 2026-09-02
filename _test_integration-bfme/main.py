@@ -816,10 +816,12 @@ def main(argv=None):
             log(f"[match] игроков: {len(players)} (слоты "
                 f"{[p['slot'] for p in players]})")
             result = monitor_match_result(players, md_cfg, lock_input=lock_input)
+            log("[match] победитель определён, закрываю игру...")
+            launcher.stop_game()
             # The match-result monitor is the terminal step of the normal
             # automation flow.  Do not continue into any post-match/menu loop
             # after a result has been written.
-            log("[done] результат матча обработан; программа остановлена")
+            log("[done] результат матча обработан, игра закрыта; программа остановлена")
             return 0
         log("[match] определение результата отключено (--no-monitor / config)")
         return 0

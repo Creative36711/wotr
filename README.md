@@ -13,15 +13,23 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.45.7
-world.json: 35
-roster.json: 14
-savegame.json: 39
+Application: 0.45.27
+world.json: 42
+roster.json: 16
+savegame.json: 59
 ```
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
-0.45.7 restores region overlay labels above all map markers, aligns the add-domain/add-stronghold controls with the counters, and improves English fallback text in the editor.
+0.45.9 rebalanced the economy and recruitment parameters for all 186 locations after the geography revision. Economic types now match the location context, per-location income and recruitment limits follow their type, specialization tags remain empty, and major capitals contribute to the global army limit. This balance revision is intentionally incompatible with previous campaign saves.
+
+0.45.27 applies the latest location update from _tools/edit_world.json. Economic types were reviewed against structural types, all per-location economy and recruitment values were recalculated from those types, and specialization tags remain empty. This data revision is intentionally incompatible with previous campaign saves.
+
+0.45.27 prevents opposing armies from passing through each other on a head-on route swap: movement endpoints are retained and direct cross-movements are consolidated into a conflict before scanning hot spots. The latest location update from `_tools/edit_world.json` is also applied. This revision is intentionally incompatible with previous campaign saves.
+
+0.45.27 recalculates location and economic-type reserve capacity as CommandPoints rather than legacy unit counts: from zero at wilderness/landmarks to 1200 at capitals. The reserve UI and recruitment flow now use the sum of unit and hero CommandPoints.
+
+
 
 ## Development
 
@@ -88,7 +96,9 @@ The same architecture supports future locales without new schema fields:
 }
 ```
 
-The editor now shows the canonical English name plus a collapsible Translations section for every supported mod locale. Missing translations fall back to the English name instead of a generic placeholder. Mods declare supportedLocales and defaultLocale in mod.json; English is always included.
+The editor shows the canonical English name plus only the currently selected interface translation. English users see the canonical field without a translation panel; users of another locale see English and that locale only. A compact language-management control can add another locale code to the mod. Missing translations fall back to the English name instead of a generic placeholder. Mods declare supportedLocales and defaultLocale in mod.json; English is always included.
+
+Content translations are stored next to their stable IDs in world.json and roster.json (for example, nameTranslations and descriptionTranslations), while the built-in interface dictionary is in src/i18n.tsx. A user-added locale is therefore portable with the mod data: share the mod.json/world.json/roster.json files or the complete mod folder, and the recipient can select the locale from the language screen. The data model accepts arbitrary locale codes such as tr, es, or it; English remains the canonical source and is never stored as a translation.
 
 ## Mods
 
@@ -231,7 +241,7 @@ Regions are a first-class authored array in `world.json`:
 }
 ```
 
-Vanilla 2.01 ships fourteen regions: Lindon, Eriador, Angmar, Forodwaith, Misty Mountains, Enedwaith, Dunland, Rohan, Gondor, Mordor, Rhovanion, Mirkwood, Harad, Rhûn.
+Vanilla 2.01 ships twenty-four regions: Lindon, Eriador, Angmar, Forodwaith, Misty Mountains, Enedwaith, Dunland, Rohan, Gondor, Mordor, Rhovanion, Mirkwood, Harad, Rhûn, Anduin, Lone-lands, The Shire, Lonely Mountain, Iron hills, Harondor, Ithilien, Dagorlad, Eregion, Ered Luin, and Dorwinion.
 
 The editor provides a **Regions** tab to create regions, edit names/colors/descriptions, paint hex membership (via hex selection on the map), and delete empty regions. Uncovered land hexes are invalid for a finished map.
 
@@ -447,3 +457,5 @@ Technical IDs remain automatic and stable. BFME Object IDs remain editable only 
 - Strategic unit levels and upgrades are not yet persistent; generated RTS units currently use level 1.
 - Only map objects with user-supplied current MapCache and shared maps BIG can launch RTS battles.
 - The strategic AI difficulty setting is stored but strategic behavior is currently shared between difficulty levels.
+
+0.45.27 keeps long location names readable in the hover tooltip by expanding its available width, wrapping names safely, and repositioning it away from the map edge. Existing English and Russian names were preserved. This interface revision is intentionally incompatible with previous campaign saves.

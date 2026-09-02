@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { areFactionsHostile, DEFAULT_GRID_CONFIG, TERRAIN_BY_ID } from '../constants'
 import { armyCommanderName, movementTargetLabel, planAlliedMovement, runAiMovement, runAiPlanning } from '../game/ai'
-import { armyMovementCap, armyUnitSlotCap, captainInstanceFromCommander, captainNamesForFaction, createCaptainCommander, createHeroCommander, factionArmyLimit, factionCaptainCount, factionCaptainLimit, generateArmyName, generateUniqueCaptainName } from '../game/army'
+import { armyCommandPointLimit, armyCommandPoints, reserveCommandPoints, armyMovementCap, armyUnitSlotCap, captainInstanceFromCommander, captainNamesForFaction, createCaptainCommander, createHeroCommander, factionArmyLimit, factionCaptainCount, factionCaptainLimit, generateArmyName, generateUniqueCaptainName } from '../game/army'
 import { canFactionPlan, canPlayerMoveArmy, factionIsActive, factionSide, firstFactionForSide, oppositeSide } from '../game/campaign'
 import { calculateConflictBattle, scanHotSpots, updateConflictRtsCompatibility } from '../game/conflicts'
 import { createDefaultCampaign } from '../game/defaultData'
@@ -327,9 +327,9 @@ function preparePlanningSide(state: MapState, campaign: CampaignState, sourceArm
       const remaining = [] as typeof locationState.recruitmentQueue
       for (const item of locationState.recruitmentQueue) {
         const turnsLeft = Math.max(0, item.turnsLeft - 1)
-        if (turnsLeft === 0 && locationState.reserve.length < location.reserveLimit) {
-          const unit = state.unitTypes.find((candidate) => candidate.id === item.entityId)
-          if (unit) locationState.reserve.push({ slotId: `reserve-${location.id}-${Date.now().toString(36)}-${locationState.reserve.length}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId })
+        const unit = state.unitTypes.find((candidate) => candidate.id === item.entityId)
+        if (turnsLeft === 0 && unit && reserveCommandPoints(locationState.reserve, state.unitTypes, state.heroes) + (unit.commandPoints ?? 0) <= location.commandPointLimit) {
+          locationState.reserve.push({ slotId: `reserve-${location.id}-${Date.now().toString(36)}-${locationState.reserve.length}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId })
         } else remaining.push({ ...item, turnsLeft })
       }
       locationState.recruitmentQueue = remaining
@@ -518,6 +518,29 @@ function enterConflictPhase(state: MapState, campaign: CampaignState, sourceArmi
   const heroes = sourceHeroes.map((hero) => ({ ...hero }))
   campaign.phase = 'conflicts'
   campaign.activeFactionId = campaign.playerFactionId ?? firstFactionForSide(state.factions, campaign.playerSide, campaign)
+
+  // Resolve head-on swaps before the hotspot scan. Movement is executed in side order,
+  // so a first mover can otherwise vacate the destination before the opposing army
+  // arrives and the two armies silently pass through one another.
+  const movements = campaign.turnMovements.filter((movement) => movement.round === campaign.round && movement.armyId && movement.originHexId && movement.destinationHexId && movement.originHexId !== movement.destinationHexId)
+  const handledCrossMovements = new Set<string>()
+  for (const left of movements) {
+    if (handledCrossMovements.has(left.armyId!)) continue
+    const right = movements.find((candidate) => candidate.armyId !== left.armyId && !handledCrossMovements.has(candidate.armyId!) && candidate.originHexId === left.destinationHexId && candidate.destinationHexId === left.originHexId && factionSide(state.factions, candidate.factionId) !== factionSide(state.factions, left.factionId))
+    if (!right) continue
+    const leftArmy = armies.find((army) => army.id === left.armyId)
+    const rightArmy = armies.find((army) => army.id === right.armyId)
+    if (!leftArmy || !rightArmy) continue
+    leftArmy.hexId = left.destinationHexId!
+    rightArmy.hexId = left.destinationHexId!
+    leftArmy.engaged = true
+    rightArmy.engaged = true
+    leftArmy.movementRemaining = 0
+    rightArmy.movementRemaining = 0
+    handledCrossMovements.add(left.armyId!)
+    handledCrossMovements.add(right.armyId!)
+    campaign.log.unshift(campaignEvent(campaign, `${leftArmy.name} и ${rightArmy.name} сталкиваются на встречном курсе.`, 'battle', null))
+  }
   const scan = scanHotSpots(campaign, armies, locations, state.factions, campaign.locationStates, state.grid, regions)
   for (const capture of scan.autoCaptures) {
     const location = locations.find((candidate) => candidate.id === capture.locationId)
@@ -946,7 +969,7 @@ export const useMapStore = create<MapState>((set) => ({
       ...(stronghold ? {} : { hexes: [hex] }),
       image: '', economicType: stronghold ? 'fortress' : 'village',
       income: stronghold ? { gold: 100, materials: 20 } : { gold: 30, materials: 0 },
-      recruitmentSlots: stronghold ? 3 : 1, reserveLimit: stronghold ? 15 : 5,
+      recruitmentSlots: stronghold ? 3 : 1, commandPointLimit: stronghold ? 15 : 5,
       recruitment: [], locationTags: [], culture: null, extraRecruitables: [], blockedRecruitables: [],
       rtsMapId: '', rtsMapCache: null, rtsFortress: null, armyLimitBonus: 0,
     }
@@ -1276,7 +1299,13 @@ export const useMapStore = create<MapState>((set) => ({
       unitSlots: (factionChanged ? [] : patch.unitSlots ?? current.unitSlots).map((slot) => ({ ...slot })),
       heroSlots: (factionChanged ? [] : patch.heroSlots ?? current.heroSlots).map((slot) => ({ ...slot })),
     }
-    next.unitSlots = next.unitSlots.slice(0, armyUnitSlotCap(next))
+    let usedCommandPoints = next.heroSlots.reduce((total, slot) => total + (state.heroes.find((hero) => hero.id === slot.entityId)?.commandPoints ?? 0), 0) + (next.commander?.kind === 'hero' ? (state.heroes.find((hero) => hero.id === next.commander!.entityId)?.commandPoints ?? 0) : 0)
+    next.unitSlots = next.unitSlots.filter((slot) => {
+      const points = state.unitTypes.find((unit) => unit.id === slot.entityId)?.commandPoints ?? 0
+      if (usedCommandPoints + points > armyCommandPointLimit(next, state.heroes, state.captains)) return false
+      usedCommandPoints += points
+      return true
+    })
     next.heroSlots = next.heroSlots.slice(0, next.heroSlotLimit)
     const captainWasReplaced = current.commander?.kind === 'captain' && (commander?.kind !== 'captain' || commander.instanceId !== current.commander.instanceId)
     if (state.mode === 'game' && captainWasReplaced) releaseCaptain(campaign, current.factionId, current.commander)
@@ -1311,7 +1340,7 @@ export const useMapStore = create<MapState>((set) => ({
         gold: Math.max(0, Number(patch.gold ?? item.gold)),
         materials: Math.max(0, Number(patch.materials ?? item.materials)),
         recruitmentSlots: Math.max(0, Math.min(20, Number(patch.recruitmentSlots ?? item.recruitmentSlots))),
-        reserveLimit: Math.max(0, Math.min(100, Number(patch.reserveLimit ?? item.reserveLimit))),
+        commandPointLimit: Math.max(0, Math.min(10000, Number(patch.commandPointLimit ?? item.commandPointLimit))),
         visionRadius: Math.max(0, Math.min(12, Number(patch.visionRadius ?? item.visionRadius))),
         defenseBonus: Math.max(0, Math.min(1, Number(patch.defenseBonus ?? item.defenseBonus))),
         battleType: (patch.battleType === 'siege' || patch.battleType === 'settlement') ? patch.battleType : item.battleType,
@@ -1333,7 +1362,7 @@ export const useMapStore = create<MapState>((set) => ({
       ...item,
       income: { ...defaults.income },
       recruitmentSlots: defaults.recruitmentSlots,
-      reserveLimit: defaults.reserveLimit,
+      commandPointLimit: defaults.commandPointLimit,
     } : item)
     return pushHistory(state, { ...cloneSnapshot(currentSnapshot(state)), locations })
   }),
@@ -1449,10 +1478,11 @@ export const useMapStore = create<MapState>((set) => ({
     const executePlayerOrders=()=>{
       const grid=resolveGrid(state.grid,locations,regions)
       for(const order of campaign.pendingOrders){const army=armies.find((item)=>item.id===order.armyId&&item.factionId===campaign.playerFactionId);if(!army||!army.commander||army.engaged)continue
+        const originHexId=army.hexId
         const interception=order.path.findIndex((hex,index)=>index>0&&armies.some((enemy)=>enemy.hexId===hex&&areFactionsHostile(state.factions,enemy.factionId,army.factionId)));const path=interception>0?order.path.slice(0,interception+1):order.path;const destination=path.at(-1)!;const cost=pathMovementCost(path,grid.byId,army.factionId);if(cost>army.movementRemaining)continue
         const enemies=armies.filter((enemy)=>enemy.hexId===destination&&areFactionsHostile(state.factions,enemy.factionId,army.factionId));const target=locations.find((location)=>location.hex===destination)??(order.locationId?locations.find((location)=>location.id===order.locationId)??null:null);const hostile=Boolean(target&&areFactionsHostile(state.factions,target.side,army.factionId));const committed=enemies.length>0||hostile;if(committed&&!army.canInitiateBattle)continue
         army.hexId=destination;army.movementRemaining=committed?0:Math.max(0,army.movementRemaining-cost);army.status=army.movementRemaining>0?'ready':'marched';army.engaged=committed;army.movedRound=campaign.round;army.movedInPhase='movement_first'
-        campaign.turnMovements.push({id:`log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`,round:campaign.round,factionId:army.factionId,armyName:army.name,commanderName:armyCommanderName(army,heroes),action:committed?'besieged':'moved',targetLabel:target?.name??movementTargetLabel(destination,locations,regions,grid),distance:path.length-1})
+        campaign.turnMovements.push({id:`log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`,round:campaign.round,factionId:army.factionId,armyName:army.name,commanderName:armyCommanderName(army,heroes),action:committed?'besieged':'moved',targetLabel:target?.name??movementTargetLabel(destination,locations,regions,grid),distance:path.length-1,armyId:army.id,originHexId,destinationHexId:destination})
         if(committed){for(const enemy of enemies)enemy.engaged=true;campaign.log.unshift(campaignEvent(campaign,`${army.name} входит в зону боя и связывает противника.`,'move',army.factionId))}else if(target?.side==='civilian'){captureLocation(locations,regions,campaign,target.id,army.factionId);campaign.log.unshift(campaignEvent(campaign,`${army.name} занимает нейтральную локацию «${target.name}».`,'capture',army.factionId))}else campaign.log.unshift(campaignEvent(campaign,`${army.name} перемещается на ${cost} ОД.`,'move',army.factionId))
       }
       campaign.pendingOrders=[]
@@ -1685,7 +1715,7 @@ export const useMapStore = create<MapState>((set) => ({
     const locationState = state.campaign.locationStates[locationId]
     const slot = locationState?.reserve.find((item) => item.slotId === slotId)
     if (!location || !army || !slot || !canFactionPlan(state.campaign, state.factions, location.side) || army.factionId !== location.side || army.hexId !== locationHexId(location, state.grid.config)) return state
-    if (slot.kind === 'unit' && army.unitSlots.length >= armyUnitSlotCap(army)) return state
+    if (slot.kind === 'unit') { const unit = state.unitTypes.find((candidate) => candidate.id === slot.entityId); if (!unit || armyCommandPoints(army, state.unitTypes, state.heroes) + (unit.commandPoints ?? 0) > armyCommandPointLimit(army, state.heroes, state.captains)) return state }
     if (slot.kind === 'hero' && state.campaign.heroStates[slot.entityId]?.status !== 'active') return state
     if (slot.kind === 'hero' && army.commander?.kind !== 'captain' && army.heroSlots.length >= army.heroSlotLimit) return state
     const campaign = cloneCampaign(state.campaign)
@@ -1710,7 +1740,7 @@ export const useMapStore = create<MapState>((set) => ({
     const army = state.armies.find((item) => item.id === armyId)
     const locationState = state.campaign.locationStates[locationId]
     const slot = army?.unitSlots.find((item) => item.slotId === slotId) ?? army?.heroSlots.find((item) => item.slotId === slotId)
-    if (!location || !army || !slot || !locationState || !canFactionPlan(state.campaign, state.factions, location.side) || army.factionId !== location.side || army.hexId !== locationHexId(location, state.grid.config) || locationState.reserve.length >= location.reserveLimit) return state
+    if (!location || !army || !slot || !locationState || !canFactionPlan(state.campaign, state.factions, location.side) || army.factionId !== location.side || army.hexId !== locationHexId(location, state.grid.config) || reserveCommandPoints(locationState.reserve, state.unitTypes, state.heroes) + (slot.kind === 'unit' ? (state.unitTypes.find((unit) => unit.id === slot.entityId)?.commandPoints ?? 0) : (state.heroes.find((hero) => hero.id === slot.entityId)?.commandPoints ?? 0)) > location.commandPointLimit) return state
     if (slot.kind === 'unit' && army.unitSlots.length <= 1) return state
     const campaign = cloneCampaign(state.campaign)
     campaign.locationStates[locationId].reserve.push({ ...slot })
@@ -1776,7 +1806,7 @@ export const useMapStore = create<MapState>((set) => ({
     if (army.commander?.kind === 'captain') releaseCaptain(campaign, army.factionId, army.commander)
     campaign.pendingOrders=campaign.pendingOrders.filter((order)=>order.armyId!==armyId)
     campaign.alliedPlans=campaign.alliedPlans.filter((plan)=>plan.armyId!==armyId)
-    const free = Math.max(0, location.reserveLimit - campaign.locationStates[locationId].reserve.length)
+    const free = Math.max(0, location.commandPointLimit - reserveCommandPoints(campaign.locationStates[locationId].reserve, state.unitTypes, state.heroes))
     campaign.locationStates[locationId].reserve.push(...additions.slice(0, free).map((slot) => ({ ...slot })))
     return { ...gameCommit(state, { campaign, armies: state.armies.filter((item) => item.id !== armyId) }), selectedArmyId: state.selectedArmyId === armyId ? null : state.selectedArmyId }
   }),

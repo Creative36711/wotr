@@ -1,5 +1,5 @@
 import { areFactionsHostile } from '../constants'
-import { armyUnitSlotCap, createCaptainCommander, createHeroCommander, factionArmyLimit, factionCaptainCount, factionCaptainLimit, generateArmyName, generateUniqueCaptainName } from './army'
+import { armyCommandPointLimit, createCaptainCommander, createHeroCommander, factionArmyLimit, factionCaptainCount, factionCaptainLimit, generateArmyName, generateUniqueCaptainName } from './army'
 import { factionIsActive, factionSide } from './campaign'
 import { heroIsDeployed, heroUnlockSatisfied } from './heroes'
 import { recruitableUnitsAtLocation } from './recruitment'
@@ -72,8 +72,9 @@ export function runAiPlanning(
       const hexId = locationHexId(location, grid.config)
       const stationed = nextArmies.filter((army) => army.factionId === faction.id && army.hexId === hexId)
       for (const army of stationed) {
-        while (army.unitSlots.length < armyUnitSlotCap(army)) {
-          const slotIndex = locationState.reserve.findIndex((slot) => slot.kind === 'unit')
+        while (true) {
+          const currentPoints = army.unitSlots.reduce((total, slot) => total + (unitTypes.find((unit) => unit.id === slot.entityId)?.commandPoints ?? 0), 0)
+          const slotIndex = locationState.reserve.findIndex((slot) => slot.kind === 'unit' && currentPoints + (unitTypes.find((unit) => unit.id === slot.entityId)?.commandPoints ?? 0) <= armyCommandPointLimit(army, heroes, captains))
           if (slotIndex < 0) break
           army.unitSlots.push({ ...locationState.reserve.splice(slotIndex, 1)[0] })
         }
@@ -166,7 +167,7 @@ export function armyCommanderName(army: Army, heroes: Hero[]) {
   return army.commander.displayName ?? null
 }
 
-function recordTurnMovement(campaign: CampaignState, army: Army, heroes: Hero[], action: 'moved' | 'stayed' | 'retreated' | 'besieged', targetLabel: string | null, distance: number) {
+function recordTurnMovement(campaign: CampaignState, army: Army, heroes: Hero[], action: 'moved' | 'stayed' | 'retreated' | 'besieged', targetLabel: string | null, distance: number, originHexId = army.hexId, destinationHexId = army.hexId) {
   campaign.turnMovements.push({
     id: aiId(`move-${army.id}`),
     round: campaign.round,
@@ -176,6 +177,9 @@ function recordTurnMovement(campaign: CampaignState, army: Army, heroes: Hero[],
     action,
     targetLabel,
     distance,
+    armyId: army.id,
+    originHexId,
+    destinationHexId,
   })
 }
 
@@ -344,6 +348,7 @@ export function runAiMovement(
       spent = affordable.spent
     }
 
+    const originHexId = army.hexId
     const destinationId = path[destinationIndex]
     const hostileArmy = nextArmies.some((candidate) => candidate.id !== army.id && candidate.hexId === destinationId && areFactionsHostile(factions, candidate.factionId, army.factionId))
     const destinationLocation = locations.find((location) => locationHexId(location, grid.config) === destinationId)
@@ -357,7 +362,7 @@ export function runAiMovement(
       army.engaged = true
       for (const candidate of nextArmies) if (candidate.hexId === destinationId && areFactionsHostile(factions, candidate.factionId, army.factionId)) candidate.engaged = true
     }
-    recordTurnMovement(campaign, army, heroes, hostileArmy || hostileLocation ? 'besieged' : 'moved', movementTargetLabel(destinationId, locations, regions, logicalGrid), destinationIndex)
+    recordTurnMovement(campaign, army, heroes, hostileArmy || hostileLocation ? 'besieged' : 'moved', movementTargetLabel(destinationId, locations, regions, logicalGrid), destinationIndex, originHexId, destinationId)
   }
   return nextArmies
 }

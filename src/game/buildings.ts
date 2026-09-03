@@ -21,12 +21,12 @@ export const DEFAULT_BUILDING_SLOTS: Record<SettlementType, number> = {
 }
 
 const type = (
-  id: string, name: string, nameRu: string, descriptionRu: string, icon: string,
+  id: string, name: string, nameRu: string, description: string, descriptionRu: string, icon: string,
   cost: number, buildTime: number, economic: SettlementType[],
   effects: Partial<BuildingTypeDefinition['effects']>, extra: Partial<BuildingTypeDefinition> = {},
 ): BuildingTypeDefinition => ({
   id, name, nameTranslations: ru(nameRu),
-  description: '', descriptionTranslations: ru(descriptionRu), icon,
+  description, descriptionTranslations: ru(descriptionRu), icon,
   cost, buildTime,
   allowedStructuralTypes: ['domain', 'stronghold'],
   allowedEconomicTypes: economic,
@@ -42,15 +42,15 @@ const MILITARY: SettlementType[] = ['capital', 'city', 'fortress', 'mine', 'camp
 const BROAD: SettlementType[] = ['capital', 'city', 'fortress', 'mine', 'port', 'farm', 'village', 'camp', 'signal_tower', 'crossroads', 'pass']
 
 export const DEFAULT_BUILDING_TYPES: BuildingTypeDefinition[] = [
-  type('forge', 'Forge', 'Кузница', 'Выдаёт апгрейд брони отрядам, стоящим в этой локации.', '⚒', 150, 2, MILITARY, { armyUpgrades: ['armorUpgrade'] }),
-  type('armory', 'Armory', 'Оружейная', 'Выдаёт апгрейд оружия отрядам, стоящим в этой локации.', '⚔', 150, 2, MILITARY, { armyUpgrades: ['weaponUpgrade'] }),
-  type('banner-workshop', 'Banner Workshop', 'Знамённая мастерская', 'Выдаёт знамёна отрядам, стоящим в этой локации.', '⚑', 200, 2, ['capital', 'city', 'fortress'], { armyUpgrades: ['bannerUpgrade'] }),
-  type('beacon', 'Beacon', 'Сигнальный огонь', 'В битве за эту локацию владелец получает сигнальный огонь.', '🔥', 100, 1, BROAD, { battleModifiers: { owner: { signalFire: true } } }),
-  type('training-camp', 'Training Camp', 'Тренировочный лагерь', 'Новобранцы в этой локации создаются на уровень выше.', '⛺', 200, 3, MILITARY, { recruitLevelBonus: 1 }),
-  type('storehouse', 'Storehouse', 'Склад', 'Владелец начинает RTS-битву с дополнительными ресурсами.', '▣', 100, 1, BROAD, { battleModifiers: { owner: { startingResources: 150 } } }),
-  type('barracks-annex', 'Barracks Annex', 'Пристройка казарм', 'Увеличивает лимит командных очков владельца в RTS-битве.', '▤', 150, 2, MILITARY, { battleModifiers: { owner: { commandPointBonus: 100 } } }),
-  type('palantir-tower', 'Palantir Tower', 'Башня палантира', 'Даёт стартовые очки палантира и их прирост в RTS-битве.', '◍', 250, 2, ['capital', 'city', 'fortress', 'signal_tower'], { battleModifiers: { owner: { palantirStartingPoints: 3, palantirIncomePerInterval: 1 } } }),
-  type('ring-forge', 'Ring Forge', 'Кольцекузня', 'Каждый ход бесплатно продвигает ковку Кольца.', '◎', 300, 3, ['capital', 'fortress'], { ringForgeBonus: 1 }, { maxPerFaction: 1, destroyedOnCapture: true }),
+  type('forge', 'Forge', 'Кузница', 'Permanently grants the armor upgrade to every unit of the owner stationed at this location.', 'Навсегда выдаёт апгрейд брони всем отрядам владельца, стоящим в этой локации.', '⚒', 150, 2, MILITARY, { armyUpgrades: ['armorUpgrade'] }),
+  type('armory', 'Armory', 'Оружейная', 'Permanently grants the weapon upgrade to every unit of the owner stationed at this location.', 'Навсегда выдаёт апгрейд оружия всем отрядам владельца, стоящим в этой локации.', '⚔', 150, 2, MILITARY, { armyUpgrades: ['weaponUpgrade'] }),
+  type('banner-workshop', 'Banner Workshop', 'Знамённая мастерская', 'Permanently grants banner carriers to every unit of the owner stationed at this location.', 'Навсегда выдаёт знамёна всем отрядам владельца, стоящим в этой локации.', '⚑', 200, 2, ['capital', 'city', 'fortress'], { armyUpgrades: ['bannerUpgrade'] }),
+  type('beacon', 'Beacon', 'Сигнальный огонь', 'In a real BFME battle for this location the owner gets a signal fire.', 'В настоящей битве BFME за эту локацию владелец получает сигнальный огонь.', '🔥', 100, 1, BROAD, { battleModifiers: { owner: { signalFire: true } } }),
+  type('training-camp', 'Training Camp', 'Тренировочный лагерь', 'Units recruited here start one veterancy level higher.', 'Отряды, нанятые в этой локации, начинают на один уровень ветеранства выше.', '⛺', 200, 3, MILITARY, { recruitLevelBonus: 1 }),
+  type('storehouse', 'Storehouse', 'Склад', 'The owner starts a BFME battle here with +150 extra resources.', 'Владелец начинает битву BFME здесь с дополнительными 150 ресурсов.', '▣', 100, 1, BROAD, { battleModifiers: { owner: { startingResources: 150 } } }),
+  type('barracks-annex', 'Barracks Annex', 'Пристройка казарм', 'Raises the owner command point limit by 100 in a BFME battle here.', 'Повышает лимит командных очков владельца на 100 в битве BFME здесь.', '▤', 150, 2, MILITARY, { battleModifiers: { owner: { commandPointBonus: 100 } } }),
+  type('palantir-tower', 'Palantir Tower', 'Башня палантира', 'Grants +3 starting palantir points and +1 income per tick in a BFME battle here.', 'Даёт +3 стартовых очка палантира и +1 к приросту в битве BFME здесь.', '◍', 250, 2, ['capital', 'city', 'fortress', 'signal_tower'], { battleModifiers: { owner: { palantirStartingPoints: 3, palantirIncomePerInterval: 1 } } }),
+  type('ring-forge', 'Ring Forge', 'Кольцекузня', 'Advances the One Ring forging by 1 progress every turn, for free.', 'Каждый ход бесплатно продвигает ковку Кольца Всевластья на 1 единицу.', '◎', 300, 3, ['capital', 'fortress'], { ringForgeBonus: 1 }, { maxPerFaction: 1, destroyedOnCapture: true }),
 ]
 
 export function createDefaultBuildingTypes(): BuildingTypeDefinition[] {

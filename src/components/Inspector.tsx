@@ -17,7 +17,7 @@ import type { ImportedRtsAsset } from '../dataService'
 import type { RtsMapAsset } from '../types'
 import { sortByText } from '../utils/sort'
 import { domainEconomicTypeIds, economicDefaultsPatch, economicTypeLabel, getEconomicType, strongholdEconomicTypeIds } from '../game/economicTypes'
-import { getDisplayName, translateText, useI18n } from '../i18n'
+import { getDisplayName, localizedValue, translateText, useI18n } from '../i18n'
 import type { Army, AppSettings, FactionId, HexCellOverride, LastSeenLocationIntel, StructuralType, LogicalHex, MapLocation, ModDefinition, SettlementType } from '../types'
 import RtsCoordinatesTool from './RtsCoordinatesTool'
 
@@ -681,15 +681,16 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
               const definition = buildingTypes.find((type) => type.id === building.buildingTypeId)
               return <div className="location-building-row" key={building.id}>
                 <span>{definition?.icon ?? '▣'}</span>
-                <div><b>{definition?.name ?? building.buildingTypeId}</b><small>{building.turnsRemaining > 0 ? `Строится · осталось ходов: ${building.turnsRemaining}` : 'Работает'}</small></div>
+                <div title={definition ? localizedValue(definition.description, definition.descriptionTranslations, language) : ''}><b>{definition ? getDisplayName(definition, language) : building.buildingTypeId}</b><small>{building.turnsRemaining > 0 ? `Строится · осталось ходов: ${building.turnsRemaining}` : 'Работает'}</small></div>
                 {canPlan && <button type="button" title="Снести" onClick={() => demolishBuilding(building.id)}>×</button>}
               </div>
             })}
             {!built.length && <p className="field-help">В этом объекте пока нет построек.</p>}
             {canPlan && totalSlots > 0 && <div className="location-building-options">{buildingTypes.map((definition) => {
               const availability = canBuild(definition, location, campaign, owner, treasury?.gold ?? 0)
-              return <button type="button" key={definition.id} disabled={!availability.allowed} title={availability.reason ?? definition.description} onClick={() => startBuilding(location.id, definition.id)}>
-                <span>{definition.icon}</span><b>{definition.name}</b><small>{definition.cost} зол. · {definition.buildTime} ход.</small>
+              const localizedDescription = localizedValue(definition.description, definition.descriptionTranslations, language)
+              return <button type="button" key={definition.id} disabled={!availability.allowed} title={availability.reason ? `${localizedDescription}\n\n${availability.reason}` : localizedDescription} onClick={() => startBuilding(location.id, definition.id)}>
+                <span>{definition.icon}</span><b>{getDisplayName(definition, language)}</b><small>{definition.cost} зол. · {definition.buildTime} ход.</small>
               </button>
             })}</div>}
             {totalSlots === 0 && <p className="field-help">Тип объекта не допускает строительство.</p>}

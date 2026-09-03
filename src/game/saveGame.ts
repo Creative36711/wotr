@@ -64,11 +64,11 @@ export function applySaveGame(world: WorldData, save: SaveGameData): WorldData {
     })() : null,
     heroSlots: army.heroSlots.flatMap((slot) => {
       const entity = world.heroes.find((item) => item.id === slot.entityId)
-      return entity ? [{ ...slot, objectId: entity.objectId, ...normalizeSlotProgression(slot, heroMaxLevel(entity, world.defaultHeroMaxLevel)) }] : []
+      return entity ? [{ ...slot, objectId: entity.objectId, ...normalizeSlotProgression(slot, heroMaxLevel(entity)) }] : []
     }),
     unitSlots: army.unitSlots.flatMap((slot) => {
       const entity = world.unitTypes.find((item) => item.id === slot.entityId)
-      return entity ? [{ ...slot, objectId: entity.objectId, ...normalizeSlotProgression(slot, unitMaxLevel(entity, world.defaultUnitMaxLevel)) }] : []
+      return entity ? [{ ...slot, objectId: entity.objectId, ...normalizeSlotProgression(slot, unitMaxLevel(entity)) }] : []
     }),
   }))
   return {

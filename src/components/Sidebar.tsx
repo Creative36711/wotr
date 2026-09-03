@@ -5,7 +5,7 @@ import { armyCommandPointLimit, armyCommandPoints, armyMovementCap, armyUnitSlot
 import { activeSide, factionSide, phaseIcon, phaseLabel } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import { useMapStore } from '../store/useMapStore'
-import { getDisplayName, translateText, useI18n } from '../i18n'
+import { getDisplayName, localizedValue, translateText, useI18n } from '../i18n'
 import { sortByText } from '../utils/sort'
 import { investmentCost, ringProgress } from '../game/ring'
 import type { FactionId, StructuralType } from '../types'
@@ -93,7 +93,7 @@ function CampaignSidebar({onFocus}:SidebarProps) {
         const location=locations.find((candidate)=>candidate.id===building.locationId)
         return <article key={building.id} onClick={()=>location&&onFocus(location.id)}>
           <span>{definition?.icon??'▣'}</span>
-          <div><b>{getDisplayName(definition)}</b><small>{location?.name??building.locationId}</small><i>{building.turnsRemaining>0?`${translateText('Строится')} · ${building.turnsRemaining}`:translateText('Готово')}</i></div>
+          <div title={definition?localizedValue(definition.description,definition.descriptionTranslations):''}><b>{definition?getDisplayName(definition):building.buildingTypeId}</b><small>{location?.name??building.locationId}</small><i>{building.turnsRemaining>0?`${translateText('Строится')} · ${building.turnsRemaining}`:translateText('Готово')}</i></div>
           <button type="button" onClick={(event)=>{event.stopPropagation();demolishBuilding(building.id)}}>×</button>
         </article>
       })}

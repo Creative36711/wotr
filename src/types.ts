@@ -123,11 +123,13 @@ export interface BuildingInstance {
   turnBuilt: number
 }
 
+/**
+ * Palantír limits. Only the caps are configurable: the base starting points and
+ * the 2-minute income tick are hard-coded inside BFME itself, so the strategic
+ * layer can only decide how many *extra* points a side brings into the battle.
+ */
 export interface PalantirSettings {
-  baseStartingPoints: number
   maxStartingPointsFromModifiers: number
-  incomeIntervalMinutes: number
-  baseIncomePerInterval: number
   maxIncomePerIntervalFromModifiers: number
 }
 
@@ -766,8 +768,6 @@ export interface WorldData {
   buildingTypes: BuildingTypeDefinition[]
   palantirSettings: PalantirSettings
   ringForging: RingForgingSettings
-  defaultUnitMaxLevel: number
-  defaultHeroMaxLevel: number
   campaign: CampaignState
   battles: AutoBattleReport[]
 }

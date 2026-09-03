@@ -525,6 +525,11 @@ const UI_EN: Record<string, string> = {
   'Версия BFME': 'BFME Version',
   'Основа': 'Base',
   'Пустой шаблон': 'Empty Template',
+  'Описание (подсказка при наведении)': 'Description (hover tooltip)',
+  'Базовые стартовые очки палантира и интервал их прироста (2 минуты) зашиты в саму BFME и не редактируются. Здесь задаётся только потолок для бонусов, которые стратегический слой может добавить сверху.': 'The base palantir points and the 2-minute income tick are hard-coded inside BFME and cannot be edited. Only the cap for the bonuses added by the strategic layer is configurable here.',
+  'Потолок ветеранства из ROTWK 2.01: 0 - без уровней (осада, энты), 5 - обычные отряды, 10 - героические': 'Veterancy cap from ROTWK 2.01: 0 = no levels (siege, ents), 5 = regular units, 10 = heroic units',
+  'Работает': 'Operational',
+  'Снести': 'Demolish',
   'Постройки': 'Buildings',
   'Постройки и Кольцо': 'Buildings and the Ring',
   'Построек нет': 'No buildings',
@@ -1117,8 +1122,15 @@ function DocumentLocalizer({ language }: { language: AppLanguage }) {
   useEffect(() => {
     currentLanguage = language
     document.documentElement.lang = language
-    // Window title is always English regardless of the UI language.
-    document.title = 'War of the Ring — Map Editor'
+    // Window title follows the selected UI language (both the HTML title and,
+    // on desktop, the native Tauri window caption next to the icon).
+    const title = translateText('Война за Кольцо — редактор карты', language)
+    document.title = title
+    if ('__TAURI_INTERNALS__' in window) {
+      void import('@tauri-apps/api/window')
+        .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
+        .catch(() => { /* Title stays as configured when the API is unavailable. */ })
+    }
 
     const refresh=()=>translateDomNode(document.body,language)
     refresh()

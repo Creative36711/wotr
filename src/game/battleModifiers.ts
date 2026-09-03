@@ -20,10 +20,7 @@ export function createEmptyBattleModifiers(): BattleModifierSet {
 }
 
 export const DEFAULT_PALANTIR_SETTINGS: PalantirSettings = {
-  baseStartingPoints: 0,
   maxStartingPointsFromModifiers: 10,
-  incomeIntervalMinutes: 2,
-  baseIncomePerInterval: 0,
   maxIncomePerIntervalFromModifiers: 3,
 }
 
@@ -80,8 +77,8 @@ export function mergeOwnerModifiers(...sources: Array<OwnerBattleModifiers | und
 }
 
 export function clampPalantir(modifiers: OwnerBattleModifiers, settings: PalantirSettings): OwnerBattleModifiers {
-  const start = Math.min(settings.maxStartingPointsFromModifiers, modifiers.palantirStartingPoints ?? 0) + settings.baseStartingPoints
-  const income = Math.min(settings.maxIncomePerIntervalFromModifiers, modifiers.palantirIncomePerInterval ?? 0) + settings.baseIncomePerInterval
+  const start = Math.min(settings.maxStartingPointsFromModifiers, modifiers.palantirStartingPoints ?? 0)
+  const income = Math.min(settings.maxIncomePerIntervalFromModifiers, modifiers.palantirIncomePerInterval ?? 0)
   const result = { ...modifiers }
   if (start > 0) result.palantirStartingPoints = Math.max(0, Math.round(start)); else delete result.palantirStartingPoints
   if (income > 0) result.palantirIncomePerInterval = Math.max(0, Math.round(income)); else delete result.palantirIncomePerInterval
@@ -90,8 +87,8 @@ export function clampPalantir(modifiers: OwnerBattleModifiers, settings: Palanti
 
 /** Strategic weight of palantir access in the auto-battle formula. */
 export function palantirAutoBattleWeight(modifiers: OwnerBattleModifiers, settings: PalantirSettings) {
-  const start = Math.min(settings.maxStartingPointsFromModifiers + settings.baseStartingPoints, modifiers.palantirStartingPoints ?? 0)
-  const income = Math.min(settings.maxIncomePerIntervalFromModifiers + settings.baseIncomePerInterval, modifiers.palantirIncomePerInterval ?? 0)
+  const start = Math.min(settings.maxStartingPointsFromModifiers, modifiers.palantirStartingPoints ?? 0)
+  const income = Math.min(settings.maxIncomePerIntervalFromModifiers, modifiers.palantirIncomePerInterval ?? 0)
   return start * 0.004 + income * 0.03
 }
 

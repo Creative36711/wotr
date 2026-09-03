@@ -122,6 +122,17 @@ fn add(
     lines.push("    End".into());
     *tag += 1;
 }
+/// `Object <Hero>` block that grants the hero its per-faction unique upgrade
+/// and its campaign veterancy level. Mirrors `build_hero_mod` in the reference
+/// bridge (spawn.py): BFME needs an explicit `LevelToGrant`, so it is emitted
+/// even for level 1 - otherwise the hero keeps whatever the map default is.
+fn hero_mod_block(object_id: &str, upgrade_number: usize, level: i64) -> String {
+    let clamped = level.clamp(1, 10);
+    format!(
+        "Object {object_id}\n    AddModule\n        Behavior = GrantUpgradeCreate ModuleTag_HeroUpgradeGrant\n            UpgradeToGrant = Upgrade_AllFactionHeroUpgrade{upgrade_number}\n        End\n    End\n    AddModule\n        Behavior = ExperienceLevelCreate ModuleTag_MPLevelBonus\n            LevelToGrant = {clamped}\n        End\n    End\nEnd\n"
+    )
+}
+
 fn build_big(data: &[u8]) -> Vec<u8> {
     let name = INTERNAL_PATH.as_bytes();
     let header_len = 16usize;
@@ -173,6 +184,8 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
     let mut lines = prelude;
     lines.push(format!("Object {OBJECT_NAME}"));
     let mut tag = 0usize;
+    // `Object <Hero>` overrides are emitted after the anchor object closes.
+    let mut hero_mods: Vec<String> = Vec::new();
     for participant in participants {
         let faction = participant
             .get("factionId")
@@ -294,6 +307,9 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
                 y,
                 Some(angle),
             );
+            // Every hero needs an explicit level object, level 1 included.
+            let level = item.get("level").and_then(Value::as_i64).unwrap_or(1);
+            hero_mods.push(hero_mod_block(object_id, index + 1, level));
         }
         // Носитель Кольца Всевластья появляется рядом с линией героев (§4.7).
         if let Some(ring_hero) = participant
@@ -307,6 +323,9 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
     }
     lines.push("End".into());
     lines.push(String::new());
+    for block in &hero_mods {
+        lines.push(block.clone());
+    }
     let ini = lines.join("\n").into_bytes();
     let big = build_big(&ini);
     if let Some(parent) = path.parent() {

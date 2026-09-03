@@ -69,8 +69,6 @@ interface WorldSnapshot {
   buildingTypes: BuildingTypeDefinition[]
   palantirSettings: PalantirSettings
   ringForging: RingForgingSettings
-  defaultUnitMaxLevel: number
-  defaultHeroMaxLevel: number
   campaign: CampaignState
   battles: AutoBattleReport[]
 }
@@ -163,7 +161,6 @@ interface MapState extends WorldSnapshot {
   removeBuildingType: (id: string) => void
   updateRingForging: (patch: Partial<RingForgingSettings>) => void
   updatePalantirSettings: (patch: Partial<PalantirSettings>) => void
-  setDefaultMaxLevels: (unitLevel: number, heroLevel: number) => void
   undo: () => void
   redo: () => void
 }
@@ -210,8 +207,6 @@ const cloneSnapshot = (snapshot: WorldSnapshot): WorldSnapshot => ({
   buildingTypes: (snapshot.buildingTypes ?? []).map(cloneBuildingType),
   palantirSettings: { ...(snapshot.palantirSettings ?? DEFAULT_PALANTIR_SETTINGS) },
   ringForging: cloneRingForging(snapshot.ringForging),
-  defaultUnitMaxLevel: snapshot.defaultUnitMaxLevel ?? DEFAULT_UNIT_MAX_LEVEL,
-  defaultHeroMaxLevel: snapshot.defaultHeroMaxLevel ?? DEFAULT_HERO_MAX_LEVEL,
   campaign: cloneCampaign(snapshot.campaign),
   battles: cloneBattles(snapshot.battles),
 })
@@ -223,7 +218,6 @@ const currentSnapshot = (state: MapState): WorldSnapshot => ({
   locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes,
   heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions,
   buildingTypes: state.buildingTypes, palantirSettings: state.palantirSettings, ringForging: state.ringForging,
-  defaultUnitMaxLevel: state.defaultUnitMaxLevel, defaultHeroMaxLevel: state.defaultHeroMaxLevel,
   campaign: state.campaign, battles: state.battles,
 })
 const snapshotToWorld = (snapshot: WorldSnapshot): WorldData => ({ version: WORLD_DATA_VERSION, ...cloneSnapshot(snapshot) })
@@ -427,7 +421,7 @@ function preparePlanningSide(state: MapState, campaign: CampaignState, sourceArm
         const turnsLeft = Math.max(0, item.turnsLeft - 1)
         const unit = state.unitTypes.find((candidate) => candidate.id === item.entityId)
         if (turnsLeft === 0 && unit && reserveCommandPoints(locationState.reserve, state.unitTypes, state.heroes) + (unit.commandPoints ?? 0) <= location.commandPointLimit) {
-          const startLevel = recruitStartLevel(campaign, state.buildingTypes, location.id, faction.id, unitMaxLevel(unit, state.defaultUnitMaxLevel))
+          const startLevel = recruitStartLevel(campaign, state.buildingTypes, location.id, faction.id, unitMaxLevel(unit))
           locationState.reserve.push({ slotId: `reserve-${location.id}-${Date.now().toString(36)}-${locationState.reserve.length}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId, level: startLevel, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false })
         } else remaining.push({ ...item, turnsLeft })
       }
@@ -597,12 +591,12 @@ function grantBattleVeterancy(state: MapState, campaign: CampaignState, armies: 
     if (!army) continue
     army.unitSlots = army.unitSlots.map((slot) => destroyedKeys.has(slot.slotId)
       ? slot
-      : grantBattleExperience(slot, unitMaxLevel(state.unitTypes.find((unit) => unit.id === slot.entityId), state.defaultUnitMaxLevel)))
+      : grantBattleExperience(slot, unitMaxLevel(state.unitTypes.find((unit) => unit.id === slot.entityId))))
     const heroIds = [...(army.commander?.kind === 'hero' ? [army.commander.entityId] : []), ...army.heroSlots.map((slot) => slot.entityId)]
     for (const heroId of heroIds) {
       if (destroyedKeys.has(`${army.id}-commander`) && army.commander?.entityId === heroId) continue
       const hero = state.heroes.find((candidate) => candidate.id === heroId)
-      const max = heroMaxLevel(hero, state.defaultHeroMaxLevel)
+      const max = heroMaxLevel(hero)
       if (max <= 1) continue
       const current = campaign.heroLevels[heroId] ?? 1
       if (current < max) campaign.heroLevels[heroId] = current + 1
@@ -997,7 +991,6 @@ function processAftermath(state: MapState, campaign: CampaignState, sourceArmies
 export const useMapStore = create<MapState>((set) => ({
   locations: [], grid: { config: { ...DEFAULT_GRID_CONFIG }, cells: {} }, factions: [], economicTypes: createDefaultEconomicTypes(), unitTypes: [], heroes: [], captains: [], armies: [], regions: [],
   buildingTypes: createDefaultBuildingTypes(), palantirSettings: { ...DEFAULT_PALANTIR_SETTINGS }, ringForging: createDefaultRingForging(),
-  defaultUnitMaxLevel: DEFAULT_UNIT_MAX_LEVEL, defaultHeroMaxLevel: DEFAULT_HERO_MAX_LEVEL,
   campaign: createDefaultCampaign([]), battles: [], editorTemplate: null, gameSave: null, selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null,
   mode: 'edit', viewMode: 'cinematic', hexEdit: false, addKind: null, history: [], future: [], revision: 0,
 
@@ -1886,10 +1879,6 @@ export const useMapStore = create<MapState>((set) => ({
     return pushHistory(state, { ...currentSnapshot(state), palantirSettings: { ...state.palantirSettings, ...patch } })
   }),
 
-  setDefaultMaxLevels: (unitLevel, heroLevel) => set((state) => {
-    if (state.mode !== 'edit') return state
-    return pushHistory(state, { ...currentSnapshot(state), defaultUnitMaxLevel: Math.max(1, Math.min(10, Math.round(unitLevel))), defaultHeroMaxLevel: Math.max(1, Math.min(10, Math.round(heroLevel))) })
-  }),
 
   selectConflict: (conflictId) => set((state) => state.campaign.conflicts.some((conflict) => conflict.id === conflictId) ? { campaign: { ...cloneCampaign(state.campaign), currentConflictId: conflictId } } : state),
 

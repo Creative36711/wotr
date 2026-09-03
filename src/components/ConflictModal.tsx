@@ -9,7 +9,7 @@ import { prepareAndStartRtsBattle, readRtsBattleResult } from '../dataService'
 import { RTS_DIFFICULTIES } from '../rts'
 import { translateText } from '../i18n'
 import { collectOwnerModifiers } from '../game/battleModifiers'
-import { calculateHandicap } from '../game/handicap'
+import { calculateRelativeHandicaps } from '../game/handicap'
 import { ringHeroObjectId } from '../game/ring'
 import { availableUpgrades } from '../game/progression'
 import type { AppSettings, ModDefinition } from '../types'
@@ -134,7 +134,6 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     const ownerBonuses=location?.side===factionId
       ?collectOwnerModifiers({location,region:regions.find((item)=>item.id===conflict.regionId)??null,factionId,campaign,buildingTypes,economicTypes,ringForging,palantirSettings})
       :{}
-    const handicap=calculateHandicap({factionId,armies:factionArmies,campaign,ringForging})
     return {
       units:unitEntries,
       heroes:[...new Map(heroEntries.map((entry)=>[entry.objectId,entry])).values()].map((entry)=>({objectId:entry.objectId,level:campaign.heroLevels[entry.entityId]??1})),
@@ -146,8 +145,6 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
         palantirIncomePerInterval:ownerBonuses.palantirIncomePerInterval??0,
         signalFire:Boolean(ownerBonuses.signalFire),
       },
-      handicapPercent:handicap.percent,
-      handicapReasons:handicap.reasons,
     }
   }
 
@@ -221,7 +218,15 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     setRtsMessage('Подготовка файлов и автоматический запуск BFME. Подтвердите запрос Windows UAC, если он появится. После этого физический ввод временно блокируется до начала загрузки боя; аварийный выход — Ctrl+Alt+Del.')
     try{
       const difficulty=RTS_DIFFICULTIES.find((item)=>item.id===campaign.aiDifficulty.rts)!
-      const participants=orderedRtsFactionIds.map((id,slotIndex)=>({slot:slotIndex+1,factionId:id,listIndex:activeMod.rts.factionOrder.indexOf(id),color:factions.find((faction)=>faction.id===id)?.rtsColor,side:factions.find((faction)=>faction.id===id)?.alignment??'good',gateAngleDeg:45,...rtsComposition(id)}))
+      // Фора считается относительно: общий для всех штраф не даёт никому
+      // преимущества и обнуляется, penalty получает только реально слабейший.
+      const handicaps=calculateRelativeHandicaps(orderedRtsFactionIds.map((id)=>({
+        factionId:id,
+        armies:rtsArmyPool.filter((army)=>army.factionId===id),
+        campaign,
+        ringForging,
+      })))
+      const participants=orderedRtsFactionIds.map((id,slotIndex)=>({slot:slotIndex+1,factionId:id,listIndex:activeMod.rts.factionOrder.indexOf(id),color:factions.find((faction)=>faction.id===id)?.rtsColor,side:factions.find((faction)=>faction.id===id)?.alignment??'good',gateAngleDeg:45,handicapPercent:handicaps.get(id)?.percent??0,handicapReasons:handicaps.get(id)?.reasons??[],...rtsComposition(id)}))
       const {startPositions,fortressOwnerSlot}=buildStartPositions(participants)
       const battleConfig={version:1,language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)

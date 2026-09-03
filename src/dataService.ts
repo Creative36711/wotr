@@ -22,6 +22,7 @@ import { createDefaultEconomicTypes, getEconomicType, normalizeEconomicTypes, se
 import { createDefaultBuildingTypes, normalizeBuildings, normalizeBuildingTypes } from './game/buildings'
 import { createDefaultRingForging, createDefaultRingState, normalizeRingForging, normalizeRingState } from './game/ring'
 import { DEFAULT_PALANTIR_SETTINGS, normalizeBattleModifiers } from './game/battleModifiers'
+import { rotwkUnitLevelCap } from './game/unitLevelCaps'
 import { ABSOLUTE_MAX_LEVEL, DEFAULT_HERO_MAX_LEVEL, DEFAULT_UNIT_MAX_LEVEL, normalizeSlotProgression } from './game/progression'
 import type { AppSettings, Army, ArmyCommander, ArmySlot, ArmyUpgradeId, BuildingTypeDefinition, PalantirSettings, RingForgingSettings, CampaignState, CaptainType, EconomicTypeDefinition, FactionDefinition, Hero, MapLocation, ModDefinition, ModSummary, Region, RosterData, RtsMapAsset, RtsStoredFile, SaveGameData, UnitType, WorldData } from './types'
 import { GAME_VERSION, ROSTER_DATA_VERSION, SAVEGAME_DATA_VERSION, WORLD_DATA_VERSION } from './version'
@@ -101,7 +102,11 @@ function normalizeUnits(source: unknown): UnitType[] {
       requiredLocationTags: Array.isArray(old.requiredLocationTags) ? old.requiredLocationTags : defaults?.requiredLocationTags ?? defaultRequiredTagsForUnit(old.id),
       recruitDuringOccupation: old.recruitDuringOccupation ?? defaults?.recruitDuringOccupation ?? (old.battlePower ?? defaults?.battlePower ?? calculatedPower) <= 80,
       transformationSourceUnitId: typeof old.transformationSourceUnitId === 'string' ? old.transformationSourceUnitId : defaults?.transformationSourceUnitId ?? null,
-      maxLevel: Number.isFinite(old.maxLevel) ? Math.max(0, Math.min(ABSOLUTE_MAX_LEVEL, Math.round(Number(old.maxLevel)))) : undefined,
+      // Level cap: an explicit roster value wins, otherwise the authoritative
+      // ROTWK 2.01 table decides (5 regular / 10 heroic / 0 for siege & ents).
+      maxLevel: Number.isFinite(old.maxLevel)
+        ? Math.max(0, Math.min(ABSOLUTE_MAX_LEVEL, Math.round(Number(old.maxLevel))))
+        : rotwkUnitLevelCap(old.objectId ?? defaults?.objectId),
       availableUpgrades: Array.isArray(old.availableUpgrades)
         ? (['weaponUpgrade', 'armorUpgrade', 'bannerUpgrade'] as ArmyUpgradeId[]).filter((upgrade) => old.availableUpgrades.includes(upgrade))
         : undefined,
@@ -147,7 +152,8 @@ function normalizeHeroes(source: unknown, rebalanceBuiltIns = false): Hero[] {
       requiredTurn: Math.max(1, Number(old.requiredTurn ?? defaults?.requiredTurn ?? 1)),
       requiredLocationId: old.requiredLocationId ?? defaults?.requiredLocationId ?? null,
       summonCostGold: Math.max(0, Number(old.summonCostGold ?? defaults?.summonCostGold ?? 0)),
-      maxLevel: Number.isFinite(old.maxLevel) ? Math.max(0, Math.min(ABSOLUTE_MAX_LEVEL, Math.round(Number(old.maxLevel)))) : undefined,
+      // BFME heroes always level up to 10 - this is fixed by the game engine.
+      maxLevel: DEFAULT_HERO_MAX_LEVEL,
     } as Hero
   })
 }
@@ -485,17 +491,12 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     ? ((source.version ?? 0) < WORLD_DATA_VERSION ? createDefaultBuildingTypes() : [])
     : normalizeBuildingTypes(source.buildingTypes)
   const palantirSettings: PalantirSettings = {
-    baseStartingPoints: Math.max(0, Math.round(Number(source.palantirSettings?.baseStartingPoints ?? DEFAULT_PALANTIR_SETTINGS.baseStartingPoints))),
     maxStartingPointsFromModifiers: Math.max(0, Math.round(Number(source.palantirSettings?.maxStartingPointsFromModifiers ?? DEFAULT_PALANTIR_SETTINGS.maxStartingPointsFromModifiers))),
-    incomeIntervalMinutes: Math.max(1, Math.round(Number(source.palantirSettings?.incomeIntervalMinutes ?? DEFAULT_PALANTIR_SETTINGS.incomeIntervalMinutes))),
-    baseIncomePerInterval: Math.max(0, Math.round(Number(source.palantirSettings?.baseIncomePerInterval ?? DEFAULT_PALANTIR_SETTINGS.baseIncomePerInterval))),
     maxIncomePerIntervalFromModifiers: Math.max(0, Math.round(Number(source.palantirSettings?.maxIncomePerIntervalFromModifiers ?? DEFAULT_PALANTIR_SETTINGS.maxIncomePerIntervalFromModifiers))),
   }
   const ringForging: RingForgingSettings = source.ringForging === undefined
     ? ((source.version ?? 0) < WORLD_DATA_VERSION ? createDefaultRingForging() : { ...createDefaultRingForging(), enabled: false })
     : normalizeRingForging(source.ringForging)
-  const defaultUnitMaxLevel = Math.max(1, Math.min(10, Math.round(Number(source.defaultUnitMaxLevel ?? DEFAULT_UNIT_MAX_LEVEL))))
-  const defaultHeroMaxLevel = Math.max(1, Math.min(10, Math.round(Number(source.defaultHeroMaxLevel ?? DEFAULT_HERO_MAX_LEVEL))))
   const looksLikeVanilla = source.locations.length === 79
     && source.locations.some((location: any) => location.id === 'helms-deep')
     && source.locations.some((location: any) => location.id === 'minas-tirith')
@@ -641,8 +642,6 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     buildingTypes,
     palantirSettings,
     ringForging,
-    defaultUnitMaxLevel,
-    defaultHeroMaxLevel,
     campaign: { ...campaign, turnOrder: [...campaign.turnOrder], log: [...campaign.log] },
     battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
   }

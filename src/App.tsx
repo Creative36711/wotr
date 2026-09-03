@@ -21,7 +21,7 @@ import type { AppLanguage } from './i18n'
 
 function currentWorld(): WorldData {
   const state = useMapStore.getState()
-  return { version: WORLD_DATA_VERSION, locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes, heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions, buildingTypes: state.buildingTypes, palantirSettings: state.palantirSettings, ringForging: state.ringForging, defaultUnitMaxLevel: state.defaultUnitMaxLevel, defaultHeroMaxLevel: state.defaultHeroMaxLevel, campaign: state.campaign, battles: state.battles }
+  return { version: WORLD_DATA_VERSION, locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes, heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions, buildingTypes: state.buildingTypes, palantirSettings: state.palantirSettings, ringForging: state.ringForging, campaign: state.campaign, battles: state.battles }
 }
 
 export default function App() {

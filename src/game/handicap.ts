@@ -31,8 +31,6 @@ export function snapHandicap(fraction: number) {
 
 /** A defeated army keeps fighting at −20 % on the global map (see conflicts.ts). */
 export const DEMORALIZED_PENALTY = 0.2
-/** Any army that already spent its movement enters the battle slightly worn out. */
-export const EXHAUSTED_PENALTY = 0.05
 
 export interface HandicapContext {
   factionId: FactionId
@@ -45,24 +43,23 @@ export interface HandicapContext {
 }
 
 /**
- * Everything that weakens a side in a real BFME battle is summed here and then
- * applied as one room handicap. Sources: demoralization after a lost battle,
- * exhaustion, and the enemy Ring.
+ * Raw penalty fraction for one side, before it is compared with the opponent.
+ *
+ * Only genuinely *exceptional* weaknesses belong here. Marching into the battle
+ * is what every attacking army does, so it must never produce a penalty —
+ * otherwise both sides get an identical handicap, which is both meaningless
+ * (the handicap is a relative advantage) and confusing to the player.
  */
-export function calculateHandicap(context: HandicapContext): HandicapResult {
+export function rawHandicapReasons(context: HandicapContext): HandicapReason[] {
   const reasons: HandicapReason[] = []
   const round = context.campaign.round
 
+  // Demoralized = an army that actually lost a battle and retreated recently.
   const demoralized = context.armies.filter((army) => army.status === 'retreating'
     && army.exhaustedUntilRound !== null && army.exhaustedUntilRound >= round)
   if (demoralized.length && context.armies.length) {
     const share = demoralized.length / context.armies.length
     reasons.push({ label: `Деморализация после поражения (${demoralized.length} из ${context.armies.length} армий)`, amount: DEMORALIZED_PENALTY * share })
-  }
-
-  const exhausted = context.armies.filter((army) => army.movementRemaining <= 0 && !demoralized.includes(army))
-  if (exhausted.length && context.armies.length) {
-    reasons.push({ label: 'Марш без отдыха', amount: EXHAUSTED_PENALTY * (exhausted.length / context.armies.length) })
   }
 
   const ring = context.campaign.ringState
@@ -71,7 +68,46 @@ export function calculateHandicap(context: HandicapContext): HandicapResult {
   }
 
   for (const item of context.extra ?? []) if (item.amount > 0) reasons.push(item)
+  return reasons
+}
 
+/**
+ * Absolute handicap for a single side. Prefer `calculateRelativeHandicaps` when
+ * both sides are known: the BFME handicap is a *relative* advantage, so a
+ * penalty shared by everybody cancels out and should not be applied at all.
+ */
+export function calculateHandicap(context: HandicapContext): HandicapResult {
+  const reasons = rawHandicapReasons(context)
   const rawFraction = reasons.reduce((total, item) => total + item.amount, 0)
   return { percent: snapHandicap(rawFraction), rawFraction, reasons }
+}
+
+/**
+ * Handicaps for every participating faction, normalised against each other.
+ *
+ * The BFME room handicap only weakens the slot it is applied to, so what
+ * matters is the *difference* between sides. The common part is subtracted so
+ * that the strongest side always ends at 0 % and only genuinely weaker sides
+ * are penalised — «у кого фора, тот и слабее».
+ */
+export function calculateRelativeHandicaps(contexts: HandicapContext[]): Map<FactionId, HandicapResult> {
+  const raw = contexts.map((context) => ({
+    factionId: context.factionId,
+    reasons: rawHandicapReasons(context),
+  })).map((entry) => ({
+    ...entry,
+    fraction: entry.reasons.reduce((total, item) => total + item.amount, 0),
+  }))
+  // The floor is the weakness every side shares; it carries no advantage.
+  const floor = raw.length ? Math.min(...raw.map((entry) => entry.fraction)) : 0
+  const result = new Map<FactionId, HandicapResult>()
+  for (const entry of raw) {
+    const relative = Math.max(0, entry.fraction - floor)
+    result.set(entry.factionId, {
+      percent: snapHandicap(relative),
+      rawFraction: relative,
+      reasons: relative > 0 ? entry.reasons : [],
+    })
+  }
+  return result
 }

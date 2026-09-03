@@ -1037,6 +1037,10 @@ const DROP_GAP: f64 = 0.033;
 const HANDICAP_COLUMN: f64 = 0.8031;
 #[cfg(target_os = "windows")]
 const HANDICAP_ROWS: usize = 20;
+/// Handicap rows are slightly taller than faction/color rows (measured in the
+/// reference automation as HANDICAP_STEP).
+#[cfg(target_os = "windows")]
+const HANDICAP_STEP_Y: f64 = 0.0305;
 
 /// Map a strategic handicap percentage (0 or negative multiple of 5) onto the
 /// BFME dropdown row index.
@@ -1078,21 +1082,33 @@ fn set_difficulty(
 }
 
 #[cfg(target_os = "windows")]
-fn pick_dropdown(
+/// Pick a row from a slot dropdown.
+///
+/// `has_random_row` distinguishes the two list shapes in the BFME room (see
+/// `_test_integration-bfme/bridge/room.py`): faction and color lists start with
+/// a «Случайно» row, so a real item sits at row `index + 1`; the handicap list
+/// has no such row and its first row is already the 0 % value, so the value at
+/// `index` sits exactly on row `index`. `step` differs too (handicap rows are
+/// slightly taller than faction rows).
+fn pick_dropdown_ex(
     view: (i32, i32, i32, i32),
     slot: usize,
     column: f64,
     item_index: usize,
+    has_random_row: bool,
+    step: f64,
 ) -> Result<(), String> {
     let visible_rows = usize::max(4, 9usize.saturating_sub(slot));
-    let visible_items = visible_rows - 1;
+    // With a «Случайно» row one visible line is spent on it.
+    let visible_items = if has_random_row { visible_rows - 1 } else { visible_rows };
+    let row_offset = usize::from(has_random_row);
     let x = view.0 + (column * view.2 as f64) as i32;
     let selector_y = view.1 + (SLOT_Y[slot - 1] * view.3 as f64) as i32;
     let list_top = SLOT_Y[slot - 1] + DROP_GAP;
     click(x, selector_y)?;
     thread::sleep(Duration::from_millis(600));
     let target_y = if item_index < visible_items {
-        list_top + (item_index + 1) as f64 * DROP_STEP
+        list_top + (item_index + row_offset) as f64 * step
     } else {
         move_mouse(x, selector_y + (0.05 * view.3 as f64) as i32)?;
         let notches = item_index - visible_items + 1;
@@ -1100,11 +1116,20 @@ fn pick_dropdown(
             scroll(-1)?;
         }
         thread::sleep(Duration::from_millis(200));
-        list_top + (visible_rows - 1) as f64 * DROP_STEP
+        list_top + (visible_rows - 1) as f64 * step
     };
     click(x, view.1 + (target_y * view.3 as f64) as i32)?;
     thread::sleep(Duration::from_millis(400));
     Ok(())
+}
+
+fn pick_dropdown(
+    view: (i32, i32, i32, i32),
+    slot: usize,
+    column: f64,
+    item_index: usize,
+) -> Result<(), String> {
+    pick_dropdown_ex(view, slot, column, item_index, true, DROP_STEP)
 }
 
 #[cfg(target_os = "windows")]
@@ -1795,7 +1820,7 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
                     index + 1,
                     percent.round()
                 ));
-                pick_dropdown(view, index + 1, HANDICAP_COLUMN, row)?;
+                pick_dropdown_ex(view, index + 1, HANDICAP_COLUMN, row, false, HANDICAP_STEP_Y)?;
             }
         }
 

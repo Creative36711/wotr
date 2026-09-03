@@ -36,7 +36,7 @@ export function runAiPlanning(
       if (!summonLocation || (campaign.locationStates[summonLocation.id]?.occupationTurnsLeft ?? 0) > 0 || treasury.gold < hero.summonCostGold || heroIsDeployed(hero.id, nextArmies, campaign.locationStates)) continue
       treasury.gold -= hero.summonCostGold
       const locationState = campaign.locationStates[summonLocation.id] ?? { locationId: summonLocation.id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
-      locationState.reserve.push({ slotId: `summoned-ai-${hero.id}-${campaign.round}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId })
+      locationState.reserve.push({ slotId: `summoned-ai-${hero.id}-${campaign.round}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId, level: campaign.heroLevels?.[hero.id] ?? 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false })
       campaign.locationStates[summonLocation.id] = locationState
       campaign.heroStates[hero.id] = { ...heroState, status: 'active', summoned: true, recoveryLocationId: null, healTurnsLeft: 0 }
       campaign.log.unshift({ id: `log-ai-hero-${hero.id}-${campaign.round}`, round: campaign.round, factionId: faction.id, phase: campaign.phase, kind: 'hero', text: `${hero.name} присоединился к фракции «${faction.label}» в «${summonLocation.name}».` })

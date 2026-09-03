@@ -108,16 +108,21 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
   // Спавн-точки всегда расставляются случайно (п.3); у оплота владелец
   // всегда занимает первую (главную) позицию защиты (п.6).
   const buildStartPositions=(participants:Array<{factionId:string;side:'good'|'evil'|'neutral'}>)=>{
-    const defensePool=rtsPositions?.defense?.length?shuffle(rtsPositions.defense):[]
+    // Прототип (maps.calculate_slot_positions): пулы перетасовываются случайно;
+    // у оплота владелец закрепляется на defense[0], а остальные защитники
+    // получают точки из defense[1..] — главная точка не повторяется.
+    let defensePool=rtsPositions?.defense?.length?shuffle(rtsPositions.defense):[]
     const attackPool=rtsPositions?.attack?.length?shuffle(rtsPositions.attack):[]
-    const startPositions:Record<string,{x:number;y:number}>=
+    const startPositions:Record<string,{x:number;y: number}>=
       {}
     let fortressOwnerSlot:number|null=null
     if(isFortressBattle&&rtsPositions?.defense?.length){
       const ownerIndex=participants.findIndex((participant)=>participant.factionId===fortressDefenderFactionId)
       if(ownerIndex>=0){
         fortressOwnerSlot=ownerIndex+1
-        startPositions[ownerIndex+1]={...rtsPositions.defense[0]}
+        const main=rtsPositions.defense[0]
+        startPositions[ownerIndex+1]={...main}
+        defensePool=defensePool.filter((point)=>point!==main)
       }
     }
     let defenseIndex=0
@@ -143,7 +148,8 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       if(token!==rtsWatchToken.current)return
       if(result?.finishedAt){
         if(result.winningTeam==='good'||result.winningTeam==='evil'){
-          resolveConflictRts(conflict.id,result.winningTeam,translateText(result.detail??'',appSettings?.language??'ru'))
+          const outcomeDetail=result.status==='COMPLETED'&&result.winningSlot?`победил слот ${result.winningSlot}`:result.status==='SURRENDER'?'противник сдался':''
+          resolveConflictRts(conflict.id,result.winningTeam,outcomeDetail)
           setRtsMessage(`Бой завершён: победа стороны «${result.winningTeam==='good'?'Свет':'Тьма'}». BFME закрыт автоматически.`)
         }else{
           setRtsMessage(`Победитель не определён (${result.status}). BFME закрыт; проведите автобой или повторите BFME-сражение.`)

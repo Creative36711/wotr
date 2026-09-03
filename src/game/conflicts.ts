@@ -190,6 +190,8 @@ export function calculateConflictBattle(
   captains: CaptainType[],
   terrain: LogicalHex['terrain'],
   factions: FactionDefinition[],
+  /** RTS battle: the winner is already known from BFME; losses/hero fates stay simulated. */
+  forcedWinner?: StrategicSide | null,
 ): ConflictBattleOutcome {
   const attackerCombatIds = [...conflict.attackerArmyIds, ...conflict.attackerReinforcementArmyIds]
   const defenderCombatIds = [...conflict.defenderArmyIds, ...conflict.defenderReinforcementArmyIds]
@@ -205,7 +207,9 @@ export function calculateConflictBattle(
   const seed = hashSeed(`${conflict.round}:${conflict.id}:${attackerMembers.length}:${defenderMembers.length}`)
   const attackerPower = preview.attackerPower * (.94 + randomFrom(seed) * .12)
   const defenderPower = preview.defenderPower * (.94 + randomFrom(seed + 1) * .12)
-  const attackerWon = attackerPower >= defenderPower
+  // With a forced winner (RTS battle) the loss distribution follows the known
+  // outcome, but which units/heroes perish is still decided by this simulation.
+  const attackerWon = forcedWinner ? forcedWinner === conflict.attackerSide : attackerPower >= defenderPower
   const ratio = Math.min(3, Math.max(.34, attackerPower / Math.max(1, defenderPower)))
   const attackerPressure = attackerWon ? Math.min(.4, Math.max(.1, .3 / ratio + randomFrom(seed + 2) * .06)) : Math.min(.9, Math.max(.5, .58 + (1 / ratio - 1) * .2 + randomFrom(seed + 2) * .08))
   const defenderPressure = attackerWon ? Math.min(.9, Math.max(.5, .58 + (ratio - 1) * .2 + randomFrom(seed + 3) * .08)) : Math.min(.4, Math.max(.1, .3 * ratio + randomFrom(seed + 3) * .06))

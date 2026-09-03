@@ -122,28 +122,32 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
     try {
       const factionIds = activeMod.rts.factionOrder.slice(0, 8)
       const pool = factionIds.length ? factionIds : ['men-of-the-west']
-      const defensePool = shuffled(positions.defense)
-      const attackPool = shuffled(positions.attack)
+      // п.5/п.8: слоты 1–4 — защитники, слоты 5–8 — атакующие.
+      // п.3: точки всегда расставляются случайно (перетасовка пулов).
+      // п.6: у оплота слот 1 (владелец) всегда на первой (главной) точке
+      // защиты; остальные защитники берут точки из defense[1..4] без повтора.
+      const defenseAssign = isStronghold && positions.defense[0]
+        ? [positions.defense[0], ...shuffled(positions.defense.slice(1))]
+        : shuffled(positions.defense)
+      const attackAssign = shuffled(positions.attack)
       const startPositions: Record<string, { x: number; y: number }> = {}
       const participants = Array.from({ length: 8 }, (_, slotIndex) => {
+        const slot = slotIndex + 1
         const factionId = pool[slotIndex % pool.length]
         const faction = factions.find((item) => item.id === factionId)
-        const side = faction?.alignment === 'evil' ? 'evil' : 'good'
-        const slot = slotIndex + 1
-        const point = side === 'good' ? defensePool[(slot - 1) % 4] : attackPool[(slot - 1) % 4]
-        if (point) startPositions[slot] = { x: point.x, y: point.y }
+        const assign = slot <= 4 ? defenseAssign[slotIndex] : attackAssign[slotIndex - 4]
+        if (assign) startPositions[slot] = { x: assign.x, y: assign.y }
         return {
           slot,
           factionId,
           listIndex: activeMod.rts.factionOrder.indexOf(factionId),
           color: RTS_COLORS[slotIndex % RTS_COLORS.length].id,
-          side,
+          side: faction?.alignment === 'evil' ? 'evil' : 'good',
           gateAngleDeg: 45,
           units: [],
           heroes: [],
         }
       })
-      if (isStronghold && positions.defense[0]) startPositions[1] = { ...positions.defense[0] }
       const battleConfig = {
         version: 1,
         language: appSettings.language ?? 'ru',

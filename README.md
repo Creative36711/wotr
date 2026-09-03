@@ -13,7 +13,7 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.46.1
+Application: 0.46.2
 world.json: 43
 roster.json: 16
 savegame.json: 60
@@ -22,6 +22,8 @@ savegame.json: 60
 0.46.0 integrates the real RTS battle flow end to end: 51 imported BFME MapCaches with calibrated minimap coordinates, randomized start positions (the fortress owner always takes the main defense point of a stronghold), a coordinate-calibration tool and a coordinate-test tool in the editor, automatic score-screen winner detection, and automatic BFME shutdown after the winner is determined. The default «Vanilla 2.01» mod now ships its `_patch201ini.big` and `__wotr_maps.big` archives plus every default MapCache embedded in the executable and restores them into `portable_data` on the first launch, so BIG files no longer need to be installed manually.
 
 0.46.1 fixes the first 0.46.0 build: the generated `templates.rs` now joins its hex chunks with `concat!` (Rust has no implicit adjacent string-literal concatenation), the calibration hotkey channel is kept in a static `Mutex` (`mpsc::Receiver` is `!Sync`), and borrow-checker conflicts in the battle-launch command are resolved.
+
+0.46.2 fixes the start-position pools and the RTS aftermath. The coordinate test now maps slots strictly by range (slots 1-4 take defense points, slots 5-8 take attack points) instead of by faction alignment, and the stronghold main point is excluded from the shuffled pool so it can never be assigned twice (the 8th click used to repeat the first position). A real RTS battle now resolves exactly like an auto-battle with a known winner: `resolveConflictRts` runs the standard conflict simulation (losses, hero fates, retreats, capture) with only `winnerSide` forced from the BFME detector.
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
@@ -485,6 +487,6 @@ Technical IDs remain automatic and stable. BFME Object IDs remain editable only 
 - Strategic unit levels and upgrades are not yet persistent; generated RTS units currently use level 1.
 - Only map objects with a MapCache and the shared maps BIG can launch RTS battles (the default mod ships both).
 - The strategic AI difficulty setting is stored but strategic behavior is currently shared between difficulty levels.
-- 18 of the 69 imported map caches have no unique matching location yet and are skipped: multiplayer duplicates and tournament variants (fall back 4p, the heubris, tournament mp1) plus region-wide caches without an unambiguous location (arnor, buckland, celduin, gondor, harad, ithilien, lostriand, mirkwood, mordor, rhun, rohan); «map wor belfalas» has a cache but is not yet calibrated (use the calibration tool).
+- 17 of the 68 prototype map caches are not integrated: 4 are duplicates of already assigned maps (mp amon sul fortress, mp weathertop, mp harlindon, mp tournament gundabad), 3 are tournament maps with no world location (fall back 4p, the heubris, tournament mp1), and 10 are region-wide caches without an unambiguous location (arnor, buckland, celduin, harad, ithilien, lostriand, mirkwood, mordor, rhun, rohan). «map wor gondor» has calibrated coordinates but no cache file in the prototype build. Belfalas has a cache but no calibrated coordinates yet (use the calibration tool).
 
 0.45.27 keeps long location names readable in the hover tooltip by expanding its available width, wrapping names safely, and repositioning it away from the map edge. Existing English and Russian names were preserved. This interface revision is intentionally incompatible with previous campaign saves.

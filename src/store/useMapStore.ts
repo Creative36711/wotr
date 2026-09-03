@@ -473,14 +473,14 @@ function conflictInvolvesPlayer(conflict: CampaignConflict, campaign: CampaignSt
   return Boolean(conflict.locationId && locations.find((location) => location.id === conflict.locationId)?.side === campaign.playerFactionId)
 }
 
-function resolveConflictBattle(state: MapState, campaign: CampaignState, conflictId: string, sourceArmies: Army[], sourceBattles: AutoBattleReport[]) {
+function resolveConflictBattle(state: MapState, campaign: CampaignState, conflictId: string, sourceArmies: Army[], sourceBattles: AutoBattleReport[], forcedWinner?: StrategicSide | null, resolution: 'auto_battle' | 'rts_battle' = 'auto_battle') {
   const conflict = campaign.conflicts.find((candidate) => candidate.id === conflictId)
   if (!conflict || conflict.status !== 'pending') return { armies: sourceArmies, battles: sourceBattles, report: null as AutoBattleReport | null }
   const armies = cloneArmies(sourceArmies)
   const battles = cloneBattles(sourceBattles)
   const cell = resolveGrid(state.grid, state.locations, state.regions).byId.get(conflict.hexId)
   if (!cell) return { armies, battles, report: null as AutoBattleReport | null }
-  const outcome = calculateConflictBattle(conflict, armies, state.locations, campaign.locationStates, state.unitTypes, state.heroes, state.captains, cell.terrain, state.factions)
+  const outcome = calculateConflictBattle(conflict, armies, state.locations, campaign.locationStates, state.unitTypes, state.heroes, state.captains, cell.terrain, state.factions, forcedWinner)
   const participantIds = new Set([...conflict.attackerArmyIds, ...conflict.defenderArmyIds, ...conflict.attackerReinforcementArmyIds, ...conflict.defenderReinforcementArmyIds])
   for (const army of armies) {
     army.unitSlots = army.unitSlots.filter((slot) => !outcome.destroyedArmyKeys.has(slot.slotId))
@@ -492,7 +492,7 @@ function resolveConflictBattle(state: MapState, campaign: CampaignState, conflic
     if (locationState) locationState.reserve = locationState.reserve.filter((slot) => slot.kind === 'hero' || !outcome.destroyedGarrisonKeys.has(slot.slotId))
   }
   conflict.status = 'resolved'
-  conflict.resolution = 'auto_battle'
+  conflict.resolution = resolution
   conflict.winnerSide = outcome.winnerSide
   conflict.attackerPower = outcome.attackerPower
   conflict.defenderPower = outcome.defenderPower
@@ -1652,31 +1652,24 @@ export const useMapStore = create<MapState>((set) => ({
   }),
 
   resolveConflictRts: (conflictId, winnerSide, detail) => set((state) => {
+    // RTS-бой: победитель известен из BFME, но все последствия (потери, судьбы
+    // героев, отходы, захват локации) считает глобальная карта — как в автобое.
+    const source = state.campaign.conflicts.find((candidate) => candidate.id === conflictId)
+    if (state.campaign.phase !== 'conflicts' || !source || source.status !== 'pending' || (winnerSide !== 'good' && winnerSide !== 'evil')) return state
+    if (!conflictInvolvesPlayer(source, state.campaign, state.armies, state.locations)) return state
     const campaign = cloneCampaign(state.campaign)
-    const conflict = campaign.conflicts.find((candidate) => candidate.id === conflictId)
-    if (state.campaign.phase !== 'conflicts' || !conflict || conflict.status !== 'pending' || (winnerSide !== 'good' && winnerSide !== 'evil')) return state
-    conflict.status = 'resolved'
-    conflict.resolution = 'rts_battle'
-    conflict.winnerSide = winnerSide
-    const attackerFactions = new Set([...conflict.attackerArmyIds, ...conflict.attackerReinforcementArmyIds].map((id) => state.armies.find((army) => army.id === id)?.factionId).filter(Boolean) as string[])
-    const defenderFactions = new Set([...conflict.defenderArmyIds, ...conflict.defenderReinforcementArmyIds].map((id) => state.armies.find((army) => army.id === id)?.factionId).filter(Boolean) as string[])
-    if (conflict.garrisonLocationId) {
-      const owner = state.locations.find((location) => location.id === conflict.garrisonLocationId)?.side
-      if (owner) defenderFactions.add(owner)
-    }
-    for (const factionId of winnerSide === conflict.attackerSide ? attackerFactions : defenderFactions) factionCampaignState(campaign, factionId).statistics.battlesWon += 1
-    for (const factionId of winnerSide === conflict.attackerSide ? defenderFactions : attackerFactions) factionCampaignState(campaign, factionId).statistics.battlesLost += 1
-    const location = conflict.locationId ? state.locations.find((candidate) => candidate.id === conflict.locationId) : null
-    campaign.log.unshift(campaignEvent(campaign, `Исход BFME-сражения${location ? ` у «${location.name}»` : ''}: победа стороны «${winnerSide === 'good' ? 'Свет' : 'Тьма'}».${detail ? ` ${detail}` : ''}`, 'battle', null))
+    const resolved = resolveConflictBattle(state, campaign, conflictId, state.armies, state.battles, winnerSide, 'rts_battle')
+    if (!resolved.report) return state
     const pending = campaign.conflicts.find((candidate) => candidate.status === 'pending')
     campaign.currentConflictId = pending?.id ?? null
+    if (detail) campaign.log.unshift(campaignEvent(campaign, `Исход BFME-сражения: победа стороны «${winnerSide === 'good' ? 'Свет' : 'Тьма'}» (${detail}).`, 'battle', null))
     if (!pending) {
-      const aftermath = processAftermath(state, campaign, state.armies, state.locations, state.regions, state.heroes, state.battles)
+      const aftermath = processAftermath({ ...state, armies: resolved.armies, battles: resolved.battles, campaign } as MapState, campaign, resolved.armies, state.locations, state.regions, state.heroes, resolved.battles)
       refreshFogIntel(campaign, aftermath.armies, aftermath.locations, state.factions, state.grid, aftermath.regions)
-      return gameCommit(state, { campaign, ...aftermath })
+      return { ...gameCommit(state, { campaign, ...aftermath }), latestBattleId: resolved.report.id }
     }
-    refreshFogIntel(campaign, state.armies, state.locations, state.factions, state.grid, state.regions)
-    return gameCommit(state, { campaign })
+    refreshFogIntel(campaign, resolved.armies, state.locations, state.factions, state.grid, state.regions)
+    return { ...gameCommit(state, { armies: resolved.armies, campaign, battles: resolved.battles }), latestBattleId: resolved.report.id }
   }),
 
   summonHero: (locationId, heroId) => set((state) => {

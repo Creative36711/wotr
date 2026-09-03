@@ -823,6 +823,7 @@ export interface RtsBattleResult { status:'COMPLETED'|'SURRENDER'|'UNKNOWN'; win
 export async function readRtsBattleResult(conflictId:string):Promise<RtsBattleResult|null>{if(!isTauriRuntime())return null;return invoke<RtsBattleResult|null>('read_rts_battle_result',{conflictId})}
 export async function startRtsCalibration(executablePath:string,options:{isFortress?:boolean;attach?:boolean;resolution?:string}):Promise<unknown>{if(!isTauriRuntime())throw new Error('Калибровка доступна только в desktop-версии Tauri');return invoke('start_rts_calibration',{executablePath,options})}
 export async function stopRtsCalibration(){if(!isTauriRuntime())return;await invoke('stop_rts_calibration')}
+export async function readRtsCalibrationStatus():Promise<unknown>{if(!isTauriRuntime())return null;return invoke<unknown>('read_rts_calibration_status')}
 export async function rtsGameRunning():Promise<boolean>{if(!isTauriRuntime())return false;return invoke<boolean>('rts_game_running')}
 export async function discoverRtsExecutable():Promise<string|null>{if(!isTauriRuntime())return null;return invoke<string|null>('discover_rts_executable')}
 export async function validateRtsExecutable(executablePath:string):Promise<boolean>{if(!isTauriRuntime())return Boolean(executablePath);return invoke<boolean>('validate_rts_executable',{executablePath})}

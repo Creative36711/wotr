@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { listen } from '@tauri-apps/api/event'
 import { useMapStore } from '../store/useMapStore'
-import { prepareAndStartRtsBattle, startRtsCalibration, stopRtsCalibration } from '../dataService'
+import { prepareAndStartRtsBattle, readRtsCalibrationStatus, startRtsCalibration, stopRtsCalibration } from '../dataService'
 import { RTS_COLORS } from '../rts'
 import { getEconomicType } from '../game/economicTypes'
 import { translateText } from '../i18n'
@@ -55,7 +54,7 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
   const [isFortress, setIsFortress] = useState(location.structuralType === 'stronghold')
   const [message, setMessage] = useState<string | null>(null)
   const [testBusy, setTestBusy] = useState(false)
-  const unlistenRef = useRef<(() => void) | null>(null)
+  const pollRef = useRef<number | null>(null)
 
   const desktopRuntime = '__TAURI_INTERNALS__' in window
   const executablePath = appSettings?.rtsExecutablePath ?? ''
@@ -68,13 +67,13 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
     setIsFortress(location.structuralType === 'stronghold')
   }, [location.structuralType])
 
-  useEffect(() => () => { unlistenRef.current?.(); unlistenRef.current = null }, [])
+  useEffect(() => () => { if (pollRef.current !== null) window.clearTimeout(pollRef.current) }, [])
 
   const handleEvent = (event: CalibrationEvent) => {
     if (event.type === 'started') {
       setCalibrating(true)
       setCurrentStep(event.steps?.[0] ?? { index: 0, role: 'defense', main: Boolean(event.isFortress) })
-      setMessage('Наведите курсор на точку миникарты комнаты BFME и нажмите F9. F10 — выход.')
+      setMessage('Игра запущена. Наведите курсор на точку миникарты комнаты BFME и нажмите F9. F10 — выход (игра закроется).')
     } else if (event.type === 'point') {
       setCurrentStep(event.next ?? null)
     } else if (event.type === 'finished') {
@@ -97,18 +96,34 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
   const startCalibration = async () => {
     if (!desktopRuntime) { setMessage('Калибровка доступна только в Tauri-приложении.'); return }
     if (!executablePath) { setMessage('Сначала выберите lotrbfme2ep1.exe в главном меню.'); return }
-    setMessage('Запуск игры в оконном режиме 1280×720…')
-    unlistenRef.current?.()
+    if (pollRef.current !== null) { window.clearTimeout(pollRef.current); pollRef.current = null }
+    setMessage('Запуск помощника калибровки: подтвердите запрос Windows UAC. Игра откроется в окне 1280×720; наведите курсор на точку и нажмите F9. F10 — выход (игра закроется).')
     try {
-      const unlisten = await listen<CalibrationEvent>('wotr://calibration', (event) => handleEvent(event.payload))
-      unlistenRef.current = unlisten
-      await startRtsCalibration(executablePath, { isFortress: isStronghold, attach: false })
+      await startRtsCalibration(executablePath, { isFortress: isFortressSite, attach: false })
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error))
+      return
     }
+    // Сессия работает в elevated-помощнике и публикует состояние в файл —
+    // опрашиваем его, пока калибровка не завершится.
+    let lastState = ''
+    const poll = async () => {
+      const event = await readRtsCalibrationStatus().catch(() => null) as CalibrationEvent | null
+      if (event) {
+        const key = JSON.stringify(event)
+        if (key !== lastState) {
+          lastState = key
+          handleEvent(event)
+        }
+      }
+      const terminal = event && (event.type === 'finished' || event.type === 'stopped' || event.type === 'error')
+      if (!terminal) pollRef.current = window.setTimeout(() => void poll(), 400)
+    }
+    void poll()
   }
 
   const stopCalibration = async () => {
+    setMessage('Останавливаю калибровку: закрываю игру и возвращаю разрешение…')
     await stopRtsCalibration().catch(() => undefined)
   }
 

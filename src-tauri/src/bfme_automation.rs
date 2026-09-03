@@ -14,9 +14,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-#[cfg(target_os = "windows")]
-use tauri::{AppHandle, Emitter, Manager};
-
 use crate::match_detector::{
     self, detect_icons, is_score_screen, line_endpoint, PlayerInfo, RgbFrame, ANALYSIS_TIMEOUT,
     RETRY_DELAY, SCORE_SCREEN_POLL, SCORE_TAB_ROI, SKIP_BUTTON_FRAC, SLOT_SETTLE, TAB_SETTLE,
@@ -220,6 +217,9 @@ extern "system" {
     fn TranslateMessage(message: *const Message) -> i32;
     fn DispatchMessageW(message: *const Message) -> isize;
     fn GetCursorPos(point: *mut Point) -> i32;
+    fn RegisterHotKey(window: Hwnd, id: i32, modifiers: u32, vk_code: u32) -> i32;
+    fn UnregisterHotKey(window: Hwnd, id: i32) -> i32;
+    fn PeekMessageW(message: *mut Message, window: Hwnd, min: u32, max: u32, remove: u32) -> i32;
     fn ShowWindow(window: Hwnd, command: i32) -> i32;
     fn BringWindowToTop(window: Hwnd) -> i32;
     fn SetActiveWindow(window: Hwnd) -> Hwnd;
@@ -343,13 +343,19 @@ const PROCESS_TERMINATE: u32 = 0x0001;
 #[cfg(target_os = "windows")]
 const STILL_ACTIVE: u32 = 259;
 #[cfg(target_os = "windows")]
-const WM_KEYDOWN: usize = 0x0100;
-#[cfg(target_os = "windows")]
-const WM_SYSKEYDOWN: usize = 0x0104;
-#[cfg(target_os = "windows")]
 const VK_CAPTURE: u32 = 0x78; // F9
 #[cfg(target_os = "windows")]
 const VK_QUIT: u32 = 0x79; // F10
+#[cfg(target_os = "windows")]
+const MOD_NOREPEAT: u32 = 0x4000;
+#[cfg(target_os = "windows")]
+const WM_HOTKEY: u32 = 0x0312;
+#[cfg(target_os = "windows")]
+const PM_REMOVE: u32 = 0x0001;
+#[cfg(target_os = "windows")]
+const HOTKEY_CAPTURE_ID: i32 = 1;
+#[cfg(target_os = "windows")]
+const HOTKEY_QUIT_ID: i32 = 2;
 #[cfg(target_os = "windows")]
 const MENU_MARKER_MATCH: f64 = 0.85;
 #[cfg(target_os = "windows")]
@@ -364,7 +370,6 @@ const MENU_MARKER_NPY: &[u8] = include_bytes!("../assets/menu_marker.npy");
 const MENU_MARKER_META: &str = include_str!("../assets/menu_marker.json");
 
 pub const CALIBRATION_RESOLUTION: &str = "1280 720";
-const CALIBRATION_EVENT: &str = "wotr://calibration";
 const MENU_SETTLE: Duration = Duration::from_millis(1200);
 const START_POS_CLICK_GAP: Duration = Duration::from_millis(200);
 const START_COUNTDOWN: Duration = Duration::from_secs(7);
@@ -375,10 +380,6 @@ const HELPER_RESULT_TIMEOUT: Duration = Duration::from_secs(900);
 static INPUT_BLOCKING: AtomicBool = AtomicBool::new(false);
 #[cfg(target_os = "windows")]
 static INPUT_HOOKS_READY: OnceLock<Result<(), String>> = OnceLock::new();
-#[cfg(target_os = "windows")]
-static CALIBRATION_ACTIVE: AtomicBool = AtomicBool::new(false);
-#[cfg(target_os = "windows")]
-static CALIBRATION_KEYS: OnceLock<mpsc::Sender<u32>> = OnceLock::new();
 #[cfg(target_os = "windows")]
 static AUTOMATION_BUSY: AtomicBool = AtomicBool::new(false);
 
@@ -581,7 +582,11 @@ fn stop_game_if_running(log: &AutomationLog) {
     if game_process_is_running() {
         log.write("[check] игра уже запущена — закрываю перед новым запуском");
         stop_game();
-        thread::sleep(Duration::from_millis(400));
+        // Процесс завершается не мгновенно: BIG-файлы и игровой мьютекс
+        // освобождаются с задержкой, и без паузы RotWK сообщает
+        // «игра уже запущена» при повторном старте.
+        log.write("[check] жду 5 секунд, пока игра полностью освободит файлы");
+        thread::sleep(Duration::from_secs(5));
     } else {
         log.write("[check] игра не запущена");
     }
@@ -708,89 +713,6 @@ impl Drop for InputLockGuard {
     fn drop(&mut self) {
         INPUT_BLOCKING.store(false, Ordering::SeqCst);
         println!("[BFME] Физический ввод разблокирован.");
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Passive calibration hotkeys (F9 capture / F10 quit) — never blocks input.
-// ---------------------------------------------------------------------------
-
-#[cfg(target_os = "windows")]
-unsafe extern "system" fn calibration_key_hook(code: i32, w_param: usize, l_param: isize) -> isize {
-    if code >= 0 && CALIBRATION_ACTIVE.load(Ordering::Relaxed) && (w_param == WM_KEYDOWN || w_param == WM_SYSKEYDOWN) {
-        let data = &*(l_param as *const KeyboardHookData);
-        if (data.vk_code == VK_CAPTURE || data.vk_code == VK_QUIT) && data.extra_info != INJECT_MAGIC {
-            if let Some(sender) = CALIBRATION_KEYS.get() {
-                let _ = sender.send(data.vk_code);
-            }
-        }
-    }
-    CallNextHookEx(null_mut(), code, w_param, l_param)
-}
-
-#[cfg(target_os = "windows")]
-fn calibration_hook_loop(ready: mpsc::Sender<Result<(), String>>) {
-    unsafe {
-        let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(calibration_key_hook), null_mut(), 0);
-        if hook.is_null() {
-            let _ = ready.send(Err(format!(
-                "Не удалось установить горячие клавиши калибровки (Windows error {})",
-                last_error()
-            )));
-            return;
-        }
-        let _ = ready.send(Ok(()));
-        let mut message: Message = zeroed();
-        loop {
-            let status = GetMessageW(&mut message, null_mut(), 0, 0);
-            if status <= 0 {
-                break;
-            }
-            TranslateMessage(&message);
-            DispatchMessageW(&message);
-        }
-        UnhookWindowsHookEx(hook);
-    }
-}
-
-#[cfg(target_os = "windows")]
-fn ensure_calibration_hook() -> Result<std::sync::MutexGuard<'static, mpsc::Receiver<u32>>, String> {
-    // The channel is created once and reused across calibration sessions:
-    // a second session simply drains stale events before starting. The
-    // receiver lives in a static Mutex because mpsc::Receiver is !Sync.
-    static HOOK: OnceLock<Result<(), String>> = OnceLock::new();
-    static RECEIVER: OnceLock<Mutex<mpsc::Receiver<u32>>> = OnceLock::new();
-    let status = HOOK
-        .get_or_init(|| {
-            let (key_sender, key_receiver) = mpsc::channel::<u32>();
-            let (ready_sender, ready_receiver) = mpsc::channel::<Result<(), String>>();
-            if let Err(error) = thread::Builder::new()
-                .name("bfme-calibration-keys".into())
-                .spawn(move || calibration_hook_loop(ready_sender))
-            {
-                return Err(format!("Не удалось создать поток горячих клавиш: {error}"));
-            }
-            let ready = ready_receiver
-                .recv_timeout(Duration::from_secs(5))
-                .unwrap_or_else(|_| Err("Горячие клавиши калибровки не ответили за 5 секунд".to_string()));
-            match ready {
-                Ok(()) => {
-                    // The LL-hook sends captured keys through this global sender.
-                    let _ = CALIBRATION_KEYS.set(key_sender);
-                    let _ = RECEIVER.set(Mutex::new(key_receiver));
-                    Ok(())
-                }
-                Err(error) => Err(error),
-            }
-        })
-        .clone();
-    match status {
-        Ok(()) => RECEIVER
-            .get()
-            .ok_or_else(|| "Канал горячих клавиш калибровки недоступен".to_string())?
-            .lock()
-            .map_err(|_| "Канал горячих клавиш калибровки заблокирован".to_string()),
-        Err(error) => Err(error),
     }
 }
 
@@ -2463,7 +2385,7 @@ pub fn run_helper_if_requested() -> bool {
             .map(PathBuf::from)
             .ok_or("BFME path is missing from the automation job")?;
         // Лёгкий режим «spawn»: закрыть уже запущенную игру (файлы BIG заняты)
-        // и просто запустить exe с повышением — для калибровки.
+        // и просто запустить exe с повышением.
         if job.get("mode").and_then(Value::as_str) == Some("spawn") {
             let log = AutomationLog::start();
             stop_game_if_running(&log);
@@ -2473,6 +2395,16 @@ pub fn run_helper_if_requested() -> bool {
                 .args(if windowed { vec!["-win"] } else { Vec::<&str>::new() })
                 .spawn()
                 .map_err(|error| format!("Не удалось запустить BFME: {error}"))?;
+            return Ok((Vec::new(), None));
+        }
+        // Режим «calibrate»: вся сессия калибровки координат (горячие клавиши
+        // F9/F10, запуск игры, возврат разрешения) работает здесь, с правами
+        // администратора — как elevate.ensure_admin() в tools/calibrate.py.
+        if job.get("mode").and_then(Value::as_str) == Some("calibrate") {
+            let log = AutomationLog::start();
+            stop_game_if_running(&log);
+            let options = job.get("options").cloned().unwrap_or_else(|| json!({}));
+            calibration_session(&executable, &options, &temp_directory);
             return Ok((Vec::new(), None));
         }
         let config = job
@@ -2526,6 +2458,12 @@ pub fn run_helper_if_requested() -> bool {
 // ---------------------------------------------------------------------------
 // Coordinate calibration wizard (editor tool)
 // ---------------------------------------------------------------------------
+// Port of tools/calibrate.py + tools/hotkey.py: system hotkeys
+// (RegisterHotKey F9/F10 + a message loop) keep firing while the game window
+// holds focus, and the session runs inside the ELEVATED helper — hotkeys and
+// clicks from a non-elevated process are filtered by UIPI when an elevated
+// game window is in the foreground. Progress is published to a JSON status
+// file polled by the UI; a stop-flag file requests an early exit.
 
 fn calibration_step_label(index: usize, is_fortress: bool) -> Value {
     if index >= 4 {
@@ -2536,22 +2474,41 @@ fn calibration_step_label(index: usize, is_fortress: bool) -> Value {
 }
 
 #[cfg(target_os = "windows")]
-fn set_calibration_topmost(app: &AppHandle, topmost: bool) {
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_always_on_top(topmost);
+fn calibration_status_path(temp_directory: &Path) -> PathBuf {
+    temp_directory.join("rts_calibration_status.json")
+}
+
+#[cfg(target_os = "windows")]
+fn calibration_stop_flag_path(temp_directory: &Path) -> PathBuf {
+    temp_directory.join("rts_calibration_stop.flag")
+}
+
+#[cfg(target_os = "windows")]
+fn write_calibration_status(status_path: &Path, payload: &Value) {
+    if let Ok(text) = serde_json::to_string(payload) {
+        let temporary = status_path.with_extension("json.tmp");
+        if std::fs::write(&temporary, text).is_ok() {
+            let _ = std::fs::rename(&temporary, status_path);
+        }
     }
 }
 
 #[cfg(target_os = "windows")]
-fn emit_calibration(app: &AppHandle, payload: Value) {
-    let _ = app.emit(CALIBRATION_EVENT, payload);
+fn calibration_points_value(captured: &[(f64, f64)]) -> Vec<Value> {
+    captured.iter().map(|(x, y)| json!({"x":x,"y":y})).collect()
 }
 
-/// Run the interactive 8-point calibration session (like tools/calibrate.py):
-/// launch the game in a small window (or attach), then follow F9/F10 hotkeys.
+/// The interactive 8-point calibration session (runs in the elevated helper):
+/// launch the game windowed, then F9 captures each minimap point and F10
+/// quits (closing the game). The resolution is restored 30 seconds after the
+/// launch — the game has read Options.ini by then even on a cold start.
 #[cfg(target_os = "windows")]
-pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Value, temp_directory: &Path) {
+fn calibration_session(executable: &Path, options: &Value, temp_directory: &Path) {
     let log = AutomationLog::start();
+    let status_path = calibration_status_path(temp_directory);
+    let stop_flag = calibration_stop_flag_path(temp_directory);
+    let _ = std::fs::remove_file(&stop_flag);
+    let _ = std::fs::remove_file(&status_path);
     let is_fortress = options
         .get("isFortress")
         .and_then(Value::as_bool)
@@ -2564,191 +2521,222 @@ pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Valu
         .get("resolution")
         .and_then(Value::as_str)
         .unwrap_or(CALIBRATION_RESOLUTION);
-    set_calibration_topmost(&app, true);
-    let finish = |payload: Value| {
-        set_calibration_topmost(&app, false);
-        CALIBRATION_ACTIVE.store(false, Ordering::SeqCst);
-        emit_calibration(&app, payload);
+
+    // Системные горячие клавиши, как в tools/hotkey.py: MOD_NOREPEAT
+    // защищает от автоповтора, срабатывают и при фокусе в игре.
+    let hotkeys_ready = unsafe {
+        RegisterHotKey(null_mut(), HOTKEY_CAPTURE_ID, MOD_NOREPEAT, VK_CAPTURE) != 0
+            && RegisterHotKey(null_mut(), HOTKEY_QUIT_ID, MOD_NOREPEAT, VK_QUIT) != 0
     };
-    if CALIBRATION_ACTIVE.swap(true, Ordering::SeqCst) {
-        finish(json!({"type":"error","message":"Калибровка уже выполняется".to_string()}));
+    if !hotkeys_ready {
+        write_calibration_status(
+            &status_path,
+            &json!({"type":"error","message":"Не удалось зарегистрировать горячие клавиши F9/F10 — возможно, калибровка уже запущена.".to_string()}),
+        );
         return;
     }
-    let receiver = match ensure_calibration_hook() {
-        Ok(receiver) => receiver,
-        Err(error) => {
-            CALIBRATION_ACTIVE.store(false, Ordering::SeqCst);
-            finish(json!({"type":"error","message":error}));
-            return;
-        }
-    };
-    // Запуск всегда свежей копией игры: занятые BIG-файлы и чужое разрешение
-    // мешают калибровке, поэтому работающая игра закрывается (в elevated-режиме
-    // spawn это делает помощник), затем игра стартует в окне 1280×720.
+
     let mut restore = ResolutionRestore::none();
-    let mut restore_settled = false;
-    let mut restore_check = Instant::now();
+    let mut restore_done = attach;
     if !attach {
         log.write("[cal] запускаю игру в оконном режиме для калибровки");
-        match launch_game(executable, true, Some(resolution), temp_directory, &log) {
-            Ok(guard) => restore = guard,
-            Err(error) => {
-                finish(json!({"type":"error","message":error}));
-                return;
+        if let Err(error) = launch_game(executable, true, Some(resolution), temp_directory, &log) {
+            // Запуск не удался — вернуть разрешение сразу (guard Drop) и выйти.
+            write_calibration_status(&status_path, &json!({"type":"error","message":error}));
+            unsafe {
+                UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
+                UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);
             }
+            return;
         }
-    } else {
-        restore_settled = true;
     }
+
     let mut window = None;
-    let window_deadline = Instant::now() + Duration::from_secs(120);
+    let deadline = Instant::now() + Duration::from_secs(120);
     while window.is_none() {
-        if !CALIBRATION_ACTIVE.load(Ordering::Relaxed) {
+        if stop_flag.exists() {
             log.write("[cal] остановлено из редактора до появления окна");
-            finish(json!({"type":"stopped","points":[]}));
+            write_calibration_status(&status_path, &json!({"type":"stopped","points":[]}));
+            stop_game();
+            unsafe {
+                UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
+                UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);
+            }
             return;
         }
         window = find_game_window().map(|(handle, _)| handle);
         if window.is_none() {
             thread::sleep(Duration::from_millis(250));
-            if Instant::now() > window_deadline {
-                finish(json!({"type":"error","message":"Окно игры не появилось за 120 секунд".to_string()}));
+            if Instant::now() > deadline {
+                write_calibration_status(
+                    &status_path,
+                    &json!({"type":"error","message":"Окно игры не появилось за 120 секунд".to_string()}),
+                );
+                unsafe {
+                    UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
+                    UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);
+                }
                 return;
             }
         }
     }
     let Some(window) = window else { unreachable!() };
+    // Как в calibrate.py: игра остаётся на переднем плане, пользователь
+    // кликает по её окну; подсказка видна в редакторе.
+    activate_window(window);
+
     let mut steps = Vec::new();
     for index in 0..8 {
         steps.push(calibration_step_label(index, is_fortress));
     }
-    emit_calibration(
-        &app,
-        json!({"type":"started","isFortress":is_fortress,"steps":steps,"resolution":resolution}),
+    write_calibration_status(
+        &status_path,
+        &json!({"type":"started","isFortress":is_fortress,"steps":steps,"resolution":resolution}),
     );
-    log.write(if is_fortress {
-        "[cal] шаг 1/8: 1-я позиция ЗАЩИТЫ — наведите курсор и нажмите F9 (главную точку можно назначить после калибровки)"
-    } else {
-        "[cal] шаг 1/8: 1-я позиция ЗАЩИТЫ — наведите курсор и нажмите F9"
-    });
+    log.write("[cal] шаг 1/8: 1-я позиция ЗАЩИТЫ — наведите курсор и нажмите F9");
+
+    let quit_session = |captured: &[(f64, f64)], reason: &str| {
+        log.write(reason);
+        restore.restore_now(&log);
+        write_calibration_status(&status_path, &json!({"type":"stopped","points":calibration_points_value(captured)}));
+        stop_game();
+    };
 
     let launched = Instant::now();
     let mut captured: Vec<(f64, f64)> = Vec::new();
-    let mut last_key = Instant::now() - Duration::from_secs(10);
+    let mut message: Message = unsafe { zeroed() };
     loop {
-        match receiver.recv_timeout(Duration::from_millis(200)) {
-            Ok(VK_QUIT) => {
-                log.write("[cal] остановлено пользователем (F10)");
-                finish(json!({"type":"stopped","points":captured}));
-                return;
+        if stop_flag.exists() {
+            quit_session(&captured, "[cal] остановлено из редактора: закрываю игру");
+            break;
+        }
+        // Возврат разрешения: фиксированно через 30 секунд после запуска.
+        if !restore_done && launched.elapsed() >= Duration::from_secs(30) {
+            restore.restore_now(&log);
+            restore_done = true;
+        }
+        while unsafe { PeekMessageW(&mut message, null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            if message.message != WM_HOTKEY {
+                continue;
             }
-            Ok(VK_CAPTURE) => {
-                if last_key.elapsed() < Duration::from_millis(400) {
-                    continue; // защита от автоповтора клавиши
+            match message.w_param as i32 {
+                HOTKEY_QUIT_ID => {
+                    quit_session(&captured, "[cal] остановлено пользователем (F10): закрываю игру");
+                    unsafe {
+                        UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
+                        UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);
+                    }
+                    return;
                 }
-                last_key = Instant::now();
-                if !restore_settled {
-                    // Пользователь уже снимает точки — игра точно загрузилась.
-                    restore.restore_now(&log);
-                    restore_settled = true;
-                }
-                let view = match viewport(window) {
-                    Ok(view) => view,
-                    Err(error) => {
-                        emit_calibration(&app, json!({"type":"error","message":format!("Окно игры недоступно: {error}")}));
+                HOTKEY_CAPTURE_ID => {
+                    let view = match viewport(window) {
+                        Ok(view) => view,
+                        Err(error) => {
+                            log.write(format!("[cal] окно игры недоступно: {error}"));
+                            continue;
+                        }
+                    };
+                    let Some((cursor_x, cursor_y)) = cursor_position() else {
+                        continue;
+                    };
+                    let fx = f64::from(cursor_x - view.0) / f64::from(view.2);
+                    let fy = f64::from(cursor_y - view.1) / f64::from(view.3);
+                    if !(0.0..=1.0).contains(&fx) || !(0.0..=1.0).contains(&fy) {
+                        write_calibration_status(
+                            &status_path,
+                            &json!({"type":"error","message":"Курсор вне окна игры — наведите точку на миникарте комнаты BFME.".to_string()}),
+                        );
                         continue;
                     }
-                };
-                let Some((cursor_x, cursor_y)) = cursor_position() else {
-                    continue;
-                };
-                let fx = f64::from(cursor_x - view.0) / f64::from(view.2);
-                let fy = f64::from(cursor_y - view.1) / f64::from(view.3);
-                if !(0.0..=1.0).contains(&fx) || !(0.0..=1.0).contains(&fy) {
-                    emit_calibration(
-                        &app,
-                        json!({"type":"error","message":"Курсор вне окна игры — наведите точку на миникарте комнаты BFME."}),
-                    );
-                    continue;
-                }
-                let index = captured.len();
-                captured.push(((fx * 10000.0).round() / 10000.0, (fy * 10000.0).round() / 10000.0));
-                let (x, y) = captured[index];
-                log.write(format!("[cal] точка {} из 8: frac=({x:.4}, {y:.4})", index + 1));
-                if captured.len() >= 8 {
-                    let defense: Vec<Value> = captured[0..4].iter().map(|(x, y)| json!({"x":x,"y":y})).collect();
-                    let attack: Vec<Value> = captured[4..8].iter().map(|(x, y)| json!({"x":x,"y":y})).collect();
-                    log.write("[cal] все 8 точек сняты — калибровка завершена");
-                    finish(json!({"type":"finished","defense":defense,"attack":attack}));
-                    return;
-                }
-                let next = calibration_step_label(index + 1, is_fortress);
-                emit_calibration(
-                    &app,
-                    json!({"type":"point","index":index,"x":x,"y":y,"role":if index < 4 {"defense"} else {"attack"},"main":is_fortress && index == 0,"next":next}),
-                );
-            }
-            Ok(_) => {}
-            Err(mpsc::RecvTimeoutError::Timeout) => {
-                if !CALIBRATION_ACTIVE.load(Ordering::Relaxed) {
-                    log.write("[cal] остановлено из редактора");
-                    restore.restore_now(&log);
-                    finish(json!({"type":"stopped","points":captured}));
-                    return;
-                }
-                // Возврат разрешения: после появления главного меню либо не
-                // позже 45 секунд после запуска (холодный старт терпеливее).
-                if !restore_settled && restore_check.elapsed() >= Duration::from_secs(1) {
-                    restore_check = Instant::now();
-                    if !attach && (main_menu_visible(window) || launched.elapsed() > Duration::from_secs(45)) {
-                        restore.restore_now(&log);
-                        restore_settled = true;
+                    let index = captured.len();
+                    captured.push((
+                        (fx * 10000.0).round() / 10000.0,
+                        (fy * 10000.0).round() / 10000.0,
+                    ));
+                    let (x, y) = captured[index];
+                    log.write(format!("[cal] точка {} из 8: frac=({x:.4}, {y:.4})", index + 1));
+                    if captured.len() >= 8 {
+                        let defense: Vec<Value> =
+                            captured[0..4].iter().map(|(x, y)| json!({"x":x,"y":y})).collect();
+                        let attack: Vec<Value> =
+                            captured[4..8].iter().map(|(x, y)| json!({"x":x,"y":y})).collect();
+                        log.write("[cal] все 8 точек сняты — калибровка завершена");
+                        write_calibration_status(
+                            &status_path,
+                            &json!({"type":"finished","defense":defense,"attack":attack}),
+                        );
+                        unsafe {
+                            UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
+                            UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);
+                        }
+                        return;
                     }
+                    let next = calibration_step_label(index + 1, is_fortress);
+                    write_calibration_status(
+                        &status_path,
+                        &json!({"type":"point","index":index,"x":x,"y":y,"role":if index < 4 {"defense"} else {"attack"},"main":is_fortress && index == 0,"next":next}),
+                    );
                 }
-            }
-            Err(mpsc::RecvTimeoutError::Disconnected) => {
-                finish(json!({"type":"error","message":"Канал горячих клавиш закрыт"}));
-                return;
+                _ => {}
             }
         }
+        thread::sleep(Duration::from_millis(100));
+    }
+    unsafe {
+        UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
+        UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);
     }
 }
 
+/// Launch the elevated helper in «calibrate» mode. The whole session (hotkeys,
+/// game window, resolution restore) must run elevated — exactly like
+/// tools/calibrate.py, which called elevate.ensure_admin() up front.
 #[cfg(target_os = "windows")]
-pub fn request_calibration_stop() {
-    CALIBRATION_ACTIVE.store(false, Ordering::SeqCst);
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn run_calibration_session(_app: tauri::AppHandle, _executable: &Path, _options: &Value, _temp_directory: &Path) {}
-
-#[cfg(target_os = "windows")]
-pub fn game_is_running() -> bool {
-    game_process_is_running()
-}
-
-#[cfg(target_os = "windows")]
-pub fn spawn_calibration(app: AppHandle, executable: PathBuf, options: Value, temp_directory: PathBuf) -> Result<Value, String> {
+pub fn spawn_calibration(executable: PathBuf, options: Value, temp_directory: PathBuf) -> Result<Value, String> {
     if !executable.is_file() {
         return Err(format!(
             "Исполняемый файл BFME не найден: {}",
             executable.display()
         ));
     }
+    std::fs::create_dir_all(&temp_directory).map_err(|error| error.to_string())?;
+    let job_path = temp_directory.join("rts_calibration_job.json");
+    let result_path = temp_directory.join("rts_calibration_result.json");
+    let status_path = calibration_status_path(&temp_directory);
+    let _ = std::fs::remove_file(&result_path);
+    let job = json!({
+        "mode": "calibrate",
+        "executablePath": executable.to_string_lossy(),
+        "options": options,
+    });
+    std::fs::write(
+        &job_path,
+        serde_json::to_vec_pretty(&job).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| format!("Не удалось записать задание калибровки: {error}"))?;
+    let error_status_path = status_path.clone();
     thread::Builder::new()
-        .name("bfme-calibration".into())
-        .spawn(move || run_calibration_session(app, &executable, &options, &temp_directory))
+        .name("bfme-calibration-launcher".into())
+        .spawn(move || {
+            let log = AutomationLog::start();
+            if let Err(error) = run_elevated_helper(&job_path, &result_path) {
+                log.write(format!("[cal] помощник калибровки: {error}"));
+                write_calibration_status(&error_status_path, &json!({"type":"error","message":error}));
+            }
+        })
         .map_err(|error| format!("Не удалось запустить калибровку: {error}"))?;
     Ok(json!({"ok": true}))
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn spawn_calibration(_app: tauri::AppHandle, _executable: PathBuf, _options: Value, _temp_directory: PathBuf) -> Result<Value, String> {
+pub fn spawn_calibration(_executable: PathBuf, _options: Value, _temp_directory: PathBuf) -> Result<Value, String> {
     Err("Калибровка координат поддерживается только в Windows".into())
 }
 
-#[cfg(not(target_os = "windows"))]
-pub fn request_calibration_stop() {}
+#[cfg(target_os = "windows")]
+pub fn game_is_running() -> bool {
+    game_process_is_running()
+}
 
 #[cfg(not(target_os = "windows"))]
 pub fn game_is_running() -> bool {

@@ -13,7 +13,7 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.46.4
+Application: 0.46.5
 world.json: 43
 roster.json: 16
 savegame.json: 60
@@ -28,6 +28,8 @@ savegame.json: 60
 0.46.3 hardens the launch flow. The Options.ini resolution is restored at a deeper milestone (after the LAN room is created, or when the main menu is detected during calibration) instead of a fixed 5-second timer that raced the cold start. Cold-start input warmup from the Python prototype is ported: the game window is activated (ShowWindow/SetForegroundWindow/BringWindowToTop/SetActiveWindow/SetFocus) with a settle pause, and «Сеть» -> «Лок. сеть» is retried when the main-menu marker proves the clicks went nowhere. Every launch path (battles, coordinate tests, calibration) now closes a running game first — BIG files in the game folder are locked while game.dat is alive — and relaunches fresh. Calibration launches the game through the elevated helper (lotrbfme2ep1.exe requires elevation, os error 740). The fortress defender start point moved from a standalone inspector menu into the BFME-coordinates card as a selectable defense point (`fortressDefenseIndex`); when no point is designated, all start positions randomize like a regular location. Weathertop (Amon Sûl) now uses the `map mp weathertop` cache and its calibrated coordinates. The fortress defender start point is designated (first defense point) for Helm's Deep, Minas Tirith, Rivendell, Erebor, Isengard, Dol Guldur and Minas Morgul.
 
 0.46.4 restores the timing constants accidentally removed from `match_detector.rs` together with the dead code cleanup (broke the build), and designates the main defense point for the seven strongholds.
+
+0.46.5 reworks the calibration session to run entirely inside the elevated helper, mirroring `tools/calibrate.py` (which elevated itself via `ensure_admin`): system hotkeys (`RegisterHotKey` F9/F10 with a message loop, as in `tools/hotkey.py`) are used instead of a low-level keyboard hook — an LL hook in the non-elevated app never receives keys while the elevated game window has focus (UIPI), which made F9 dead. Progress is published to `rts_calibration_status.json` and polled by the UI; the editor Stop button and F10 both close the game. The windowed resolution is restored by a fixed 30-second timer (the game has read Options.ini by then even on a cold start). After closing an already-running game every flow waits 5 seconds before relaunching so RotWK does not report «game already running».
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 

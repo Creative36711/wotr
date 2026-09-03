@@ -14,7 +14,7 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.46.4";
+const GAME_VERSION: &str = "0.46.5";
 const SAVE_VERSION: u64 = 60;
 
 // Bundled RTS assets for the default «Vanilla 2.01» mod (Requirement: the mod
@@ -173,12 +173,23 @@ fn battle_result_path(temp:&Path,conflict_id:&str)->PathBuf{
 #[tauri::command] fn start_rts_calibration(app:AppHandle,executable_path:String,options:Value)->Result<Value,String>{
  let executable=PathBuf::from(&executable_path);
  let temp=data_root(&app)?.join("temp");
- bfme_automation::spawn_calibration(app,executable,options,temp)
+ bfme_automation::spawn_calibration(executable,options,temp)
 }
-#[tauri::command] fn stop_rts_calibration()->Result<(),String>{bfme_automation::request_calibration_stop();Ok(())}
+#[tauri::command] fn stop_rts_calibration(app:AppHandle)->Result<(),String>{
+ let temp=data_root(&app)?.join("temp");
+ std::fs::create_dir_all(&temp).map_err(|e|e.to_string())?;
+ std::fs::write(temp.join("rts_calibration_stop.flag"),b"1").map_err(|e|e.to_string())
+}
 #[tauri::command] fn read_rts_battle_result(app:AppHandle,conflict_id:String)->Result<Option<Value>,String>{
  let temp=data_root(&app)?.join("temp");
  let path=battle_result_path(&temp,&conflict_id);
+ if !path.exists(){return Ok(None)}
+ let text=fs::read_to_string(&path).map_err(|e|e.to_string())?;
+ serde_json::from_str(&text).map(Some).map_err(|e|e.to_string())
+}
+#[tauri::command] fn read_rts_calibration_status(app:AppHandle)->Result<Option<Value>,String>{
+ let temp=data_root(&app)?.join("temp");
+ let path=temp.join("rts_calibration_status.json");
  if !path.exists(){return Ok(None)}
  let text=fs::read_to_string(&path).map_err(|e|e.to_string())?;
  serde_json::from_str(&text).map(Some).map_err(|e|e.to_string())
@@ -270,4 +281,4 @@ fn chrono_like_now()->String{use std::time::{SystemTime,UNIX_EPOCH};let secs=Sys
 
 pub fn run_rts_helper_if_requested()->bool{bfme_automation::run_helper_if_requested()}
 
-#[cfg_attr(mobile,tauri::mobile_entry_point)] pub fn run(){tauri::Builder::default().plugin(tauri_plugin_dialog::init()).setup(|app|{let _=initialize_mods(app.handle());Ok(())}).invoke_handler(tauri::generate_handler![read_app_settings,write_app_settings,read_mod_file,write_mod_file,write_rts_asset,import_rts_asset,pick_and_import_rts_asset,discover_rts_executable,validate_rts_executable,pick_rts_executable,delete_rts_asset,list_rts_map_caches,prepare_rts_battle,prepare_and_start_rts_battle,launch_rts_game,configure_and_start_rts_battle,start_rts_calibration,stop_rts_calibration,read_rts_battle_result,rts_game_running,read_mod_map,write_mod_map,reset_mod_map,list_mods,create_mod,delete_mod,open_mods_folder,portable_data_directory,open_application_folder,exit_application]).run(tauri::generate_context!()).expect("error while running War of the Ring")}
+#[cfg_attr(mobile,tauri::mobile_entry_point)] pub fn run(){tauri::Builder::default().plugin(tauri_plugin_dialog::init()).setup(|app|{let _=initialize_mods(app.handle());Ok(())}).invoke_handler(tauri::generate_handler![read_app_settings,write_app_settings,read_mod_file,write_mod_file,write_rts_asset,import_rts_asset,pick_and_import_rts_asset,discover_rts_executable,validate_rts_executable,pick_rts_executable,delete_rts_asset,list_rts_map_caches,prepare_rts_battle,prepare_and_start_rts_battle,launch_rts_game,configure_and_start_rts_battle,start_rts_calibration,stop_rts_calibration,read_rts_calibration_status,read_rts_battle_result,rts_game_running,read_mod_map,write_mod_map,reset_mod_map,list_mods,create_mod,delete_mod,open_mods_folder,portable_data_directory,open_application_folder,exit_application]).run(tauri::generate_context!()).expect("error while running War of the Ring")}

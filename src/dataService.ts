@@ -716,7 +716,9 @@ function normalizeSupportedLocales(value: unknown) {
 export async function loadModDefinition(modId: string, factions: FactionDefinition[] = []): Promise<ModDefinition> {
   const raw = await readModJson(modId, 'mod') as ModDefinition
   const rts=normalizeRtsSettings(raw.rts,factions)
-  if(modId==='default'){rts.moduleFiles=[];rts.mapsFile=null;if(rts.networkRules==='0 0 0 200 4000 -1 -1 -1 -1 -1')rts.networkRules=DEFAULT_NETWORK_RULES}
+  // Дефолтный мод хранит свои BIG-архивы (2.01 + карты) как обычный мод:
+  // бэкенд восстанавливает их из встроенных ресурсов при каждом запуске.
+  if(modId==='default'&&rts.networkRules==='0 0 0 200 4000 -1 -1 -1 -1 -1')rts.networkRules=DEFAULT_NETWORK_RULES
   const supportedLocales = normalizeSupportedLocales(raw.supportedLocales ?? (modId === 'default' ? ['en', 'ru'] : ['en']))
   const defaultLocale = supportedLocales.includes(raw.defaultLocale) ? raw.defaultLocale : supportedLocales.includes('ru') ? 'ru' : 'en'
   return { ...raw, rts, supportedLocales, defaultLocale }
@@ -817,6 +819,11 @@ export async function prepareAndStartRtsBattle(modId:string,executablePath:strin
 }
 export async function launchRtsGame(executablePath:string){if(!isTauriRuntime())throw new Error('Запуск BFME доступен только в desktop-версии Tauri');await invoke('launch_rts_game',{executablePath})}
 export async function configureAndStartRtsBattle(executablePath:string,battleConfig:unknown){if(!isTauriRuntime())throw new Error('Автоматизация BFME доступна только в desktop-версии Tauri');await invoke('configure_and_start_rts_battle',{executablePath,battleConfig})}
+export interface RtsBattleResult { status:'COMPLETED'|'SURRENDER'|'UNKNOWN'; winningTeam:'good'|'evil'|null; winningSlot:number|null; detail?:string; elapsedSec?:number; finishedAt?:number }
+export async function readRtsBattleResult(conflictId:string):Promise<RtsBattleResult|null>{if(!isTauriRuntime())return null;return invoke<RtsBattleResult|null>('read_rts_battle_result',{conflictId})}
+export async function startRtsCalibration(executablePath:string,options:{isFortress?:boolean;attach?:boolean;resolution?:string}):Promise<unknown>{if(!isTauriRuntime())throw new Error('Калибровка доступна только в desktop-версии Tauri');return invoke('start_rts_calibration',{executablePath,options})}
+export async function stopRtsCalibration(){if(!isTauriRuntime())return;await invoke('stop_rts_calibration')}
+export async function rtsGameRunning():Promise<boolean>{if(!isTauriRuntime())return false;return invoke<boolean>('rts_game_running')}
 export async function discoverRtsExecutable():Promise<string|null>{if(!isTauriRuntime())return null;return invoke<string|null>('discover_rts_executable')}
 export async function validateRtsExecutable(executablePath:string):Promise<boolean>{if(!isTauriRuntime())return Boolean(executablePath);return invoke<boolean>('validate_rts_executable',{executablePath})}
 export async function pickRtsExecutable():Promise<string|null>{if(!isTauriRuntime())return null;return invoke<string|null>('pick_rts_executable')}

@@ -1,5 +1,6 @@
 use serde_json::{json, Value};
 use std::{
+    collections::BTreeMap,
     ffi::{c_void, OsString},
     mem::{size_of, zeroed},
     path::{Path, PathBuf},
@@ -11,6 +12,14 @@ use std::{
     },
     thread,
     time::{Duration, Instant},
+};
+
+#[cfg(target_os = "windows")]
+use tauri::{AppHandle, Emitter, Manager};
+
+use crate::match_detector::{
+    self, detect_icons, is_score_screen, line_endpoint, PlayerInfo, RgbFrame, ANALYSIS_TIMEOUT,
+    RETRY_DELAY, SCORE_SCREEN_POLL, SCORE_TAB_ROI, SKIP_BUTTON_FRAC, SLOT_SETTLE, TAB_SETTLE,
 };
 
 #[cfg(target_os = "windows")]
@@ -210,6 +219,7 @@ extern "system" {
     fn GetMessageW(message: *mut Message, window: Hwnd, min: u32, max: u32) -> i32;
     fn TranslateMessage(message: *const Message) -> i32;
     fn DispatchMessageW(message: *const Message) -> isize;
+    fn GetCursorPos(point: *mut Point) -> i32;
 }
 
 #[cfg(target_os = "windows")]
@@ -222,6 +232,9 @@ extern "system" {
     fn CloseHandle(handle: Handle) -> i32;
     fn GetLastError() -> u32;
     fn GetLocalTime(system_time: *mut WindowsSystemTime);
+    fn OpenProcess(access: u32, inherit: i32, process_id: u32) -> Handle;
+    fn TerminateProcess(handle: Handle, exit_code: u32) -> i32;
+    fn GetExitCodeProcess(handle: Handle, exit_code: *mut u32) -> i32;
 }
 
 #[cfg(target_os = "windows")]
@@ -297,15 +310,15 @@ const MOUSE_ABSOLUTE: u32 = 0x8000;
 #[cfg(target_os = "windows")]
 const INJECT_MAGIC: usize = 0x57415231;
 #[cfg(target_os = "windows")]
-const TH32CS_SNAPPROCESS: u32 = 0x00000002;
+const TH32CS_SNAPPROCESS: u32 = 0x0000_0002;
 #[cfg(target_os = "windows")]
 const WH_KEYBOARD_LL: i32 = 13;
 #[cfg(target_os = "windows")]
 const WH_MOUSE_LL: i32 = 14;
 #[cfg(target_os = "windows")]
-const SEE_MASK_NOCLOSEPROCESS: u32 = 0x00000040;
+const SEE_MASK_NOCLOSEPROCESS: u32 = 0x0000_0040;
 #[cfg(target_os = "windows")]
-const SEE_MASK_FLAG_NO_UI: u32 = 0x00000400;
+const SEE_MASK_FLAG_NO_UI: u32 = 0x0000_0400;
 #[cfg(target_os = "windows")]
 const INFINITE: u32 = 0xFFFF_FFFF;
 #[cfg(target_os = "windows")]
@@ -325,6 +338,18 @@ const SRCCOPY: u32 = 0x00CC_0020;
 #[cfg(target_os = "windows")]
 const DIB_RGB_COLORS: u32 = 0;
 #[cfg(target_os = "windows")]
+const PROCESS_TERMINATE: u32 = 0x0001;
+#[cfg(target_os = "windows")]
+const STILL_ACTIVE: u32 = 259;
+#[cfg(target_os = "windows")]
+const WM_KEYDOWN: usize = 0x0100;
+#[cfg(target_os = "windows")]
+const WM_SYSKEYDOWN: usize = 0x0104;
+#[cfg(target_os = "windows")]
+const VK_CAPTURE: u32 = 0x78; // F9
+#[cfg(target_os = "windows")]
+const VK_QUIT: u32 = 0x79; // F10
+#[cfg(target_os = "windows")]
 const MENU_MARKER_MATCH: f64 = 0.85;
 #[cfg(target_os = "windows")]
 const MENU_MARKER_TOLERANCE: i16 = 30;
@@ -337,10 +362,24 @@ const MENU_MARKER_NPY: &[u8] = include_bytes!("../assets/menu_marker.npy");
 #[cfg(target_os = "windows")]
 const MENU_MARKER_META: &str = include_str!("../assets/menu_marker.json");
 
+pub const CALIBRATION_RESOLUTION: &str = "1280 720";
+const CALIBRATION_RESTORE_AFTER: Duration = Duration::from_secs(5);
+const CALIBRATION_EVENT: &str = "wotr://calibration";
+const START_POS_CLICK_GAP: Duration = Duration::from_millis(200);
+const START_COUNTDOWN: Duration = Duration::from_secs(7);
+const MONITOR_DEFAULT_TIMEOUT: Duration = Duration::from_secs(5400);
+const HELPER_RESULT_TIMEOUT: Duration = Duration::from_secs(900);
+
 #[cfg(target_os = "windows")]
 static INPUT_BLOCKING: AtomicBool = AtomicBool::new(false);
 #[cfg(target_os = "windows")]
 static INPUT_HOOKS_READY: OnceLock<Result<(), String>> = OnceLock::new();
+#[cfg(target_os = "windows")]
+static CALIBRATION_ACTIVE: AtomicBool = AtomicBool::new(false);
+#[cfg(target_os = "windows")]
+static CALIBRATION_KEYS: OnceLock<mpsc::Sender<u32>> = OnceLock::new();
+#[cfg(target_os = "windows")]
+static AUTOMATION_BUSY: AtomicBool = AtomicBool::new(false);
 
 #[cfg(target_os = "windows")]
 fn wide(value: &str) -> Vec<u16> {
@@ -361,7 +400,7 @@ impl AutomationLog {
     }
     fn write(&self, message: impl AsRef<str>) {
         let mut now = WindowsSystemTime::default();
-        unsafe { GetLocalTime(&mut now) }
+        unsafe { GetLocalTime(&mut now) };
         println!(
             "[{:02}:{:02}:{:02} +{:6.1}s] {}",
             now.hour,
@@ -505,6 +544,35 @@ fn wait_for_game_window(timeout: Duration) -> Result<(Hwnd, &'static str), Strin
     )
 }
 
+/// Force-close every running game.dat (ported from the Python bridge launcher.stop_game).
+#[cfg(target_os = "windows")]
+pub fn stop_game() -> bool {
+    let Ok(pids) = process_ids_by_name("game.dat") else {
+        return true;
+    };
+    if pids.is_empty() {
+        return true;
+    }
+    for pid in pids {
+        unsafe {
+            let handle = OpenProcess(PROCESS_TERMINATE, 0, pid);
+            if handle.is_null() {
+                continue;
+            }
+            TerminateProcess(handle, 1);
+            CloseHandle(handle);
+        }
+    }
+    let deadline = Instant::now() + Duration::from_secs(8);
+    while Instant::now() < deadline {
+        if !game_process_is_running() {
+            return true;
+        }
+        thread::sleep(Duration::from_millis(250));
+    }
+    !game_process_is_running()
+}
+
 #[cfg(target_os = "windows")]
 unsafe extern "system" fn keyboard_hook(code: i32, w_param: usize, l_param: isize) -> isize {
     if code >= 0 && INPUT_BLOCKING.load(Ordering::Relaxed) {
@@ -597,6 +665,86 @@ impl Drop for InputLockGuard {
     fn drop(&mut self) {
         INPUT_BLOCKING.store(false, Ordering::SeqCst);
         println!("[BFME] Физический ввод разблокирован.");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Passive calibration hotkeys (F9 capture / F10 quit) — never blocks input.
+// ---------------------------------------------------------------------------
+
+#[cfg(target_os = "windows")]
+unsafe extern "system" fn calibration_key_hook(code: i32, w_param: usize, l_param: isize) -> isize {
+    if code >= 0 && CALIBRATION_ACTIVE.load(Ordering::Relaxed) && (w_param == WM_KEYDOWN || w_param == WM_SYSKEYDOWN) {
+        let data = &*(l_param as *const KeyboardHookData);
+        if (data.vk_code == VK_CAPTURE || data.vk_code == VK_QUIT) && data.extra_info != INJECT_MAGIC {
+            if let Some(sender) = CALIBRATION_KEYS.get() {
+                let _ = sender.send(data.vk_code);
+            }
+        }
+    }
+    CallNextHookEx(null_mut(), code, w_param, l_param)
+}
+
+#[cfg(target_os = "windows")]
+fn calibration_hook_loop(ready: mpsc::Sender<Result<(), String>>) {
+    unsafe {
+        let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(calibration_key_hook), null_mut(), 0);
+        if hook.is_null() {
+            let _ = ready.send(Err(format!(
+                "Не удалось установить горячие клавиши калибровки (Windows error {})",
+                last_error()
+            )));
+            return;
+        }
+        let _ = ready.send(Ok(()));
+        let mut message: Message = zeroed();
+        loop {
+            let status = GetMessageW(&mut message, null_mut(), 0, 0);
+            if status <= 0 {
+                break;
+            }
+            TranslateMessage(&message);
+            DispatchMessageW(&message);
+        }
+        UnhookWindowsHookEx(hook);
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn ensure_calibration_hook() -> Result<&'static mpsc::Receiver<u32>, String> {
+    // The channel is created once and reused across calibration sessions:
+    // a second session simply drains stale events before starting.
+    static HOOK: OnceLock<Result<&'static mpsc::Receiver<u32>, String>> = OnceLock::new();
+    HOOK.get_or_init(|| {
+        let (key_sender, key_receiver) = mpsc::channel::<u32>();
+        let (ready_sender, ready_receiver) = mpsc::channel::<Result<(), String>>();
+        thread::Builder::new()
+            .name("bfme-calibration-keys".into())
+            .spawn(move || calibration_hook_loop(ready_sender))
+            .map_err(|error| format!("Не удалось создать поток горячих клавиш: {error}"))?;
+        let status = ready_receiver
+            .recv_timeout(Duration::from_secs(5))
+            .unwrap_or_else(|_| Err("Горячие клавиши калибровки не ответили за 5 секунд".into()));
+        match status {
+            Ok(()) => {
+                // The LL-hook sends captured keys through this global sender.
+                let _ = CALIBRATION_KEYS.set(key_sender);
+                Ok(Box::leak(Box::new(key_receiver)))
+            }
+            Err(error) => Err(error),
+        }
+    })
+    .clone()
+    .map_err(|_| "Канал горячих клавиш калибровки недоступен".to_string())
+}
+
+#[cfg(target_os = "windows")]
+fn cursor_position() -> Option<(i32, i32)> {
+    let mut point = Point::default();
+    if unsafe { GetCursorPos(&mut point) } != 0 {
+        Some((point.x, point.y))
+    } else {
+        None
     }
 }
 
@@ -748,6 +896,16 @@ fn capture_screen_region_rgb(x: i32, y: i32, width: i32, height: i32) -> Result<
 }
 
 #[cfg(target_os = "windows")]
+fn capture_viewport(view: (i32, i32, i32, i32)) -> Result<RgbFrame, String> {
+    let data = capture_screen_region_rgb(view.0, view.1, view.2, view.3)?;
+    Ok(RgbFrame {
+        width: view.2 as usize,
+        height: view.3 as usize,
+        data,
+    })
+}
+
+#[cfg(target_os = "windows")]
 fn menu_marker_match(window: Hwnd, marker: &MenuMarker) -> Result<f64, String> {
     let (left, top, width, height) = viewport(window)?;
     let box_size = ((marker.size_fraction * f64::from(width.min(height))) as i32).max(4);
@@ -811,7 +969,7 @@ fn wait_for_menu_ready(window: Hwnd, log: &AutomationLog, language: &str) -> Res
                 }
             }
         }
-        thread::sleep(MENU_MARKER_POLL)
+        thread::sleep(MENU_MARKER_POLL);
     }
     Err(if language == "en" {
         "The BFME main-menu marker did not appear within 60 seconds".into()
@@ -871,10 +1029,10 @@ fn click(x: i32, y: i32) -> Result<(), String> {
 }
 
 #[cfg(target_os = "windows")]
-fn click_fraction(viewport: (i32, i32, i32, i32), x: f64, y: f64) -> Result<(), String> {
+fn click_fraction(view: (i32, i32, i32, i32), x: f64, y: f64) -> Result<(), String> {
     click(
-        viewport.0 + (x * viewport.2 as f64) as i32,
-        viewport.1 + (y * viewport.3 as f64) as i32,
+        view.0 + (x * view.2 as f64) as i32,
+        view.1 + (y * view.3 as f64) as i32,
     )
 }
 
@@ -895,21 +1053,33 @@ const DIFF_OFFSETS: [f64; 4] = [0.0865, 0.1160, 0.1439, 0.1713];
 const DROP_STEP: f64 = 0.029;
 #[cfg(target_os = "windows")]
 const DROP_GAP: f64 = 0.033;
+/// Rating-column slot click coordinates on the «Счёт» screen (fractions of the
+/// window), ported from the Python detector config. Slot 1 is selected by default.
+#[cfg(target_os = "windows")]
+const RATING_SLOT_FRAC: [(f64, f64); 7] = [
+    (1626.0 / 1920.0, 359.0 / 1080.0),
+    (1623.0 / 1920.0, 427.0 / 1080.0),
+    (1622.0 / 1920.0, 495.0 / 1080.0),
+    (1619.0 / 1920.0, 562.0 / 1080.0),
+    (1628.0 / 1920.0, 630.0 / 1080.0),
+    (1626.0 / 1920.0, 698.0 / 1080.0),
+    (1627.0 / 1920.0, 766.0 / 1080.0),
+];
 
 #[cfg(target_os = "windows")]
 fn set_difficulty(
-    viewport: (i32, i32, i32, i32),
+    view: (i32, i32, i32, i32),
     slot: usize,
     difficulty: usize,
 ) -> Result<(), String> {
-    let x = viewport.0 + (0.177 * viewport.2 as f64) as i32;
-    let selector_y = viewport.1 + (SLOT_Y[slot - 1] * viewport.3 as f64) as i32;
+    let x = view.0 + (0.177 * view.2 as f64) as i32;
+    let selector_y = view.1 + (SLOT_Y[slot - 1] * view.3 as f64) as i32;
     click(x, selector_y)?;
     thread::sleep(Duration::from_millis(600));
     click(
         x,
-        viewport.1
-            + ((SLOT_Y[slot - 1] + DIFF_OFFSETS[difficulty.min(3)]) * viewport.3 as f64) as i32,
+        view.1
+            + ((SLOT_Y[slot - 1] + DIFF_OFFSETS[difficulty.min(3)]) * view.3 as f64) as i32,
     )?;
     thread::sleep(Duration::from_millis(400));
     Ok(())
@@ -917,22 +1087,22 @@ fn set_difficulty(
 
 #[cfg(target_os = "windows")]
 fn pick_dropdown(
-    viewport: (i32, i32, i32, i32),
+    view: (i32, i32, i32, i32),
     slot: usize,
     column: f64,
     item_index: usize,
 ) -> Result<(), String> {
     let visible_rows = usize::max(4, 9usize.saturating_sub(slot));
     let visible_items = visible_rows - 1;
-    let x = viewport.0 + (column * viewport.2 as f64) as i32;
-    let selector_y = viewport.1 + (SLOT_Y[slot - 1] * viewport.3 as f64) as i32;
+    let x = view.0 + (column * view.2 as f64) as i32;
+    let selector_y = view.1 + (SLOT_Y[slot - 1] * view.3 as f64) as i32;
     let list_top = SLOT_Y[slot - 1] + DROP_GAP;
     click(x, selector_y)?;
     thread::sleep(Duration::from_millis(600));
     let target_y = if item_index < visible_items {
         list_top + (item_index + 1) as f64 * DROP_STEP
     } else {
-        move_mouse(x, selector_y + (0.05 * viewport.3 as f64) as i32)?;
+        move_mouse(x, selector_y + (0.05 * view.3 as f64) as i32)?;
         let notches = item_index - visible_items + 1;
         for _ in 0..notches {
             scroll(-1)?;
@@ -940,7 +1110,7 @@ fn pick_dropdown(
         thread::sleep(Duration::from_millis(200));
         list_top + (visible_rows - 1) as f64 * DROP_STEP
     };
-    click(x, viewport.1 + (target_y * viewport.3 as f64) as i32)?;
+    click(x, view.1 + (target_y * view.3 as f64) as i32)?;
     thread::sleep(Duration::from_millis(400));
     Ok(())
 }
@@ -976,6 +1146,63 @@ fn player_template(faction_id: &str) -> Option<i32> {
         _ => None,
     }
 }
+
+// ---------------------------------------------------------------------------
+// Start positions on the room minimap (defense/attack pools)
+// ---------------------------------------------------------------------------
+
+fn parse_start_positions(map: &Value) -> BTreeMap<u64, (f64, f64)> {
+    let mut result = BTreeMap::new();
+    let Some(entries) = map.get("startPositions").and_then(Value::as_object) else {
+        return result;
+    };
+    for (slot, position) in entries {
+        let Ok(slot) = slot.parse::<u64>() else { continue };
+        let Some(x) = position.get("x").and_then(Value::as_f64) else { continue };
+        let Some(y) = position.get("y").and_then(Value::as_f64) else { continue };
+        if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y) {
+            result.insert(slot, (x, y));
+        }
+    }
+    result
+}
+
+/// Port of room.assign_start_positions: the fortress owner is clicked first
+/// (slot_number clicks on the main defense point), then every other slot in
+/// ascending order with a single click per point.
+#[cfg(target_os = "windows")]
+fn assign_start_positions(
+    view: (i32, i32, i32, i32),
+    positions: &BTreeMap<u64, (f64, f64)>,
+    fortress_owner: Option<u64>,
+    log: &AutomationLog,
+) -> Result<(), String> {
+    let owner = fortress_owner.filter(|slot| positions.contains_key(slot));
+    if let Some(owner) = owner {
+        let (x, y) = positions[&owner];
+        log.write(format!("[room] стартовая позиция: слот {owner} (владелец крепости) → ({x:.4}, {y:.4}) — {owner} клик(ов)"));
+        for _ in 0..owner {
+            click_fraction(view, x, y)?;
+            thread::sleep(START_POS_CLICK_GAP);
+        }
+        for (&slot, &(x, y)) in positions.iter().filter(|(slot, _)| **slot != owner) {
+            log.write(format!("[room] стартовая позиция: слот {slot} → ({x:.4}, {y:.4})"));
+            click_fraction(view, x, y)?;
+            thread::sleep(START_POS_CLICK_GAP);
+        }
+        return Ok(());
+    }
+    for (&slot, &(x, y)) in positions.iter() {
+        log.write(format!("[room] стартовая позиция: слот {slot} → ({x:.4}, {y:.4})"));
+        click_fraction(view, x, y)?;
+        thread::sleep(START_POS_CLICK_GAP);
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// NetworkPref.ini (player faction/color/rules)
+// ---------------------------------------------------------------------------
 
 #[cfg(target_os = "windows")]
 struct NetworkPrefResult {
@@ -1141,6 +1368,69 @@ fn network_pref_paths(
 }
 
 #[cfg(target_os = "windows")]
+fn profile_folders(executable: &Path, real_appdata: Option<&str>) -> Vec<PathBuf> {
+    network_pref_paths(executable, real_appdata)
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|path| path.parent().map(Path::to_path_buf))
+        .collect()
+}
+
+#[cfg(target_os = "windows")]
+fn ini_line_has_key(line: &str, key: &str) -> bool {
+    pref_line_has_key(line, key)
+}
+
+#[cfg(target_os = "windows")]
+fn read_ini_option(folder: &Path, key: &str) -> Option<String> {
+    let text = std::fs::read(folder.join("Options.ini")).ok()?;
+    let text = String::from_utf8_lossy(&text);
+    for line in text.lines() {
+        if line.trim().is_empty() || !line.contains('=') {
+            continue;
+        }
+        if ini_line_has_key(line, key) {
+            return line.split_once('=').map(|(_, value)| value.trim().to_string());
+        }
+    }
+    None
+}
+
+#[cfg(target_os = "windows")]
+fn set_ini_option(folder: &Path, key: &str, value: &str) -> Result<(), String> {
+    let path = folder.join("Options.ini");
+    let previous = std::fs::read(&path).unwrap_or_default();
+    let text = String::from_utf8_lossy(&previous);
+    let mut output: Vec<String> = Vec::new();
+    let mut written = false;
+    for line in text.lines() {
+        if !written && ini_line_has_key(line, key) {
+            output.push(format!("{key} = {value}"));
+            written = true;
+        } else {
+            output.push(line.to_string());
+        }
+    }
+    if !written {
+        output.push(format!("{key} = {value}"));
+    }
+    let mut content = output.join("\n");
+    content.push('\n');
+    let bytes: Vec<u8> = content
+        .chars()
+        .map(|character| {
+            if u32::from(character) <= 255 {
+                character as u8
+            } else {
+                b'?'
+            }
+        })
+        .collect();
+    std::fs::create_dir_all(folder).map_err(|error| error.to_string())?;
+    std::fs::write(&path, bytes).map_err(|error| format!("Failed to write {}: {error}", path.display()))
+}
+
+#[cfg(target_os = "windows")]
 fn write_network_pref(path: &Path, settings: &[(&str, String)]) -> Result<(), String> {
     if let Some(folder) = path.parent() {
         std::fs::create_dir_all(folder)
@@ -1234,148 +1524,468 @@ fn update_network_pref(executable: &Path, config: &Value) -> Result<NetworkPrefR
     })
 }
 
+// ---------------------------------------------------------------------------
+// Launch helpers (windowed mode for calibration / coordinate tests)
+// ---------------------------------------------------------------------------
+
 #[cfg(target_os = "windows")]
-fn launch_and_configure_inner(executable: &Path, config: &Value) -> Result<(), String> {
-    let log = AutomationLog::start();
+fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, log: &AutomationLog) -> Result<(), String> {
+    let mut restored = false;
+    let mut old_resolution: Option<(PathBuf, String)> = None;
+    if windowed {
+        let target = resolution.unwrap_or(CALIBRATION_RESOLUTION);
+        for folder in profile_folders(executable, std::env::var("APPDATA").ok().as_deref()) {
+            match read_ini_option(&folder, "Resolution") {
+                Some(current) => {
+                    if current != target {
+                        old_resolution = Some((folder.clone(), current));
+                        let _ = set_ini_option(&folder, "Resolution", target);
+                    }
+                }
+                // Options.ini may not exist yet on a fresh profile — create the
+                // key so the game still starts in a small window.
+                None => {
+                    let _ = set_ini_option(&folder, "Resolution", target);
+                }
+            }
+        }
+        log.write(format!("[launch] оконный режим {target} (прежнее разрешение: {:?})", old_resolution.as_ref().map(|(_, value)| value)));
+    }
+    Command::new(executable)
+        .current_dir(executable.parent().ok_or("Не найдена папка игры")?)
+        .args(if windowed { vec!["-win"] } else { Vec::<&str>::new() })
+        .spawn()
+        .map_err(|error| format!("Не удалось запустить BFME: {error}"))?;
+    if windowed {
+        // The game reads Options.ini at startup; restore the user value afterwards.
+        thread::sleep(CALIBRATION_RESTORE_AFTER);
+        if let Some((folder, value)) = old_resolution {
+            let _ = set_ini_option(&folder, "Resolution", &value);
+            restored = true;
+        }
+    }
+    if restored {
+        log.write("[launch] прежнее разрешение восстановлено в Options.ini");
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Main automation flow (battle config v2)
+// ---------------------------------------------------------------------------
+
+pub enum FlowOutcome {
+    /// Full battle was started; the monitor phase may follow.
+    BattleLaunched,
+    /// Coordinate test finished in the room; the game stays open for inspection.
+    CoordinatesTested,
+}
+
+#[cfg(target_os = "windows")]
+fn launch_and_configure_inner(executable: &Path, config: &Value, log: &AutomationLog) -> Result<FlowOutcome, String> {
     let language = config
         .get("language")
         .and_then(Value::as_str)
         .unwrap_or("ru");
-    if game_process_is_running() {
-        return Err("BFME уже запущен. Закройте game.dat перед началом RTS-боя.".into());
-    }
-    let _input_lock = InputLockGuard::acquire()?;
-    let pref_result = update_network_pref(executable, config)?;
-    log.write(format!(
-        "[prefs] NetworkPref.ini prepared in {} profile folder(s)",
-        pref_result.paths.len()
-    ));
-    log.write("[launch] starting BFME");
-    Command::new(executable)
-        .current_dir(executable.parent().ok_or("Не найдена папка игры")?)
-        .spawn()
-        .map_err(|error| format!("Не удалось запустить BFME: {error}"))?;
-
-    log.write("[wait] waiting for the game.dat window (up to 120s)");
-    let (window, discovery) = wait_for_game_window(Duration::from_secs(120))?;
-    log.write(format!("[window] found via {discovery}"));
-    unsafe {
-        SetForegroundWindow(window);
-    }
-    wait_for_menu_ready(window, &log, language)?;
-    let viewport = viewport(window)?;
-    unsafe {
-        SetForegroundWindow(window);
-    }
-
-    log.write("[nav] Network -> Local Network -> Create Game");
-    move_mouse(
-        viewport.0 + (0.3019 * viewport.2 as f64) as i32,
-        viewport.1 + (0.9244 * viewport.3 as f64) as i32,
-    )?;
-    thread::sleep(Duration::from_millis(800));
-    click_fraction(viewport, 0.3000, 0.7811)?;
-    thread::sleep(Duration::from_secs(2));
-    click_fraction(viewport, 0.8337, 0.4611)?;
-    thread::sleep(Duration::from_secs(2));
-
-    let participants = config
-        .get("participants")
-        .and_then(Value::as_array)
-        .ok_or("В battle_config отсутствуют участники")?;
-    if participants.len() < 2 || participants.len() > 8 {
-        return Err("BFME поддерживает от 2 до 8 RTS-слотов".into());
-    }
-    let difficulty = config
-        .get("difficulty")
-        .and_then(|value| value.get("bfmeIndex"))
-        .and_then(Value::as_u64)
-        .unwrap_or(1) as usize;
-
-    log.write(format!(
-        "[room] configuring {} RTS slots",
-        participants.len()
-    ));
-    // Проверенный порядок Python PoC: сложность -> фракции -> союзы -> цвета.
-    for slot in 2..=participants.len() {
-        set_difficulty(viewport, slot, difficulty)?;
-    }
-    // Фракция и цвет игрока уже заданы через NetworkPref.ini. В комнате
-    // меняем только ботов, чтобы не создавать лишние клики по первому слоту.
-    for (index, participant) in participants.iter().enumerate().skip(1) {
-        let list_index = participant
-            .get("listIndex")
-            .and_then(Value::as_u64)
-            .ok_or("Нет индекса фракции BFME")? as usize;
-        pick_dropdown(viewport, index + 1, 0.383, list_index)?;
-    }
-    for (index, participant) in participants.iter().enumerate() {
-        let alliance = if participant.get("side").and_then(Value::as_str) == Some("evil") {
-            1
-        } else {
-            0
-        };
-        pick_dropdown(viewport, index + 1, 0.685, alliance)?;
-    }
-
-    let player_color = participants[0]
-        .get("color")
-        .and_then(Value::as_str)
-        .and_then(color_index)
-        .unwrap_or(0);
-    let mut used_colors = vec![player_color];
-    for (index, participant) in participants.iter().enumerate().skip(1) {
-        let Some(color) = participant
-            .get("color")
-            .and_then(Value::as_str)
-            .and_then(color_index)
-        else {
-            continue;
-        };
-        if used_colors.contains(&color) {
-            continue;
-        }
-        let adjusted = color - usize::from(color > player_color);
-        pick_dropdown(viewport, index + 1, 0.744, adjusted)?;
-        used_colors.push(color);
-    }
-
-    if let Some(map) = config.get("map") {
-        if let (Some(position), Some(slot)) = (
-            map.get("defenderStartPosition"),
-            map.get("defenderSlot").and_then(Value::as_u64),
-        ) {
-            let x = position
-                .get("x")
-                .and_then(Value::as_f64)
-                .ok_or("Нет X стартовой позиции крепости")?;
-            let y = position
-                .get("y")
-                .and_then(Value::as_f64)
-                .ok_or("Нет Y стартовой позиции крепости")?;
-            for _ in 0..slot {
-                click_fraction(viewport, x, y)?;
-                thread::sleep(Duration::from_millis(200));
+    if !AUTOMATION_BUSY.swap(true, Ordering::SeqCst) {
+        struct BusyGuard;
+        impl Drop for BusyGuard {
+            fn drop(&mut self) {
+                AUTOMATION_BUSY.store(false, Ordering::SeqCst);
             }
         }
-    }
+        let _busy = BusyGuard;
+        if game_process_is_running() {
+            log.write("[check] игра уже запущена — закрываю перед новым запуском");
+            stop_game();
+        } else {
+            log.write("[check] игра не запущена");
+        }
+        let _input_lock = InputLockGuard::acquire()?;
+        let pref_result = update_network_pref(executable, config)?;
+        log.write(format!(
+            "[prefs] NetworkPref.ini prepared in {} profile folder(s)",
+            pref_result.paths.len()
+        ));
+        let windowed = config
+            .get("launch")
+            .and_then(|value| value.get("windowed"))
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        let resolution = config
+            .get("launch")
+            .and_then(|value| value.get("resolution"))
+            .and_then(Value::as_str);
+        log.write(if windowed { "[launch] starting BFME (windowed)" } else { "[launch] starting BFME" });
+        launch_game(executable, windowed, resolution, log)?;
 
-    log.write("[room] clicking Start Game");
-    click_fraction(viewport, 0.8836, 0.9542)?;
-    thread::sleep(Duration::from_secs(7));
-    log.write("[done] battle launched");
-    Ok(())
+        log.write("[wait] waiting for the game.dat window (up to 120s)");
+        let (window, discovery) = wait_for_game_window(Duration::from_secs(120))?;
+        log.write(format!("[window] found via {discovery}"));
+        unsafe {
+            SetForegroundWindow(window);
+        }
+        wait_for_menu_ready(window, log, language)?;
+        let view = viewport(window)?;
+        unsafe {
+            SetForegroundWindow(window);
+        }
+
+        log.write("[nav] Network -> Local Network -> Create Game");
+        move_mouse(
+            view.0 + (0.3019 * view.2 as f64) as i32,
+            view.1 + (0.9244 * view.3 as f64) as i32,
+        )?;
+        thread::sleep(Duration::from_millis(800));
+        click_fraction(view, 0.3000, 0.7811)?;
+        thread::sleep(Duration::from_secs(2));
+        click_fraction(view, 0.8337, 0.4611)?;
+        thread::sleep(Duration::from_secs(2));
+
+        let participants = config
+            .get("participants")
+            .and_then(Value::as_array)
+            .ok_or("В battle_config отсутствуют участники")?;
+        if participants.is_empty() || participants.len() > 8 {
+            return Err("BFME поддерживает от 1 до 8 RTS-слотов".into());
+        }
+        let test_mode = config
+            .get("testCoordinates")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        let difficulty = config
+            .get("difficulty")
+            .and_then(|value| value.get("bfmeIndex"))
+            .and_then(Value::as_u64)
+            .unwrap_or(1) as usize;
+
+        log.write(format!(
+            "[room] configuring {} RTS slots{}",
+            participants.len(),
+            if test_mode { " (тест координат)" } else { "" }
+        ));
+        // Проверенный порядок Python PoC: сложность -> фракции -> союзы -> цвета.
+        if test_mode {
+            // Тест координат: только сложность «Новобранец», фракции/союзы/цвета не трогаем.
+            for slot in 2..=8 {
+                set_difficulty(view, slot, 0)?;
+            }
+        } else {
+            for slot in 2..=participants.len() {
+                set_difficulty(view, slot, difficulty)?;
+            }
+            // Фракция и цвет игрока уже заданы через NetworkPref.ini. В комнате
+            // меняем только ботов, чтобы не создавать лишние клики по первому слоту.
+            for (index, participant) in participants.iter().enumerate().skip(1) {
+                let list_index = participant
+                    .get("listIndex")
+                    .and_then(Value::as_u64)
+                    .ok_or("Нет индекса фракции BFME")? as usize;
+                pick_dropdown(view, index + 1, 0.383, list_index)?;
+            }
+            for (index, participant) in participants.iter().enumerate() {
+                let alliance = if participant.get("side").and_then(Value::as_str) == Some("evil") {
+                    1
+                } else {
+                    0
+                };
+                pick_dropdown(view, index + 1, 0.685, alliance)?;
+            }
+
+            let player_color = participants[0]
+                .get("color")
+                .and_then(Value::as_str)
+                .and_then(color_index)
+                .unwrap_or(0);
+            let mut used_colors = vec![player_color];
+            for (index, participant) in participants.iter().enumerate().skip(1) {
+                let Some(color) = participant
+                    .get("color")
+                    .and_then(Value::as_str)
+                    .and_then(color_index)
+                else {
+                    continue;
+                };
+                if used_colors.contains(&color) {
+                    continue;
+                }
+                let adjusted = color - usize::from(color > player_color);
+                pick_dropdown(view, index + 1, 0.744, adjusted)?;
+                used_colors.push(color);
+            }
+        }
+
+        // Стартовые позиции на миникарте: защиты/атаки пул + владелец крепости.
+        if let Some(map) = config.get("map") {
+            let positions = parse_start_positions(map);
+            if !positions.is_empty() {
+                let fortress_owner = map.get("fortressOwnerSlot").and_then(Value::as_u64);
+                assign_start_positions(view, &positions, fortress_owner, log)?;
+            } else if !test_mode {
+                log.write("[room] стартовые позиции не заданы — слоты остаются на случайных местах");
+            }
+        }
+
+        if test_mode {
+            log.write("[test] координаты выставлены; расстановка завершена — автоматизация остановлена");
+            return Ok(FlowOutcome::CoordinatesTested);
+        }
+
+        log.write("[room] clicking Start Game");
+        click_fraction(view, 0.8836, 0.9542)?;
+        thread::sleep(START_COUNTDOWN);
+        log.write("[done] battle launched");
+        return Ok(FlowOutcome::BattleLaunched);
+    }
+    Err("Автоматизация BFME уже выполняется".into())
 }
 
 #[cfg(target_os = "windows")]
 pub fn launch_and_configure(executable: &Path, config: &Value) -> Result<(), String> {
-    launch_and_configure_inner(executable, config)
+    let log = AutomationLog::start();
+    launch_and_configure_inner(executable, config, &log).map(|_| ())
 }
 
 #[cfg(not(target_os = "windows"))]
 pub fn launch_and_configure(_executable: &Path, _config: &Value) -> Result<(), String> {
     Err("Автоматизация BFME поддерживается только в Windows".into())
 }
+
+// ---------------------------------------------------------------------------
+// Match result monitoring (ported from match_result_detector)
+// ---------------------------------------------------------------------------
+
+#[cfg(target_os = "windows")]
+fn players_from_config(config: &Value) -> Vec<PlayerInfo> {
+    config
+        .get("participants")
+        .and_then(Value::as_array)
+        .map(|participants| {
+            participants
+                .iter()
+                .filter_map(|participant| {
+                    let slot = participant.get("slot").and_then(Value::as_u64)?;
+                    let color = participant
+                        .get("color")
+                        .and_then(Value::as_str)
+                        .unwrap_or("blue")
+                        .to_string();
+                    let side = match participant.get("side").and_then(Value::as_str) {
+                        Some("evil") => "evil".to_string(),
+                        _ => "good".to_string(),
+                    };
+                    Some(PlayerInfo { slot, color, side })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+#[cfg(target_os = "windows")]
+fn capture_game_frame() -> Option<RgbFrame> {
+    let (window, _) = find_game_window()?;
+    let view = viewport(window).ok()?;
+    capture_viewport(view).ok()
+}
+
+/// Wait for the score screen, analyse the winner, and report the result JSON.
+#[cfg(target_os = "windows")]
+fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
+    let started = Instant::now();
+    let players = players_from_config(config);
+    if players.is_empty() {
+        return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"participants are missing","elapsedSec":0});
+    }
+    let timeout = config
+        .get("monitor")
+        .and_then(|value| value.get("timeoutSec"))
+        .and_then(Value::as_u64)
+        .map(Duration::from_secs)
+        .unwrap_or(MONITOR_DEFAULT_TIMEOUT);
+    let fortress = match_detector::fortress_template();
+    let marker = match_detector::score_marker_template();
+
+    log.write(format!(
+        "[match] жду экран статистики (до {} c)…",
+        timeout.as_secs()
+    ));
+    let deadline = Instant::now() + timeout;
+    loop {
+        if Instant::now() > deadline {
+            return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"score screen timeout","elapsedSec":started.elapsed().as_secs()});
+        }
+        if !game_process_is_running() {
+            return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"игра закрыта до появления экрана статистики","elapsedSec":started.elapsed().as_secs()});
+        }
+        if let Some(frame) = capture_game_frame() {
+            if !frame.is_black() && is_score_screen(&frame, &fortress, &marker) {
+                log.write("[match] экран статистики найден — анализирую победителя");
+                let mut result = analyse_score_screen(&players, log);
+                if let Some(object) = result.as_object_mut() {
+                    object.insert("elapsedSec".into(), json!(started.elapsed().as_secs()));
+                }
+                return result;
+            }
+        }
+        thread::sleep(SCORE_SCREEN_POLL);
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
+    let _input_lock = InputLockGuard::acquire();
+    let fortress = match_detector::fortress_template();
+    let marker = match_detector::score_marker_template();
+    let view = find_game_window().and_then(|(window, _)| viewport(window).ok());
+    if let Some(view) = view {
+        // «Пропустить» ускоряет появление вкладок, затем открываем вкладку «Счёт».
+        let _ = click_fraction(view, SKIP_BUTTON_FRAC.0, SKIP_BUTTON_FRAC.1);
+        thread::sleep(TAB_SETTLE);
+        let tab_x = (SCORE_TAB_ROI.0 + SCORE_TAB_ROI.2) / 2.0;
+        let tab_y = (SCORE_TAB_ROI.1 + SCORE_TAB_ROI.3) / 2.0;
+        let _ = click_fraction(view, tab_x, tab_y);
+        thread::sleep(TAB_SETTLE);
+        let _ = click_fraction(view, tab_x, tab_y);
+        thread::sleep(TAB_SETTLE);
+    }
+    // Ждём стабильный кадр графика (не чёрный, подтверждён маркерами статистики).
+    let mut frame: Option<RgbFrame> = None;
+    let deadline = Instant::now() + ANALYSIS_TIMEOUT;
+    while Instant::now() < deadline {
+        if let Some(candidate) = capture_game_frame() {
+            if !candidate.is_black() && is_score_screen(&candidate, &fortress, &marker) {
+                frame = Some(candidate);
+                break;
+            }
+        }
+        thread::sleep(RETRY_DELAY);
+    }
+    let Some(frame) = frame else {
+        return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no valid chart frame"});
+    };
+    let icons = detect_icons(&frame);
+    if icons.is_empty() {
+        return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"victory/defeat icons not found"});
+    }
+    log.write(format!("[match] найдено иконок: {}", icons.len()));
+
+    let max_x_gap = 80.0f64;
+    let max_y_gap = 60.0f64;
+    let mut slots: Vec<u64> = players.iter().map(|player| player.slot).collect();
+    slots.sort_unstable();
+    slots.dedup();
+
+    let mut surrendered_slot: Option<u64> = None;
+    for slot in slots {
+        let Some(player) = players.iter().find(|item| item.slot == slot) else { continue };
+        if slot > 1 {
+            if let Some(view) = view {
+                if slot >= 2 && (slot as usize) <= RATING_SLOT_FRAC.len() + 1 {
+                    let (fx, fy) = RATING_SLOT_FRAC[(slot - 2) as usize];
+                    if click_fraction(view, fx, fy).is_err() {
+                        log.write(format!("[match] не удалось кликнуть слот {slot} рейтинга"));
+                    }
+                    thread::sleep(SLOT_SETTLE);
+                }
+            }
+        }
+        let current = capture_game_frame().unwrap_or_else(|| frame.clone());
+        let Some((x_end, y_end)) = line_endpoint(&current, &player.color, &icons, true) else {
+            log.write(format!("[match] слот {slot} ({}): яркая линия не найдена — сдача", player.color));
+            surrendered_slot = Some(slot);
+            break;
+        };
+        let mut candidates: Vec<&match_detector::DetectedIcon> = icons
+            .iter()
+            .filter(|icon| {
+                (icon.x - x_end).abs() <= max_x_gap && (icon.y - y_end).abs() <= max_y_gap
+            })
+            .collect();
+        candidates.sort_by(|left, right| {
+            let dl = (left.x - x_end).hypot(left.y - y_end);
+            let dr = (right.x - x_end).hypot(right.y - y_end);
+            dl.partial_cmp(&dr).unwrap_or(std::cmp::Ordering::Equal)
+        });
+        match candidates.first() {
+            Some(icon) if icon.kind == "victory" => {
+                log.write(format!("[match] слот {slot} ({}): линия дошла до монеты победы", player.color));
+                return json!({
+                    "status":"COMPLETED",
+                    "winningTeam":player.side,
+                    "winningSlot":slot,
+                    "detail":format!("slot {} ({}) reached the victory coin", slot, player.color)
+                });
+            }
+            Some(_) => {
+                log.write(format!("[match] слот {slot} ({}): иконка поражения — проверяю следующий слот", player.color));
+            }
+            None => {
+                surrendered_slot = Some(slot);
+                break;
+            }
+        }
+    }
+    if let Some(slot) = surrendered_slot {
+        if let Some(player) = players.iter().find(|item| item.slot == slot) {
+            let winner = players.iter().find(|item| item.side != player.side);
+            return json!({
+                "status":"SURRENDER",
+                "winningTeam":winner.map(|item| item.side.clone()),
+                "winningSlot":null,
+                "detail":format!("slot {} ({}) surrendered or left the match", slot, player.color)
+            });
+        }
+    }
+    json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no conclusive victory icon"})
+}
+
+/// Monitor the battle after launch, persist the result, then close the game.
+#[cfg(target_os = "windows")]
+pub fn monitor_and_finish(config: &Value, result_path: &Path, log: &AutomationLog) {
+    let result = monitor_battle(config, log);
+    log.write(format!(
+        "[match] результат: status={} winningTeam={}",
+        result.get("status").and_then(Value::as_str).unwrap_or("?"),
+        result
+            .get("winningTeam")
+            .and_then(Value::as_str)
+            .unwrap_or("?")
+    ));
+    if let Some(parent) = result_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let mut payload = result;
+    if let Some(object) = payload.as_object_mut() {
+        object.insert("finishedAt".into(), json!(crate::unix_timestamp()));
+    }
+    if let Ok(text) = serde_json::to_string_pretty(&payload) {
+        let _ = std::fs::write(result_path, text);
+    }
+    log.write("[match] закрываю BFME после определения победителя");
+    stop_game();
+}
+
+#[cfg(target_os = "windows")]
+fn monitor_requested(config: &Value) -> bool {
+    config
+        .get("monitor")
+        .and_then(|value| value.get("enabled"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+#[cfg(target_os = "windows")]
+fn battle_result_path_from(config: &Value, fallback: &Path) -> PathBuf {
+    config
+        .get("_battleResultPath")
+        .and_then(Value::as_str)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| fallback.to_path_buf())
+}
+
+// ---------------------------------------------------------------------------
+// Deployment planning + execution
+// ---------------------------------------------------------------------------
 
 fn deployment_error(language: &str, action: &str, path: &Path, error: &std::io::Error) -> String {
     if language == "en" {
@@ -1399,7 +2009,7 @@ fn deployment_error(language: &str, action: &str, path: &Path, error: &std::io::
             "replacing" => "замена",
             "installing" => "установка",
             "verifying" => "проверка",
-            "removing obsolete WOTR files"=>"удаление устаревших файлов WOTR",
+            "removing obsolete WOTR files" => "удаление устаревших файлов WOTR",
             _ => action,
         };
         format!(
@@ -1413,8 +2023,16 @@ fn deploy_job_files(deployment: &Value, language: &str) -> Result<Vec<Value>, St
     let Some(entries) = deployment.as_array() else { return Ok(Vec::new()); };
     // Remove obsolete bundled WOTR archives from the external game folder.
     // A filename explicitly supplied by the active mod is never removed.
-    let destinations:Vec<PathBuf>=entries.iter().filter_map(|entry|entry.get("destinationPath").and_then(Value::as_str).map(PathBuf::from)).collect();
-    if let Some(game_dir)=destinations.first().and_then(|path|path.parent()){for legacy in ["__wotr_ini.big","__wotr_maps.big","__wotr_maps_cache.big"]{let path=game_dir.join(legacy);let supplied=destinations.iter().any(|destination|destination.file_name().and_then(|name|name.to_str()).is_some_and(|name|name.eq_ignore_ascii_case(legacy)));if path.exists()&&!supplied{std::fs::remove_file(&path).map_err(|error|deployment_error(language,"removing obsolete WOTR files",&path,&error))?;}}}
+    let destinations: Vec<PathBuf> = entries.iter().filter_map(|entry| entry.get("destinationPath").and_then(Value::as_str).map(PathBuf::from)).collect();
+    if let Some(game_dir) = destinations.first().and_then(|path| path.parent()) {
+        for legacy in ["__wotr_ini.big", "__wotr_maps.big", "__wotr_maps_cache.big", "wotr_generated_presets.big", "__wotr_generated_presets.big"] {
+            let path = game_dir.join(legacy);
+            let supplied = destinations.iter().any(|destination| destination.file_name().and_then(|name| name.to_str()).is_some_and(|name| name.eq_ignore_ascii_case(legacy)));
+            if path.exists() && !supplied {
+                std::fs::remove_file(&path).map_err(|error| deployment_error(language, "removing obsolete WOTR files", &path, &error))?;
+            }
+        }
+    }
     let mut deployed = Vec::new();
     for entry in entries {
         let source = entry
@@ -1510,6 +2128,10 @@ fn deploy_job_files(deployment: &Value, language: &str) -> Result<Vec<Value>, St
     Ok(deployed)
 }
 
+// ---------------------------------------------------------------------------
+// Elevation
+// ---------------------------------------------------------------------------
+
 #[cfg(target_os = "windows")]
 fn is_elevated() -> bool {
     unsafe { IsUserAnAdmin() != 0 }
@@ -1561,33 +2183,48 @@ fn run_elevated_helper(job_path: &Path, result_path: &Path) -> Result<Vec<Value>
     if info.process.is_null() {
         return Err("Windows не вернул процесс elevated-автоматизации".into());
     }
-    let wait = unsafe { WaitForSingleObject(info.process, INFINITE) };
+    // The helper keeps running through the battle monitor phase, so the result
+    // file is polled instead of waiting for process exit. The handle is only
+    // used to detect an early crash.
+    let process = info.process;
+    let deployed = (|| -> Result<Vec<Value>, String> {
+        let deadline = Instant::now() + HELPER_RESULT_TIMEOUT;
+        while Instant::now() < deadline {
+            if result_path.exists() {
+                let result_text = std::fs::read_to_string(result_path)
+                    .map_err(|error| format!("Elevated-автоматизация не вернула результат: {error}"))?;
+                let result: Value = serde_json::from_str(&result_text)
+                    .map_err(|error| format!("Повреждён ответ elevated-автоматизации: {error}"))?;
+                if result.get("ok").and_then(Value::as_bool) == Some(true) {
+                    return Ok(result
+                        .get("deployed")
+                        .and_then(Value::as_array)
+                        .cloned()
+                        .unwrap_or_default());
+                }
+                return Err(result
+                    .get("error")
+                    .and_then(Value::as_str)
+                    .unwrap_or("Автоматизация BFME завершилась с неизвестной ошибкой")
+                    .to_string());
+            }
+            let mut exit_code = 0u32;
+            unsafe {
+                if GetExitCodeProcess(process, &mut exit_code) != 0 && exit_code != STILL_ACTIVE {
+                    return Err(
+                        "Elevated-автоматизация завершилась до отчёта (сбой или закрытие UAC-процесса)."
+                            .into(),
+                    );
+                }
+            }
+            thread::sleep(Duration::from_millis(250));
+        }
+        Err("Elevated-автоматизация не отчиталась за отведённое время".into())
+    })();
     unsafe {
-        CloseHandle(info.process);
+        CloseHandle(process);
     }
-    if wait == WAIT_FAILED {
-        return Err(format!(
-            "Ошибка ожидания elevated-автоматизации: Windows error {}",
-            last_error()
-        ));
-    }
-    let result_text = std::fs::read_to_string(result_path)
-        .map_err(|error| format!("Elevated-автоматизация не вернула результат: {error}"))?;
-    let result: Value = serde_json::from_str(&result_text)
-        .map_err(|error| format!("Повреждён ответ elevated-автоматизации: {error}"))?;
-    if result.get("ok").and_then(Value::as_bool) == Some(true) {
-        Ok(result
-            .get("deployed")
-            .and_then(Value::as_array)
-            .cloned()
-            .unwrap_or_default())
-    } else {
-        Err(result
-            .get("error")
-            .and_then(Value::as_str)
-            .unwrap_or("Автоматизация BFME завершилась с неизвестной ошибкой")
-            .to_string())
-    }
+    deployed
 }
 
 #[cfg(target_os = "windows")]
@@ -1602,17 +2239,34 @@ pub fn deploy_and_launch_with_elevation(
         .and_then(Value::as_str)
         .unwrap_or("ru");
     if is_elevated() {
+        let log = AutomationLog::start();
         let deployed = deploy_job_files(deployment, language)?;
-        launch_and_configure_inner(executable, config)?;
+        let outcome = launch_and_configure_inner(executable, config, &log)?;
+        if matches!(outcome, FlowOutcome::BattleLaunched) && monitor_requested(config) {
+            // Продолжаем мониторинг в фоне, чтобы не блокировать интерфейс.
+            let monitor_config = config.clone();
+            let result_path =
+                battle_result_path_from(config, &temp_directory.join("rts_battle_result_last.json"));
+            thread::Builder::new()
+                .name("bfme-match-monitor".into())
+                .spawn(move || {
+                    let log = AutomationLog::start();
+                    monitor_and_finish(&monitor_config, &result_path, &log);
+                })
+                .map_err(|error| format!("Не удалось запустить монитор боя: {error}"))?;
+        }
         return Ok(deployed);
     }
     std::fs::create_dir_all(temp_directory).map_err(|error| error.to_string())?;
     let job_path = temp_directory.join("rts_automation_job.json");
     let result_path = temp_directory.join("rts_automation_result.json");
     let _ = std::fs::remove_file(&result_path);
+    // The helper keeps this field so its monitor phase writes the outcome
+    // exactly where the UI polls it.
+    let job_config = config.clone();
     let job = json!({
         "executablePath": executable.to_string_lossy(),
-        "battleConfig": config,
+        "battleConfig": job_config,
         "deployment": deployment,
     });
     std::fs::write(
@@ -1640,31 +2294,24 @@ pub fn launch_with_elevation(
 
 #[cfg(not(target_os = "windows"))]
 pub fn deploy_and_launch_with_elevation(
-    executable: &Path,
-    config: &Value,
+    _executable: &Path,
+    _config: &Value,
     _temp_directory: &Path,
-    deployment: &Value,
+    _deployment: &Value,
 ) -> Result<Vec<Value>, String> {
-    let deployed = deploy_job_files(
-        deployment,
-        config
-            .get("language")
-            .and_then(Value::as_str)
-            .unwrap_or("en"),
-    )?;
-    launch_and_configure(executable, config)?;
-    Ok(deployed)
+    Err("Автоматизация BFME поддерживается только в Windows".into())
 }
 
 #[cfg(not(target_os = "windows"))]
 pub fn launch_with_elevation(
-    executable: &Path,
-    config: &Value,
-    temp_directory: &Path,
+    _executable: &Path,
+    _config: &Value,
+    _temp_directory: &Path,
 ) -> Result<(), String> {
-    deploy_and_launch_with_elevation(executable, config, temp_directory, &json!([])).map(|_| ())
+    Err("Автоматизация BFME поддерживается только в Windows".into())
 }
 
+#[cfg(target_os = "windows")]
 fn helper_arguments() -> Option<(PathBuf, PathBuf)> {
     let arguments: Vec<OsString> = std::env::args_os().collect();
     if arguments.get(1).and_then(|value| value.to_str()) != Some("--wotr-rts-helper") {
@@ -1675,11 +2322,12 @@ fn helper_arguments() -> Option<(PathBuf, PathBuf)> {
     Some((job_path, result_path))
 }
 
+#[cfg(target_os = "windows")]
 pub fn run_helper_if_requested() -> bool {
     let Some((job_path, result_path)) = helper_arguments() else {
         return false;
     };
-    let result = (|| -> Result<Vec<Value>, String> {
+    let result = (|| -> Result<(Vec<Value>, Option<Value>), String> {
         let job_text = std::fs::read_to_string(&job_path).map_err(|error| {
             format!(
                 "Failed to read automation job {}: {error}",
@@ -1695,18 +2343,25 @@ pub fn run_helper_if_requested() -> bool {
             .ok_or("BFME path is missing from the automation job")?;
         let config = job
             .get("battleConfig")
-            .ok_or("battleConfig is missing from the automation job")?;
+            .ok_or("battleConfig is missing from the automation job")?
+            .clone();
         let language = config
             .get("language")
             .and_then(Value::as_str)
             .unwrap_or("ru");
         let deployed = deploy_job_files(job.get("deployment").unwrap_or(&Value::Null), language)?;
-        launch_and_configure(&executable, config)?;
-        Ok(deployed)
+        let log = AutomationLog::start();
+        let outcome = launch_and_configure_inner(&executable, &config, &log)?;
+        if matches!(outcome, FlowOutcome::BattleLaunched) && monitor_requested(&config) {
+            // Мониторинг боя продолжается ПОСЛЕ записи результата навигации:
+            // главный процесс уже разблокирован и ждёт файл исхода боя.
+            return Ok((deployed, Some(config)));
+        }
+        Ok((deployed, None))
     })();
-    let response = match result {
-        Ok(deployed) => json!({ "ok": true, "deployed": deployed }),
-        Err(error) => json!({ "ok": false, "error": error }),
+    let (response, monitor_config) = match result {
+        Ok((deployed, monitor_config)) => (json!({ "ok": true, "deployed": deployed }), monitor_config),
+        Err(error) => (json!({ "ok": false, "error": error }), None),
     };
     if let Some(parent) = result_path.parent() {
         let _ = std::fs::create_dir_all(parent);
@@ -1716,5 +2371,220 @@ pub fn run_helper_if_requested() -> bool {
         serde_json::to_vec_pretty(&response)
             .unwrap_or_else(|_| b"{\"ok\":false,\"error\":\"serialization failed\"}".to_vec()),
     );
+    if let Some(config) = monitor_config {
+        let fallback = result_path
+            .parent()
+            .map(|parent| parent.join("rts_battle_result_last.json"))
+            .unwrap_or_else(|| PathBuf::from("rts_battle_result_last.json"));
+        let path = battle_result_path_from(&config, &fallback);
+        let log = AutomationLog::start();
+        monitor_and_finish(&config, &path, &log);
+    }
     true
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn run_helper_if_requested() -> bool {
+    false
+}
+
+// ---------------------------------------------------------------------------
+// Coordinate calibration wizard (editor tool)
+// ---------------------------------------------------------------------------
+
+fn calibration_step_label(index: usize, is_fortress: bool) -> Value {
+    if index >= 4 {
+        json!({"index": index, "role": "attack", "main": false})
+    } else {
+        json!({"index": index, "role": "defense", "main": is_fortress && index == 0})
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn set_calibration_topmost(app: &AppHandle, topmost: bool) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_always_on_top(topmost);
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn emit_calibration(app: &AppHandle, payload: Value) {
+    let _ = app.emit(CALIBRATION_EVENT, payload);
+}
+
+/// Run the interactive 8-point calibration session (like tools/calibrate.py):
+/// launch the game in a small window (or attach), then follow F9/F10 hotkeys.
+#[cfg(target_os = "windows")]
+pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Value) {
+    let log = AutomationLog::start();
+    let is_fortress = options
+        .get("isFortress")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let attach = options
+        .get("attach")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let resolution = options
+        .get("resolution")
+        .and_then(Value::as_str)
+        .unwrap_or(CALIBRATION_RESOLUTION);
+    set_calibration_topmost(&app, true);
+    let finish = |payload: Value| {
+        set_calibration_topmost(&app, false);
+        CALIBRATION_ACTIVE.store(false, Ordering::SeqCst);
+        emit_calibration(&app, payload);
+    };
+    let receiver = match ensure_calibration_hook() {
+        Ok(receiver) => receiver,
+        Err(error) => {
+            finish(json!({"type":"error","message":error}));
+            return;
+        }
+    };
+    CALIBRATION_ACTIVE.store(true, Ordering::SeqCst);
+    if !attach && !game_process_is_running() && CALIBRATION_ACTIVE.load(Ordering::Relaxed) {
+        log.write("[cal] запускаю игру в оконном режиме для калибровки");
+        if let Err(error) = launch_game(executable, true, Some(resolution), &log) {
+            finish(json!({"type":"error","message":error}));
+            return;
+        }
+    }
+    let mut window = None;
+    let window_deadline = Instant::now() + Duration::from_secs(120);
+    while window.is_none() {
+        if !CALIBRATION_ACTIVE.load(Ordering::Relaxed) {
+            log.write("[cal] остановлено из редактора до появления окна");
+            finish(json!({"type":"stopped","points":[]}));
+            return;
+        }
+        window = find_game_window().map(|(handle, _)| handle);
+        if window.is_none() {
+            thread::sleep(Duration::from_millis(250));
+            if Instant::now() > window_deadline {
+                finish(json!({"type":"error","message":"Окно игры не появилось за 120 секунд".into()}));
+                return;
+            }
+        }
+    }
+    let Some(window) = window else { unreachable!() };
+    let mut steps = Vec::new();
+    for index in 0..8 {
+        steps.push(calibration_step_label(index, is_fortress));
+    }
+    emit_calibration(
+        &app,
+        json!({"type":"started","isFortress":is_fortress,"steps":steps,"resolution":resolution}),
+    );
+    log.write(if is_fortress {
+        "[cal] шаг 1/8: ГЛАВНАЯ позиция защиты (владелец крепости) — наведите курсор и нажмите F9"
+    } else {
+        "[cal] шаг 1/8: 1-я позиция ЗАЩИТЫ — наведите курсор и нажмите F9"
+    });
+
+    let mut captured: Vec<(f64, f64)> = Vec::new();
+    let mut last_key = Instant::now() - Duration::from_secs(10);
+    loop {
+        match receiver.recv_timeout(Duration::from_millis(200)) {
+            Ok(VK_QUIT) => {
+                log.write("[cal] остановлено пользователем (F10)");
+                finish(json!({"type":"stopped","points":captured}));
+                return;
+            }
+            Ok(VK_CAPTURE) => {
+                if last_key.elapsed() < Duration::from_millis(400) {
+                    continue; // защита от автоповтора клавиши
+                }
+                last_key = Instant::now();
+                let view = match viewport(window) {
+                    Ok(view) => view,
+                    Err(error) => {
+                        emit_calibration(&app, json!({"type":"error","message":format!("Окно игры недоступно: {error}")}));
+                        continue;
+                    }
+                };
+                let Some((cursor_x, cursor_y)) = cursor_position() else {
+                    continue;
+                };
+                let fx = f64::from(cursor_x - view.0) / f64::from(view.2);
+                let fy = f64::from(cursor_y - view.1) / f64::from(view.3);
+                if !(0.0..=1.0).contains(&fx) || !(0.0..=1.0).contains(&fy) {
+                    emit_calibration(
+                        &app,
+                        json!({"type":"error","message":"Курсор вне окна игры — наведите точку на миникарте комнаты BFME."}),
+                    );
+                    continue;
+                }
+                let index = captured.len();
+                captured.push(((fx * 10000.0).round() / 10000.0, (fy * 10000.0).round() / 10000.0));
+                let (x, y) = captured[index];
+                log.write(format!("[cal] точка {} из 8: frac=({x:.4}, {y:.4})", index + 1));
+                if captured.len() >= 8 {
+                    let defense: Vec<Value> = captured[0..4].iter().map(|(x, y)| json!({"x":x,"y":y})).collect();
+                    let attack: Vec<Value> = captured[4..8].iter().map(|(x, y)| json!({"x":x,"y":y})).collect();
+                    log.write("[cal] все 8 точек сняты — калибровка завершена");
+                    finish(json!({"type":"finished","defense":defense,"attack":attack}));
+                    return;
+                }
+                let next = calibration_step_label(index + 1, is_fortress);
+                emit_calibration(
+                    &app,
+                    json!({"type":"point","index":index,"x":x,"y":y,"role":if index < 4 {"defense"} else {"attack"},"main":is_fortress && index == 0,"next":next}),
+                );
+            }
+            Ok(_) => {}
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                if !CALIBRATION_ACTIVE.load(Ordering::Relaxed) {
+                    log.write("[cal] остановлено из редактора");
+                    finish(json!({"type":"stopped","points":captured}));
+                    return;
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                finish(json!({"type":"error","message":"Канал горячих клавиш закрыт"}));
+                return;
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+pub fn request_calibration_stop() {
+    CALIBRATION_ACTIVE.store(false, Ordering::SeqCst);
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn run_calibration_session(_app: tauri::AppHandle, _executable: &Path, _options: &Value) {}
+
+#[cfg(target_os = "windows")]
+pub fn game_is_running() -> bool {
+    game_process_is_running()
+}
+
+#[cfg(target_os = "windows")]
+pub fn spawn_calibration(app: AppHandle, executable: PathBuf, options: Value) -> Result<Value, String> {
+    if !executable.is_file() {
+        return Err(format!(
+            "Исполняемый файл BFME не найден: {}",
+            executable.display()
+        ));
+    }
+    thread::Builder::new()
+        .name("bfme-calibration".into())
+        .spawn(move || run_calibration_session(app, &executable, &options))
+        .map_err(|error| format!("Не удалось запустить калибровку: {error}"))?;
+    Ok(json!({"ok": true}))
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn spawn_calibration(_app: tauri::AppHandle, _executable: PathBuf, _options: Value) -> Result<Value, String> {
+    Err("Калибровка координат поддерживается только в Windows".into())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn request_calibration_stop() {}
+
+#[cfg(not(target_os = "windows"))]
+pub fn game_is_running() -> bool {
+    false
 }

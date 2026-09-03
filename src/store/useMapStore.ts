@@ -129,6 +129,7 @@ interface MapState extends WorldSnapshot {
   setReinforcementParticipation: (conflictId: string, armyId: string, participate: boolean) => void
   resolveConflict: (conflictId: string) => void
   retreatConflictDefender: (conflictId: string) => void
+  resolveConflictRts: (conflictId: string, winnerSide: 'good' | 'evil', detail?: string) => void
   summonHero: (locationId: string, heroId: string) => void
   queueRecruitment: (locationId: string, unitId: string) => void
   transformReserveUnit: (locationId: string, slotId: string, targetUnitId: string) => void
@@ -1641,6 +1642,34 @@ export const useMapStore = create<MapState>((set) => ({
     campaign.currentConflictId = pending?.id ?? null
     const location = conflict.locationId ? state.locations.find((candidate) => candidate.id === conflict.locationId) : null
     campaign.log.unshift(campaignEvent(campaign, `Защитники ${location ? `локации «${location.name}»` : 'поля боя'} отступают без сражения.`, 'retreat', campaign.playerFactionId))
+    if (!pending) {
+      const aftermath = processAftermath(state, campaign, state.armies, state.locations, state.regions, state.heroes, state.battles)
+      refreshFogIntel(campaign, aftermath.armies, aftermath.locations, state.factions, state.grid, aftermath.regions)
+      return gameCommit(state, { campaign, ...aftermath })
+    }
+    refreshFogIntel(campaign, state.armies, state.locations, state.factions, state.grid, state.regions)
+    return gameCommit(state, { campaign })
+  }),
+
+  resolveConflictRts: (conflictId, winnerSide, detail) => set((state) => {
+    const campaign = cloneCampaign(state.campaign)
+    const conflict = campaign.conflicts.find((candidate) => candidate.id === conflictId)
+    if (state.campaign.phase !== 'conflicts' || !conflict || conflict.status !== 'pending' || (winnerSide !== 'good' && winnerSide !== 'evil')) return state
+    conflict.status = 'resolved'
+    conflict.resolution = 'rts_battle'
+    conflict.winnerSide = winnerSide
+    const attackerFactions = new Set([...conflict.attackerArmyIds, ...conflict.attackerReinforcementArmyIds].map((id) => state.armies.find((army) => army.id === id)?.factionId).filter(Boolean) as string[])
+    const defenderFactions = new Set([...conflict.defenderArmyIds, ...conflict.defenderReinforcementArmyIds].map((id) => state.armies.find((army) => army.id === id)?.factionId).filter(Boolean) as string[])
+    if (conflict.garrisonLocationId) {
+      const owner = state.locations.find((location) => location.id === conflict.garrisonLocationId)?.side
+      if (owner) defenderFactions.add(owner)
+    }
+    for (const factionId of winnerSide === conflict.attackerSide ? attackerFactions : defenderFactions) factionCampaignState(campaign, factionId).statistics.battlesWon += 1
+    for (const factionId of winnerSide === conflict.attackerSide ? defenderFactions : attackerFactions) factionCampaignState(campaign, factionId).statistics.battlesLost += 1
+    const location = conflict.locationId ? state.locations.find((candidate) => candidate.id === conflict.locationId) : null
+    campaign.log.unshift(campaignEvent(campaign, `Исход BFME-сражения${location ? ` у «${location.name}»` : ''}: победа стороны «${winnerSide === 'good' ? 'Свет' : 'Тьма'}».${detail ? ` ${detail}` : ''}`, 'battle', null))
+    const pending = campaign.conflicts.find((candidate) => candidate.status === 'pending')
+    campaign.currentConflictId = pending?.id ?? null
     if (!pending) {
       const aftermath = processAftermath(state, campaign, state.armies, state.locations, state.regions, state.heroes, state.battles)
       refreshFogIntel(campaign, aftermath.armies, aftermath.locations, state.factions, state.grid, aftermath.regions)

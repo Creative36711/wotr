@@ -2,7 +2,7 @@ use serde_json::{json, Value};
 use std::{f64::consts::PI, path::Path};
 
 const OBJECT_NAME: &str = "WOTRTemporaryVictoryAnchor";
-const INTERNAL_PATH: &str = r"data\ini\object\system\systemwotr_spawn.ini";
+const INTERNAL_PATH: &str = r"data\ini\object\zzz_wotr\system\zzz_spawn.ini";
 const HERO_RADIUS: f64 = 95.0;
 const HERO_SPACING: f64 = 20.0;
 const RING1_RADIUS: f64 = 140.0;
@@ -201,6 +201,6 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
     std::fs::write(path, &big)
         .map_err(|error| format!("Failed to write generated RTS spawn file: {error}"))?;
     Ok(
-        json!({"size":big.len(),"iniBytes":ini.len(),"objects":tag,"targetFileName":"wotr_generated_presets.big"}),
+        json!({"size":big.len(),"iniBytes":ini.len(),"objects":tag,"targetFileName":"__wotr_generated_presets.big"}),
     )
 }

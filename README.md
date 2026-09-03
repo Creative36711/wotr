@@ -13,11 +13,13 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.45.27
-world.json: 42
+Application: 0.46.0
+world.json: 43
 roster.json: 16
-savegame.json: 59
+savegame.json: 60
 ```
+
+0.46.0 integrates the real RTS battle flow end to end: 51 imported BFME MapCaches with calibrated minimap coordinates, randomized start positions (the fortress owner always takes the main defense point of a stronghold), a coordinate-calibration tool and a coordinate-test tool in the editor, automatic score-screen winner detection, and automatic BFME shutdown after the winner is determined. The default «Vanilla 2.01» mod now ships its `_patch201ini.big` and `__wotr_maps.big` archives plus every default MapCache embedded in the executable and restores them into `portable_data` on the first launch, so BIG files no longer need to be installed manually.
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
@@ -358,7 +360,7 @@ lotrbfme2ep1.exe
 
 ### Required mod assets
 
-No RTS files are preinstalled. A mod author provides:
+The default mod is preinstalled: its two BIG archives and all default MapCaches are embedded into the executable with `include_bytes!` and extracted to `portable_data/mods/default/rts/` on the first launch (and restored automatically whenever they are missing). A custom mod author provides:
 
 - zero or more module BIG files;
 - one shared BIG containing all supported maps;
@@ -373,7 +375,7 @@ Windows protects installations under `Program Files`. Before an RTS battle, WOTR
 1. validates source assets;
 2. copies/replaces BIG files in the game directory;
 3. installs the selected active MapCache;
-4. generates and installs `wotr_generated_presets.big`;
+4. generates and installs `__wotr_generated_presets.big`;
 5. writes `NetworkPref.ini` in the real user profile;
 6. launches ROTWK;
 7. configures the room and starts the match.
@@ -424,12 +426,36 @@ If the marker does not appear, automation stops instead of clicking an unready s
 
 During automation, low-level Windows keyboard and mouse hooks block physical input while allowing WOTR-generated `SendInput` events identified by a private marker. `Ctrl+Alt+Del` remains available as an emergency escape.
 
+### Start positions
+
+Each map object can store eight calibrated minimap points: the first four belong to defenders, the second four to attackers. Positions are always assigned randomly (there is no sequential/random prompt from the Python prototype). The only exception is a stronghold: its owner always takes the first (main) defense point, which is selected in the room by clicking the point once per slot number; every other slot then takes a single click per point.
+
+### Winner detection and auto-close
+
+After a battle starts, a background monitor polls the game window (0.5 s interval, 90-minute default timeout). When the score screen appears (detected by the fortress legend icon and the score header marker), automation:
+
+1. presses «Пропустить» and opens the «Счёт» tab;
+2. selects each rating row for slots 2–8;
+3. traces the highlighted player line to the victory coin or defeat flame;
+4. writes the outcome JSON (`COMPLETED`/`SURRENDER`/`UNKNOWN`) to `portable_data/temp/rts_battle_result_<conflict>.json`;
+5. closes every `game.dat` process.
+
+The UI polls that file and applies the winner to the campaign conflict automatically.
+
+### Coordinate calibration (editor)
+
+The location inspector includes «Калибровать координаты»: the game launches windowed at 1280×720, the WOTR window stays on top, and eight points are captured with F9 (F10 exits). The first four points are defense (the first one is the «main» defense position for strongholds), the next four are attack. The captured fractions are stored in `rtsPositions` on the location.
+
+### Coordinate test (editor)
+
+«Тест координат» requires an uploaded MapCache for the location. The game launches windowed at 1280×720, the bridge navigates to Local Network, creates a game with 8 players on «Новобранец» difficulty, assigns the calibrated points, and stops right after the placement — the game stays open for inspection.
+
 ### Generated RTS deployment
 
-`wotr_generated_presets.big` is built per battle and contains:
+`__wotr_generated_presets.big` is built per battle and contains:
 
 ```text
-data\ini\object\system\systemwotr_spawn.ini
+data\ini\object\zzz_wotr\system\zzz_spawn.ini
 ```
 
 Strategic units are arranged in concentric rings. Heroes are arranged near the configured gate direction. Unit levels and aura upgrades are supported by the generated format; current strategic slots use level 1 until persistent level/upgrade data is added to the campaign model.
@@ -453,9 +479,10 @@ Technical IDs remain automatic and stable. BFME Object IDs remain editable only 
 
 ## Current limitations
 
-- RTS results are not yet imported back into the global campaign.
+- RTS winner detection resolves the winning side and closes BFME automatically, but detailed per-unit RTS losses are not imported: the aftermath applies the standard retreat/garrison rules for the losing side.
 - Strategic unit levels and upgrades are not yet persistent; generated RTS units currently use level 1.
-- Only map objects with user-supplied current MapCache and shared maps BIG can launch RTS battles.
+- Only map objects with a MapCache and the shared maps BIG can launch RTS battles (the default mod ships both).
 - The strategic AI difficulty setting is stored but strategic behavior is currently shared between difficulty levels.
+- 18 of the 69 imported map caches have no unique matching location yet and are skipped: multiplayer duplicates and tournament variants (fall back 4p, the heubris, tournament mp1) plus region-wide caches without an unambiguous location (arnor, buckland, celduin, gondor, harad, ithilien, lostriand, mirkwood, mordor, rhun, rohan); «map wor belfalas» has a cache but is not yet calibrated (use the calibration tool).
 
 0.45.27 keeps long location names readable in the hover tooltip by expanding its available width, wrapping names safely, and repositioning it away from the map edge. Existing English and Russian names were preserved. This interface revision is intentionally incompatible with previous campaign saves.

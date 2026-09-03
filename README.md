@@ -13,11 +13,25 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.45.27
-world.json: 42
+Application: 0.46.8
+world.json: 43
 roster.json: 16
-savegame.json: 59
+savegame.json: 60
 ```
+
+0.46.0 integrates the real RTS battle flow end to end: 51 imported BFME MapCaches with calibrated minimap coordinates, randomized start positions (the fortress owner always takes the main defense point of a stronghold), a coordinate-calibration tool and a coordinate-test tool in the editor, automatic score-screen winner detection, and automatic BFME shutdown after the winner is determined. The default «Vanilla 2.01» mod now ships its `_patch201ini.big` and `__wotr_maps.big` archives plus every default MapCache embedded in the executable and restores them into `portable_data` on the first launch, so BIG files no longer need to be installed manually.
+
+0.46.1 fixes the first 0.46.0 build: the generated `templates.rs` now joins its hex chunks with `concat!` (Rust has no implicit adjacent string-literal concatenation), the calibration hotkey channel is kept in a static `Mutex` (`mpsc::Receiver` is `!Sync`), and borrow-checker conflicts in the battle-launch command are resolved.
+
+0.46.2 fixes the start-position pools and the RTS aftermath. The coordinate test now maps slots strictly by range (slots 1-4 take defense points, slots 5-8 take attack points) instead of by faction alignment, and the stronghold main point is excluded from the shuffled pool so it can never be assigned twice (the 8th click used to repeat the first position). A real RTS battle now resolves exactly like an auto-battle with a known winner: `resolveConflictRts` runs the standard conflict simulation (losses, hero fates, retreats, capture) with only `winnerSide` forced from the BFME detector.
+
+0.46.3 hardens the launch flow. The Options.ini resolution is restored at a deeper milestone (after the LAN room is created, or when the main menu is detected during calibration) instead of a fixed 5-second timer that raced the cold start. Cold-start input warmup from the Python prototype is ported: the game window is activated (ShowWindow/SetForegroundWindow/BringWindowToTop/SetActiveWindow/SetFocus) with a settle pause, and «Сеть» -> «Лок. сеть» is retried when the main-menu marker proves the clicks went nowhere. Every launch path (battles, coordinate tests, calibration) now closes a running game first — BIG files in the game folder are locked while game.dat is alive — and relaunches fresh. Calibration launches the game through the elevated helper (lotrbfme2ep1.exe requires elevation, os error 740). The fortress defender start point moved from a standalone inspector menu into the BFME-coordinates card as a selectable defense point (`fortressDefenseIndex`); when no point is designated, all start positions randomize like a regular location. Weathertop (Amon Sûl) now uses the `map mp weathertop` cache and its calibrated coordinates. The fortress defender start point is designated (first defense point) for Helm's Deep, Minas Tirith, Rivendell, Erebor, Isengard, Dol Guldur and Minas Morgul.
+
+0.46.4 restores the timing constants accidentally removed from `match_detector.rs` together with the dead code cleanup (broke the build), and designates the main defense point for the seven strongholds.
+
+0.46.8 ships eight gameplay and usability fixes. The window title is now always English («War of the Ring» in `tauri.conf.json` and in the dynamic `document.title`), no matter which UI language is picked. Calibration closes the game automatically after the eighth point, exactly like F10 (resolution is restored first). Belfalas ships with calibrated RTS coordinates (4 defense + 4 attack slots). Treebeard's Hill is now a stronghold (economic type «camp») instead of a domain, so it no longer claims surrounding hexes. Recruitment now shows the command points each unit occupies (hire list, queue and reserve rows), the hire button is disabled when the location's CP limit is exhausted, and the «←»/«→» transfer buttons between army, reserve and stationed armies are disabled per-slot when the CP limit would be exceeded. Disbanding an army no longer overflows the location reserve: heroes always transfer, units fill the reserve up to the location's CP limit and the rest are disbanded permanently (logged in the chronicle). A new in-place transfer lets you move units between two armies of the same faction standing in the same hex (selector in the army inspector, per-slot «→» button). Isengard's RTS line color changed from black to white everywhere (as in the prototype) because black was unreadable on the dark chart.
+
+0.46.5 reworks the calibration session to run entirely inside the elevated helper, mirroring `tools/calibrate.py` (which elevated itself via `ensure_admin`): system hotkeys (`RegisterHotKey` F9/F10 with a message loop, as in `tools/hotkey.py`) are used instead of a low-level keyboard hook — an LL hook in the non-elevated app never receives keys while the elevated game window has focus (UIPI), which made F9 dead. Progress is published to `rts_calibration_status.json` and polled by the UI; the editor Stop button and F10 both close the game. The windowed resolution is restored by a fixed 30-second timer (the game has read Options.ini by then even on a cold start). After closing an already-running game every flow waits 5 seconds before relaunching so RotWK does not report «game already running». Calibration now deploys the same files as the coordinate test (mod BIGs + the location MapCache) before launching the game, so the calibrated map is the one actually loaded; the deployment plan comes from a shared planner used by both flows, and calibration requires an uploaded MapCache. 0.46.7 fixes three compile errors introduced by that change (unused Mutex import, a closure double-mutable-borrow of the resolution restore, and a missing `mut` on the deployment error list).
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
@@ -358,7 +372,7 @@ lotrbfme2ep1.exe
 
 ### Required mod assets
 
-No RTS files are preinstalled. A mod author provides:
+The default mod is preinstalled: its two BIG archives and all default MapCaches are embedded into the executable with `include_bytes!` and extracted to `portable_data/mods/default/rts/` on the first launch (and restored automatically whenever they are missing). A custom mod author provides:
 
 - zero or more module BIG files;
 - one shared BIG containing all supported maps;
@@ -373,7 +387,7 @@ Windows protects installations under `Program Files`. Before an RTS battle, WOTR
 1. validates source assets;
 2. copies/replaces BIG files in the game directory;
 3. installs the selected active MapCache;
-4. generates and installs `wotr_generated_presets.big`;
+4. generates and installs `__wotr_generated_presets.big`;
 5. writes `NetworkPref.ini` in the real user profile;
 6. launches ROTWK;
 7. configures the room and starts the match.
@@ -424,12 +438,36 @@ If the marker does not appear, automation stops instead of clicking an unready s
 
 During automation, low-level Windows keyboard and mouse hooks block physical input while allowing WOTR-generated `SendInput` events identified by a private marker. `Ctrl+Alt+Del` remains available as an emergency escape.
 
+### Start positions
+
+Each map object can store eight calibrated minimap points: the first four belong to defenders, the second four to attackers. Positions are always assigned randomly (there is no sequential/random prompt from the Python prototype). The only exception is a stronghold: its owner always takes the first (main) defense point, which is selected in the room by clicking the point once per slot number; every other slot then takes a single click per point.
+
+### Winner detection and auto-close
+
+After a battle starts, a background monitor polls the game window (0.5 s interval, 90-minute default timeout). When the score screen appears (detected by the fortress legend icon and the score header marker), automation:
+
+1. presses «Пропустить» and opens the «Счёт» tab;
+2. selects each rating row for slots 2–8;
+3. traces the highlighted player line to the victory coin or defeat flame;
+4. writes the outcome JSON (`COMPLETED`/`SURRENDER`/`UNKNOWN`) to `portable_data/temp/rts_battle_result_<conflict>.json`;
+5. closes every `game.dat` process.
+
+The UI polls that file and applies the winner to the campaign conflict automatically.
+
+### Coordinate calibration (editor)
+
+The location inspector includes «Калибровать координаты»: the game launches windowed at 1280×720, the WOTR window stays on top, and eight points are captured with F9 (F10 exits). The first four points are defense (the first one is the «main» defense position for strongholds), the next four are attack. The captured fractions are stored in `rtsPositions` on the location.
+
+### Coordinate test (editor)
+
+«Тест координат» requires an uploaded MapCache for the location. The game launches windowed at 1280×720, the bridge navigates to Local Network, creates a game with 8 players on «Новобранец» difficulty, assigns the calibrated points, and stops right after the placement — the game stays open for inspection.
+
 ### Generated RTS deployment
 
-`wotr_generated_presets.big` is built per battle and contains:
+`__wotr_generated_presets.big` is built per battle and contains:
 
 ```text
-data\ini\object\system\systemwotr_spawn.ini
+data\ini\object\zzz_wotr\system\zzz_spawn.ini
 ```
 
 Strategic units are arranged in concentric rings. Heroes are arranged near the configured gate direction. Unit levels and aura upgrades are supported by the generated format; current strategic slots use level 1 until persistent level/upgrade data is added to the campaign model.
@@ -453,9 +491,10 @@ Technical IDs remain automatic and stable. BFME Object IDs remain editable only 
 
 ## Current limitations
 
-- RTS results are not yet imported back into the global campaign.
+- RTS winner detection resolves the winning side and closes BFME automatically, but detailed per-unit RTS losses are not imported: the aftermath applies the standard retreat/garrison rules for the losing side.
 - Strategic unit levels and upgrades are not yet persistent; generated RTS units currently use level 1.
-- Only map objects with user-supplied current MapCache and shared maps BIG can launch RTS battles.
+- Only map objects with a MapCache and the shared maps BIG can launch RTS battles (the default mod ships both).
 - The strategic AI difficulty setting is stored but strategic behavior is currently shared between difficulty levels.
+- 17 of the 68 prototype map caches are not integrated: 4 are duplicates of already assigned maps (mp amon sul fortress, wor ang amon sul, mp harlindon, mp tournament gundabad), 3 are tournament maps with no world location (fall back 4p, the heubris, tournament mp1), and 10 are region-wide caches without an unambiguous location (arnor, buckland, celduin, harad, ithilien, lostriand, mirkwood, mordor, rhun, rohan). «map wor gondor» has calibrated coordinates but no cache file in the prototype build. Belfalas has a cache but no calibrated coordinates yet (use the calibration tool).
 
 0.45.27 keeps long location names readable in the hover tooltip by expanding its available width, wrapping names safely, and repositioning it away from the map edge. Existing English and Russian names were preserved. This interface revision is intentionally incompatible with previous campaign saves.

@@ -85,6 +85,16 @@ export interface RtsFortressSettings {
   defenderStartPosition: { x: number | null; y: number | null } | null
 }
 
+/** Minimap start points measured in window fractions (calibrated per location). */
+export interface RtsPositionSet {
+  defense: Array<{ x: number; y: number }>
+  attack: Array<{ x: number; y: number }>
+  /** Index (0-3) of the defense point designated as the fortress owner's main
+   *  position. Null/undefined = no designation: all points randomize like a
+   *  regular location. */
+  fortressDefenseIndex?: number | null
+}
+
 export interface ModDefinition {
   id: string
   name: string
@@ -383,7 +393,7 @@ export interface CampaignConflict {
   captorFactionId: FactionId
   defenseBonus: number
   status: 'pending' | 'resolved'
-  resolution: 'auto_battle' | 'defender_retreat' | null
+  resolution: 'auto_battle' | 'defender_retreat' | 'rts_battle' | null
   winnerSide: StrategicSide | null
   attackerPower: number | null
   defenderPower: number | null
@@ -549,6 +559,8 @@ export interface MapLocation {
   rtsMapId: string
   rtsMapCache: RtsMapAsset | null
   rtsFortress: RtsFortressSettings | null
+  /** Calibrated minimap points: первые 4 — защитники, вторые 4 — атакующие. */
+  rtsPositions?: RtsPositionSet | null
   /** Bonus to the faction-wide army cap while this major location is controlled. */
   armyLimitBonus?: number
 }
@@ -589,7 +601,7 @@ export interface RosterData {
 }
 
 export interface WorldData {
-  version: 42
+  version: 43
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]
@@ -604,7 +616,7 @@ export interface WorldData {
 }
 
 export interface SaveGameData {
-  version: 59
+  version: 60
   gameVersion: string
   modId: string
   name: string

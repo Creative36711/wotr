@@ -13,7 +13,7 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.46.2
+Application: 0.46.3
 world.json: 43
 roster.json: 16
 savegame.json: 60
@@ -24,6 +24,8 @@ savegame.json: 60
 0.46.1 fixes the first 0.46.0 build: the generated `templates.rs` now joins its hex chunks with `concat!` (Rust has no implicit adjacent string-literal concatenation), the calibration hotkey channel is kept in a static `Mutex` (`mpsc::Receiver` is `!Sync`), and borrow-checker conflicts in the battle-launch command are resolved.
 
 0.46.2 fixes the start-position pools and the RTS aftermath. The coordinate test now maps slots strictly by range (slots 1-4 take defense points, slots 5-8 take attack points) instead of by faction alignment, and the stronghold main point is excluded from the shuffled pool so it can never be assigned twice (the 8th click used to repeat the first position). A real RTS battle now resolves exactly like an auto-battle with a known winner: `resolveConflictRts` runs the standard conflict simulation (losses, hero fates, retreats, capture) with only `winnerSide` forced from the BFME detector.
+
+0.46.3 hardens the launch flow. The Options.ini resolution is restored at a deeper milestone (after the LAN room is created, or when the main menu is detected during calibration) instead of a fixed 5-second timer that raced the cold start. Cold-start input warmup from the Python prototype is ported: the game window is activated (ShowWindow/SetForegroundWindow/BringWindowToTop/SetActiveWindow/SetFocus) with a settle pause, and «Сеть» -> «Лок. сеть» is retried when the main-menu marker proves the clicks went nowhere. Every launch path (battles, coordinate tests, calibration) now closes a running game first — BIG files in the game folder are locked while game.dat is alive — and relaunches fresh. Calibration launches the game through the elevated helper (lotrbfme2ep1.exe requires elevation, os error 740). The fortress defender start point moved from a standalone inspector menu into the BFME-coordinates card as a selectable defense point (`fortressDefenseIndex`); when no point is designated, all start positions randomize like a regular location. Weathertop (Amon Sûl) now uses the `map mp weathertop` cache and its calibrated coordinates.
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 
@@ -487,6 +489,6 @@ Technical IDs remain automatic and stable. BFME Object IDs remain editable only 
 - Strategic unit levels and upgrades are not yet persistent; generated RTS units currently use level 1.
 - Only map objects with a MapCache and the shared maps BIG can launch RTS battles (the default mod ships both).
 - The strategic AI difficulty setting is stored but strategic behavior is currently shared between difficulty levels.
-- 17 of the 68 prototype map caches are not integrated: 4 are duplicates of already assigned maps (mp amon sul fortress, mp weathertop, mp harlindon, mp tournament gundabad), 3 are tournament maps with no world location (fall back 4p, the heubris, tournament mp1), and 10 are region-wide caches without an unambiguous location (arnor, buckland, celduin, harad, ithilien, lostriand, mirkwood, mordor, rhun, rohan). «map wor gondor» has calibrated coordinates but no cache file in the prototype build. Belfalas has a cache but no calibrated coordinates yet (use the calibration tool).
+- 17 of the 68 prototype map caches are not integrated: 4 are duplicates of already assigned maps (mp amon sul fortress, wor ang amon sul, mp harlindon, mp tournament gundabad), 3 are tournament maps with no world location (fall back 4p, the heubris, tournament mp1), and 10 are region-wide caches without an unambiguous location (arnor, buckland, celduin, harad, ithilien, lostriand, mirkwood, mordor, rhun, rohan). «map wor gondor» has calibrated coordinates but no cache file in the prototype build. Belfalas has a cache but no calibrated coordinates yet (use the calibration tool).
 
 0.45.27 keeps long location names readable in the hover tooltip by expanding its available width, wrapping names safely, and repositioning it away from the map edge. Existing English and Russian names were preserved. This interface revision is intentionally incompatible with previous campaign saves.

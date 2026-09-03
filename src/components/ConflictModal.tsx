@@ -96,9 +96,8 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
           :!activeMod.rts.mapsFile?'В системных настройках мода отсутствует общий BIG-архив карт.'
             :!cacheEntityId||!selectedMapAsset||!conflict.rtsMapId?'Для места этого боя не загружен MapCache BIG.'
               :!factionOrderReady?'Одна из участвующих фракций отсутствует в порядке фракций BFME.'
-                :conflict.battleType==='siege'&&!conflict.rtsDefenderStartPosition?'Для крепости не указана полная стартовая точка защитника.'
-                  :!conflict.rtsCompatible?'Состав сторон не совместим с RTS: проверьте число фракций и слотов.'
-                    :null
+                :!conflict.rtsCompatible?'Состав сторон не совместим с RTS: проверьте число фракций и слотов.'
+                  :null
   const rtsReady=rtsBlockReason===null
   const rtsArmyPool=[...new Map([...attackers,...defenders,...attackerReinforcements,...defenderReinforcements].map((army)=>[army.id,army])).values()]
   const rtsComposition=(factionId:string)=>{const factionArmies=rtsArmyPool.filter((army)=>army.factionId===factionId);const unitObjects=factionArmies.flatMap((army)=>army.unitSlots.map((slot)=>slot.objectId));const heroObjects=factionArmies.flatMap((army)=>[...(army.commander?.kind==='hero'&&army.commander.objectId?[army.commander.objectId]:[]),...army.heroSlots.map((slot)=>slot.objectId)]);if(location?.side===factionId&&conflict.garrisonLocationId){for(const slot of reserve){if(slot.kind==='hero')heroObjects.push(slot.objectId);else unitObjects.push(slot.objectId)}}return{units:unitObjects.map((objectId)=>({objectId,level:1,upgrades:[]})),heroes:[...new Set(heroObjects)].map((objectId)=>({objectId,level:1}))}}
@@ -116,11 +115,16 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     const startPositions:Record<string,{x:number;y: number}>=
       {}
     let fortressOwnerSlot:number|null=null
-    if(isFortressBattle&&rtsPositions?.defense?.length){
+    // Владелец оплота закрепляется за точкой ТОЛЬКО если главная позиция
+    // защиты назначена в BFME-координатах объекта; иначе всё случайно.
+    const mainIndex=isFortressBattle&&rtsPositions?.defense?.length
+      ?rtsPositions.fortressDefenseIndex??null
+      :null
+    if(mainIndex!=null&&mainIndex>=0&&mainIndex<rtsPositions!.defense.length){
       const ownerIndex=participants.findIndex((participant)=>participant.factionId===fortressDefenderFactionId)
       if(ownerIndex>=0){
         fortressOwnerSlot=ownerIndex+1
-        const main=rtsPositions.defense[0]
+        const main=rtsPositions!.defense[mainIndex]
         startPositions[ownerIndex+1]={...main}
         defensePool=defensePool.filter((point)=>point!==main)
       }

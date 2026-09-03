@@ -220,6 +220,10 @@ extern "system" {
     fn TranslateMessage(message: *const Message) -> i32;
     fn DispatchMessageW(message: *const Message) -> isize;
     fn GetCursorPos(point: *mut Point) -> i32;
+    fn ShowWindow(window: Hwnd, command: i32) -> i32;
+    fn BringWindowToTop(window: Hwnd) -> i32;
+    fn SetActiveWindow(window: Hwnd) -> Hwnd;
+    fn SetFocus(window: Hwnd) -> Hwnd;
 }
 
 #[cfg(target_os = "windows")]
@@ -228,7 +232,6 @@ extern "system" {
     fn CreateToolhelp32Snapshot(flags: u32, process_id: u32) -> Handle;
     fn Process32FirstW(snapshot: Handle, entry: *mut ProcessEntry32W) -> i32;
     fn Process32NextW(snapshot: Handle, entry: *mut ProcessEntry32W) -> i32;
-    fn WaitForSingleObject(handle: Handle, milliseconds: u32) -> u32;
     fn CloseHandle(handle: Handle) -> i32;
     fn GetLastError() -> u32;
     fn GetLocalTime(system_time: *mut WindowsSystemTime);
@@ -320,9 +323,7 @@ const SEE_MASK_NOCLOSEPROCESS: u32 = 0x0000_0040;
 #[cfg(target_os = "windows")]
 const SEE_MASK_FLAG_NO_UI: u32 = 0x0000_0400;
 #[cfg(target_os = "windows")]
-const INFINITE: u32 = 0xFFFF_FFFF;
-#[cfg(target_os = "windows")]
-const WAIT_FAILED: u32 = 0xFFFF_FFFF;
+const SW_RESTORE: i32 = 9;
 #[cfg(target_os = "windows")]
 const KEY_READ: u32 = 0x0002_0019;
 #[cfg(target_os = "windows")]
@@ -363,8 +364,8 @@ const MENU_MARKER_NPY: &[u8] = include_bytes!("../assets/menu_marker.npy");
 const MENU_MARKER_META: &str = include_str!("../assets/menu_marker.json");
 
 pub const CALIBRATION_RESOLUTION: &str = "1280 720";
-const CALIBRATION_RESTORE_AFTER: Duration = Duration::from_secs(5);
 const CALIBRATION_EVENT: &str = "wotr://calibration";
+const MENU_SETTLE: Duration = Duration::from_millis(1200);
 const START_POS_CLICK_GAP: Duration = Duration::from_millis(200);
 const START_COUNTDOWN: Duration = Duration::from_secs(7);
 const MONITOR_DEFAULT_TIMEOUT: Duration = Duration::from_secs(5400);
@@ -521,6 +522,34 @@ fn find_game_window() -> Option<(Hwnd, &'static str)> {
     None
 }
 
+/// Port of nav.activate_window: bring the game window to the foreground and
+/// give it focus. REQUIRED on cold start: right after the game.dat window
+/// appears the game may not have focus yet, so the first injected move/click
+/// would go «nowhere».
+#[cfg(target_os = "windows")]
+fn activate_window(window: Hwnd) -> bool {
+    unsafe {
+        if IsWindowVisible(window) == 0 {
+            ShowWindow(window, SW_RESTORE);
+        }
+        SetForegroundWindow(window);
+        BringWindowToTop(window);
+        SetActiveWindow(window);
+        SetFocus(window);
+    }
+    true
+}
+
+/// True while the main-menu marker is still on screen (used to detect that
+/// navigation clicks went nowhere during a cold start).
+#[cfg(target_os = "windows")]
+fn main_menu_visible(window: Hwnd) -> bool {
+    let Ok(marker) = load_menu_marker() else { return false };
+    menu_marker_match(window, &marker)
+        .map(|ratio| ratio >= MENU_MARKER_MATCH)
+        .unwrap_or(false)
+}
+
 #[cfg(target_os = "windows")]
 fn game_process_is_running() -> bool {
     process_ids_by_name("game.dat")
@@ -542,6 +571,20 @@ fn wait_for_game_window(timeout: Duration) -> Result<(Hwnd, &'static str), Strin
         "Окно процесса game.dat не появилось за 120 секунд. Закройте BFME и повторите запуск."
             .into(),
     )
+}
+
+/// Close a running game before any launch/deployment: BIG files in the game
+/// folder are locked while game.dat is alive (os error 32), so every flow —
+/// editor tests, calibration and campaign battles — restarts the game.
+#[cfg(target_os = "windows")]
+fn stop_game_if_running(log: &AutomationLog) {
+    if game_process_is_running() {
+        log.write("[check] игра уже запущена — закрываю перед новым запуском");
+        stop_game();
+        thread::sleep(Duration::from_millis(400));
+    } else {
+        log.write("[check] игра не запущена");
+    }
 }
 
 /// Force-close every running game.dat (ported from the Python bridge launcher.stop_game).
@@ -1541,17 +1584,83 @@ fn update_network_pref(executable: &Path, config: &Value) -> Result<NetworkPrefR
 // Launch helpers (windowed mode for calibration / coordinate tests)
 // ---------------------------------------------------------------------------
 
+/// Deferred Options.ini resolution restore. The game reads Options.ini well
+/// after the process starts (especially on a cold start), so the old value is
+/// written back only at a deeper milestone — after the LAN room is created,
+/// after the main menu is detected, or on the first calibration point. The
+/// Drop impl guarantees the restore even when the flow errors out earlier.
 #[cfg(target_os = "windows")]
-fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, log: &AutomationLog) -> Result<(), String> {
-    let mut restored = false;
-    let mut old_resolution: Option<(PathBuf, String)> = None;
+struct ResolutionRestore {
+    previous: Vec<(PathBuf, String)>,
+    restored: bool,
+}
+
+#[cfg(target_os = "windows")]
+impl ResolutionRestore {
+    fn none() -> Self {
+        Self { previous: Vec::new(), restored: true }
+    }
+    fn restore_now(&mut self, log: &AutomationLog) {
+        if self.restored {
+            return;
+        }
+        self.restored = true;
+        for (folder, value) in self.previous.drain(..) {
+            let _ = set_ini_option(&folder, "Resolution", &value);
+        }
+        log.write("[launch] прежнее разрешение восстановлено в Options.ini");
+    }
+}
+
+#[cfg(target_os = "windows")]
+impl Drop for ResolutionRestore {
+    fn drop(&mut self) {
+        for (folder, value) in self.previous.drain(..) {
+            let _ = set_ini_option(&folder, "Resolution", &value);
+        }
+    }
+}
+
+/// Spawn the game process. lotrbfme2ep1.exe requires elevation on most
+/// installs (os error 740), so from a non-elevated app the spawn goes through
+/// the same UAC helper as the battle deployment, in a lightweight «spawn» mode.
+#[cfg(target_os = "windows")]
+fn spawn_game_process(executable: &Path, windowed: bool, temp_directory: &Path, log: &AutomationLog) -> Result<(), String> {
+    if is_elevated() {
+        stop_game_if_running(log);
+        return Command::new(executable)
+            .current_dir(executable.parent().ok_or("Не найдена папка игры")?)
+            .args(if windowed { vec!["-win"] } else { Vec::<&str>::new() })
+            .spawn()
+            .map(|_| ())
+            .map_err(|error| format!("Не удалось запустить BFME: {error}"));
+    }
+    let job_path = temp_directory.join("rts_spawn_job.json");
+    let result_path = temp_directory.join("rts_spawn_result.json");
+    let _ = std::fs::remove_file(&result_path);
+    let job = json!({
+        "mode": "spawn",
+        "executablePath": executable.to_string_lossy(),
+        "windowed": windowed,
+    });
+    std::fs::create_dir_all(temp_directory).map_err(|error| error.to_string())?;
+    std::fs::write(&job_path, serde_json::to_vec_pretty(&job).map_err(|error| error.to_string())?)
+        .map_err(|error| format!("Не удалось записать задание запуска: {error}"))?;
+    log.write("[launch] запуск игры через UAC-помощник (exe требует повышение)");
+    run_elevated_helper(&job_path, &result_path).map(|_| ())
+}
+
+#[cfg(target_os = "windows")]
+fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, temp_directory: &Path, log: &AutomationLog) -> Result<ResolutionRestore, String> {
+    let mut restore = ResolutionRestore::none();
     if windowed {
         let target = resolution.unwrap_or(CALIBRATION_RESOLUTION);
         for folder in profile_folders(executable, std::env::var("APPDATA").ok().as_deref()) {
             match read_ini_option(&folder, "Resolution") {
                 Some(current) => {
                     if current != target {
-                        old_resolution = Some((folder.clone(), current));
+                        restore.previous.push((folder.clone(), current));
+                        restore.restored = false;
                         let _ = set_ini_option(&folder, "Resolution", target);
                     }
                 }
@@ -1562,30 +1671,43 @@ fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, log:
                 }
             }
         }
-        log.write(format!("[launch] оконный режим {target} (прежнее разрешение: {:?})", old_resolution.as_ref().map(|(_, value)| value)));
+        log.write(format!(
+            "[launch] оконный режим {target} (прежнее разрешение вернём после загрузки игры)"
+        ));
     }
-    Command::new(executable)
-        .current_dir(executable.parent().ok_or("Не найдена папка игры")?)
-        .args(if windowed { vec!["-win"] } else { Vec::<&str>::new() })
-        .spawn()
-        .map_err(|error| format!("Не удалось запустить BFME: {error}"))?;
-    if windowed {
-        // The game reads Options.ini at startup; restore the user value afterwards.
-        thread::sleep(CALIBRATION_RESTORE_AFTER);
-        if let Some((folder, value)) = old_resolution {
-            let _ = set_ini_option(&folder, "Resolution", &value);
-            restored = true;
-        }
-    }
-    if restored {
-        log.write("[launch] прежнее разрешение восстановлено в Options.ini");
-    }
-    Ok(())
+    spawn_game_process(executable, windowed, temp_directory, log)?;
+    Ok(restore)
 }
 
 // ---------------------------------------------------------------------------
 // Main automation flow (battle config v2)
 // ---------------------------------------------------------------------------
+
+/// «Сеть» -> «Лок. сеть» с защитой от холодного старта (main.py 4b): после
+/// клика проверяем маркер главного меню — если он всё ещё на экране, клики
+/// ушли «в пустоту»; активируем окно и повторяем навигацию.
+#[cfg(target_os = "windows")]
+fn goto_lan_with_retry(window: Hwnd, view: (i32, i32, i32, i32), log: &AutomationLog) -> Result<(), String> {
+    for attempt in 1..=3 {
+        move_mouse(
+            view.0 + (0.3019 * view.2 as f64) as i32,
+            view.1 + (0.9244 * view.3 as f64) as i32,
+        )?;
+        thread::sleep(Duration::from_millis(800));
+        click_fraction(view, 0.3000, 0.7811)?;
+        thread::sleep(Duration::from_secs(2));
+        if !main_menu_visible(window) {
+            log.write("[nav] маркер главного меню исчез — экран «Лок. сеть» загружен");
+            return Ok(());
+        }
+        log.write(format!(
+            "[nav] маркер главного меню всё ещё на экране (попытка {attempt}/3) — клики ушли в пустоту, повторяю"
+        ));
+        activate_window(window);
+        thread::sleep(MENU_SETTLE);
+    }
+    Err("Не удалось перейти на экран «Локальная сеть»: клики не доходят до игры (холодный старт). Закройте BFME и повторите.".into())
+}
 
 pub enum FlowOutcome {
     /// Full battle was started; the monitor phase may follow.
@@ -1595,7 +1717,7 @@ pub enum FlowOutcome {
 }
 
 #[cfg(target_os = "windows")]
-fn launch_and_configure_inner(executable: &Path, config: &Value, log: &AutomationLog) -> Result<FlowOutcome, String> {
+fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory: &Path, log: &AutomationLog) -> Result<FlowOutcome, String> {
     let language = config
         .get("language")
         .and_then(Value::as_str)
@@ -1608,12 +1730,6 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, log: &Automatio
             }
         }
         let _busy = BusyGuard;
-        if game_process_is_running() {
-            log.write("[check] игра уже запущена — закрываю перед новым запуском");
-            stop_game();
-        } else {
-            log.write("[check] игра не запущена");
-        }
         let _input_lock = InputLockGuard::acquire()?;
         let pref_result = update_network_pref(executable, config)?;
         log.write(format!(
@@ -1630,30 +1746,28 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, log: &Automatio
             .and_then(|value| value.get("resolution"))
             .and_then(Value::as_str);
         log.write(if windowed { "[launch] starting BFME (windowed)" } else { "[launch] starting BFME" });
-        launch_game(executable, windowed, resolution, log)?;
+        let mut restore = launch_game(executable, windowed, resolution, temp_directory, log)?;
 
         log.write("[wait] waiting for the game.dat window (up to 120s)");
         let (window, discovery) = wait_for_game_window(Duration::from_secs(120))?;
         log.write(format!("[window] found via {discovery}"));
-        unsafe {
-            SetForegroundWindow(window);
-        }
+        activate_window(window);
         wait_for_menu_ready(window, log, language)?;
         let view = viewport(window)?;
-        unsafe {
-            SetForegroundWindow(window);
-        }
+        // Прогрев ввода: на холодном старте окно появляется раньше, чем игра
+        // начинает принимать инжектируемый SendInput — первый клик ушёл бы
+        // «в пустоту». Активируем окно и даём ему осесть.
+        activate_window(window);
+        thread::sleep(MENU_SETTLE);
 
-        log.write("[nav] Network -> Local Network -> Create Game");
-        move_mouse(
-            view.0 + (0.3019 * view.2 as f64) as i32,
-            view.1 + (0.9244 * view.3 as f64) as i32,
-        )?;
-        thread::sleep(Duration::from_millis(800));
-        click_fraction(view, 0.3000, 0.7811)?;
-        thread::sleep(Duration::from_secs(2));
+        log.write("[nav] Network -> Local Network (с повтором при холодном старте)");
+        goto_lan_with_retry(window, view, log)?;
+        log.write("[nav] Create Game");
         click_fraction(view, 0.8337, 0.4611)?;
         thread::sleep(Duration::from_secs(2));
+        // Комната создана — игра давно прочитала Options.ini; теперь безопасно
+        // вернуть прежнее разрешение пользователя.
+        restore.restore_now(log);
 
         let participants = config
             .get("participants")
@@ -1751,17 +1865,6 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, log: &Automatio
         return Ok(FlowOutcome::BattleLaunched);
     }
     Err("Автоматизация BFME уже выполняется".into())
-}
-
-#[cfg(target_os = "windows")]
-pub fn launch_and_configure(executable: &Path, config: &Value) -> Result<(), String> {
-    let log = AutomationLog::start();
-    launch_and_configure_inner(executable, config, &log).map(|_| ())
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn launch_and_configure(_executable: &Path, _config: &Value) -> Result<(), String> {
-    Err("Автоматизация BFME поддерживается только в Windows".into())
 }
 
 // ---------------------------------------------------------------------------
@@ -1954,7 +2057,7 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
 
 /// Monitor the battle after launch, persist the result, then close the game.
 #[cfg(target_os = "windows")]
-pub fn monitor_and_finish(config: &Value, result_path: &Path, log: &AutomationLog) {
+fn monitor_and_finish(config: &Value, result_path: &Path, log: &AutomationLog) {
     let result = monitor_battle(config, log);
     log.write(format!(
         "[match] результат: status={} winningTeam={}",
@@ -2253,8 +2356,9 @@ pub fn deploy_and_launch_with_elevation(
         .unwrap_or("ru");
     if is_elevated() {
         let log = AutomationLog::start();
+        stop_game_if_running(&log);
         let deployed = deploy_job_files(deployment, language)?;
-        let outcome = launch_and_configure_inner(executable, config, &log)?;
+        let outcome = launch_and_configure_inner(executable, config, temp_directory, &log)?;
         if matches!(outcome, FlowOutcome::BattleLaunched) && monitor_requested(config) {
             // Продолжаем мониторинг в фоне, чтобы не блокировать интерфейс.
             let monitor_config = config.clone();
@@ -2340,6 +2444,10 @@ pub fn run_helper_if_requested() -> bool {
     let Some((job_path, result_path)) = helper_arguments() else {
         return false;
     };
+    let temp_directory = result_path
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(std::env::temp_dir);
     let result = (|| -> Result<(Vec<Value>, Option<Value>), String> {
         let job_text = std::fs::read_to_string(&job_path).map_err(|error| {
             format!(
@@ -2354,6 +2462,19 @@ pub fn run_helper_if_requested() -> bool {
             .and_then(Value::as_str)
             .map(PathBuf::from)
             .ok_or("BFME path is missing from the automation job")?;
+        // Лёгкий режим «spawn»: закрыть уже запущенную игру (файлы BIG заняты)
+        // и просто запустить exe с повышением — для калибровки.
+        if job.get("mode").and_then(Value::as_str) == Some("spawn") {
+            let log = AutomationLog::start();
+            stop_game_if_running(&log);
+            let windowed = job.get("windowed").and_then(Value::as_bool).unwrap_or(false);
+            Command::new(&executable)
+                .current_dir(executable.parent().ok_or("Не найдена папка игры")?)
+                .args(if windowed { vec!["-win"] } else { Vec::<&str>::new() })
+                .spawn()
+                .map_err(|error| format!("Не удалось запустить BFME: {error}"))?;
+            return Ok((Vec::new(), None));
+        }
         let config = job
             .get("battleConfig")
             .ok_or("battleConfig is missing from the automation job")?
@@ -2362,9 +2483,10 @@ pub fn run_helper_if_requested() -> bool {
             .get("language")
             .and_then(Value::as_str)
             .unwrap_or("ru");
-        let deployed = deploy_job_files(job.get("deployment").unwrap_or(&Value::Null), language)?;
         let log = AutomationLog::start();
-        let outcome = launch_and_configure_inner(&executable, &config, &log)?;
+        stop_game_if_running(&log);
+        let deployed = deploy_job_files(job.get("deployment").unwrap_or(&Value::Null), language)?;
+        let outcome = launch_and_configure_inner(&executable, &config, &temp_directory, &log)?;
         if matches!(outcome, FlowOutcome::BattleLaunched) && monitor_requested(&config) {
             // Мониторинг боя продолжается ПОСЛЕ записи результата навигации:
             // главный процесс уже разблокирован и ждёт файл исхода боя.
@@ -2428,7 +2550,7 @@ fn emit_calibration(app: &AppHandle, payload: Value) {
 /// Run the interactive 8-point calibration session (like tools/calibrate.py):
 /// launch the game in a small window (or attach), then follow F9/F10 hotkeys.
 #[cfg(target_os = "windows")]
-pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Value) {
+pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Value, temp_directory: &Path) {
     let log = AutomationLog::start();
     let is_fortress = options
         .get("isFortress")
@@ -2460,12 +2582,23 @@ pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Valu
             return;
         }
     };
-    if !attach && !game_process_is_running() {
+    // Запуск всегда свежей копией игры: занятые BIG-файлы и чужое разрешение
+    // мешают калибровке, поэтому работающая игра закрывается (в elevated-режиме
+    // spawn это делает помощник), затем игра стартует в окне 1280×720.
+    let mut restore = ResolutionRestore::none();
+    let mut restore_settled = false;
+    let mut restore_check = Instant::now();
+    if !attach {
         log.write("[cal] запускаю игру в оконном режиме для калибровки");
-        if let Err(error) = launch_game(executable, true, Some(resolution), &log) {
-            finish(json!({"type":"error","message":error}));
-            return;
+        match launch_game(executable, true, Some(resolution), temp_directory, &log) {
+            Ok(guard) => restore = guard,
+            Err(error) => {
+                finish(json!({"type":"error","message":error}));
+                return;
+            }
         }
+    } else {
+        restore_settled = true;
     }
     let mut window = None;
     let window_deadline = Instant::now() + Duration::from_secs(120);
@@ -2494,11 +2627,12 @@ pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Valu
         json!({"type":"started","isFortress":is_fortress,"steps":steps,"resolution":resolution}),
     );
     log.write(if is_fortress {
-        "[cal] шаг 1/8: ГЛАВНАЯ позиция защиты (владелец крепости) — наведите курсор и нажмите F9"
+        "[cal] шаг 1/8: 1-я позиция ЗАЩИТЫ — наведите курсор и нажмите F9 (главную точку можно назначить после калибровки)"
     } else {
         "[cal] шаг 1/8: 1-я позиция ЗАЩИТЫ — наведите курсор и нажмите F9"
     });
 
+    let launched = Instant::now();
     let mut captured: Vec<(f64, f64)> = Vec::new();
     let mut last_key = Instant::now() - Duration::from_secs(10);
     loop {
@@ -2513,6 +2647,11 @@ pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Valu
                     continue; // защита от автоповтора клавиши
                 }
                 last_key = Instant::now();
+                if !restore_settled {
+                    // Пользователь уже снимает точки — игра точно загрузилась.
+                    restore.restore_now(&log);
+                    restore_settled = true;
+                }
                 let view = match viewport(window) {
                     Ok(view) => view,
                     Err(error) => {
@@ -2553,8 +2692,18 @@ pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Valu
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 if !CALIBRATION_ACTIVE.load(Ordering::Relaxed) {
                     log.write("[cal] остановлено из редактора");
+                    restore.restore_now(&log);
                     finish(json!({"type":"stopped","points":captured}));
                     return;
+                }
+                // Возврат разрешения: после появления главного меню либо не
+                // позже 45 секунд после запуска (холодный старт терпеливее).
+                if !restore_settled && restore_check.elapsed() >= Duration::from_secs(1) {
+                    restore_check = Instant::now();
+                    if !attach && (main_menu_visible(window) || launched.elapsed() > Duration::from_secs(45)) {
+                        restore.restore_now(&log);
+                        restore_settled = true;
+                    }
                 }
             }
             Err(mpsc::RecvTimeoutError::Disconnected) => {
@@ -2571,7 +2720,7 @@ pub fn request_calibration_stop() {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn run_calibration_session(_app: tauri::AppHandle, _executable: &Path, _options: &Value) {}
+pub fn run_calibration_session(_app: tauri::AppHandle, _executable: &Path, _options: &Value, _temp_directory: &Path) {}
 
 #[cfg(target_os = "windows")]
 pub fn game_is_running() -> bool {
@@ -2579,7 +2728,7 @@ pub fn game_is_running() -> bool {
 }
 
 #[cfg(target_os = "windows")]
-pub fn spawn_calibration(app: AppHandle, executable: PathBuf, options: Value) -> Result<Value, String> {
+pub fn spawn_calibration(app: AppHandle, executable: PathBuf, options: Value, temp_directory: PathBuf) -> Result<Value, String> {
     if !executable.is_file() {
         return Err(format!(
             "Исполняемый файл BFME не найден: {}",
@@ -2588,13 +2737,13 @@ pub fn spawn_calibration(app: AppHandle, executable: PathBuf, options: Value) ->
     }
     thread::Builder::new()
         .name("bfme-calibration".into())
-        .spawn(move || run_calibration_session(app, &executable, &options))
+        .spawn(move || run_calibration_session(app, &executable, &options, &temp_directory))
         .map_err(|error| format!("Не удалось запустить калибровку: {error}"))?;
     Ok(json!({"ok": true}))
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn spawn_calibration(_app: tauri::AppHandle, _executable: PathBuf, _options: Value) -> Result<Value, String> {
+pub fn spawn_calibration(_app: tauri::AppHandle, _executable: PathBuf, _options: Value, _temp_directory: PathBuf) -> Result<Value, String> {
     Err("Калибровка координат поддерживается только в Windows".into())
 }
 

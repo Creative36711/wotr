@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event'
 import { useMapStore } from '../store/useMapStore'
 import { prepareAndStartRtsBattle, startRtsCalibration, stopRtsCalibration } from '../dataService'
 import { RTS_COLORS } from '../rts'
+import { getEconomicType } from '../game/economicTypes'
 import { translateText } from '../i18n'
 import type { AppSettings, MapLocation, ModDefinition, RtsPositionSet } from '../types'
 
@@ -27,7 +28,7 @@ interface CalibrationEvent {
 const stepHint = (step: CalibrationStep | null, isFortress: boolean) => {
   if (!step) return null
   if (step.role === 'defense') {
-    if (step.main && isFortress) return `Точка ${step.index + 1}/8 · ГЛАВНАЯ позиция защиты (владелец крепости)`
+    if (step.main && isFortress) return `Точка ${step.index + 1}/8 · позиция защиты (можно назначить главной после калибровки)`
     return `Точка ${step.index + 1}/8 · защитная позиция`
   }
   return `Точка ${step.index + 1}/8 · атакующая позиция`
@@ -59,6 +60,7 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
   const desktopRuntime = '__TAURI_INTERNALS__' in window
   const executablePath = appSettings?.rtsExecutablePath ?? ''
   const isStronghold = location.structuralType === 'stronghold'
+  const isFortressSite = isStronghold || getEconomicType(location.economicType).battleType === 'siege' || getEconomicType(location.economicType).isCapital
   const positions = location.rtsPositions ?? null
   const positionsReady = Boolean(positions && positions.defense?.length === 4 && positions.attack?.length === 4)
 
@@ -111,8 +113,19 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
   }
 
   const resetPositions = () => {
-    updateLocation(location.id, { rtsPositions: null })
+    updateLocation(location.id, { rtsPositions: null, rtsFortress: { defenderStartPosition: null } })
     setMessage('Координаты сброшены.')
+  }
+
+  // Главная позиция защиты (владелец оплота). Null = все точки случайны,
+  // как у обычной локации.
+  const setFortressDefenseIndex = (index: number | null) => {
+    const next = positions ?? { defense: [], attack: [] }
+    const point = index != null ? next.defense[index] : undefined
+    updateLocation(location.id, {
+      rtsPositions: { ...next, fortressDefenseIndex: index },
+      rtsFortress: { defenderStartPosition: point ? { x: point.x, y: point.y } : null },
+    })
   }
 
   const testCoordinates = async () => {
@@ -126,8 +139,11 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
       // п.3: точки всегда расставляются случайно (перетасовка пулов).
       // п.6: у оплота слот 1 (владелец) всегда на первой (главной) точке
       // защиты; остальные защитники берут точки из defense[1..4] без повтора.
-      const defenseAssign = isStronghold && positions.defense[0]
-        ? [positions.defense[0], ...shuffled(positions.defense.slice(1))]
+      const mainIndex = isFortressSite && positions.fortressDefenseIndex != null && positions.fortressDefenseIndex >= 0 && positions.fortressDefenseIndex < positions.defense.length
+        ? positions.fortressDefenseIndex
+        : null
+      const defenseAssign = mainIndex != null
+        ? [positions.defense[mainIndex], ...shuffled(positions.defense.filter((_, index) => index !== mainIndex))]
         : shuffled(positions.defense)
       const attackAssign = shuffled(positions.attack)
       const startPositions: Record<string, { x: number; y: number }> = {}
@@ -161,7 +177,7 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
           mapPath: location.rtsMapCache.mapPath,
           expectedSize: location.rtsMapCache.size,
           startPositions,
-          fortressOwnerSlot: isStronghold ? 1 : null,
+          fortressOwnerSlot: mainIndex != null ? 1 : null,
         },
         launch: { windowed: true, resolution: '1280 720' },
         monitor: { enabled: false },
@@ -196,6 +212,20 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
         <div><b>Защита</b>{positions.defense?.map((point, index) => <small key={index}>{index + 1}: {point.x.toFixed(4)} · {point.y.toFixed(4)}</small>)}</div>
         <div><b>Атака</b>{positions.attack?.map((point, index) => <small key={index}>{index + 1}: {point.x.toFixed(4)} · {point.y.toFixed(4)}</small>)}</div>
       </div>}
+      {isFortressSite && (
+        <label className="rts-fortress-point-select">
+          <span>Стартовая точка защитника крепости</span>
+          <select
+            value={positions?.fortressDefenseIndex ?? ''}
+            disabled={!positionsReady}
+            onChange={(event) => setFortressDefenseIndex(event.target.value === '' ? null : Number(event.target.value))}
+          >
+            <option value="">Случайно (как обычная локация)</option>
+            {positions?.defense?.map((point, index) => <option key={index} value={index}>Точка защиты {index + 1} ({point.x.toFixed(4)} · {point.y.toFixed(4)})</option>)}
+          </select>
+          <small>Владелец оплота всегда встаёт на выбранную точку. Без выбора все точки расставляются случайно, как у обычной локации.</small>
+        </label>
+      )}
       <footer>
         {calibrating
           ? <button type="button" className="danger" onClick={() => void stopCalibration()}>■ Стоп (F10)</button>

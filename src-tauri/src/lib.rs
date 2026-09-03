@@ -14,7 +14,7 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.46.2";
+const GAME_VERSION: &str = "0.46.3";
 const SAVE_VERSION: u64 = 60;
 
 // Bundled RTS assets for the default «Vanilla 2.01» mod (Requirement: the mod
@@ -172,7 +172,8 @@ fn battle_result_path(temp:&Path,conflict_id:&str)->PathBuf{
 }
 #[tauri::command] fn start_rts_calibration(app:AppHandle,executable_path:String,options:Value)->Result<Value,String>{
  let executable=PathBuf::from(&executable_path);
- bfme_automation::spawn_calibration(app,executable,options)
+ let temp=data_root(&app)?.join("temp");
+ bfme_automation::spawn_calibration(app,executable,options,temp)
 }
 #[tauri::command] fn stop_rts_calibration()->Result<(),String>{bfme_automation::request_calibration_stop();Ok(())}
 #[tauri::command] fn read_rts_battle_result(app:AppHandle,conflict_id:String)->Result<Option<Value>,String>{

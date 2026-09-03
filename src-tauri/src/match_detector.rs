@@ -11,8 +11,7 @@
 
 #![allow(clippy::too_many_arguments)]
 
-use serde_json::{json, Value};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 mod templates {
     include!("assets_gen/templates.rs");
@@ -339,21 +338,6 @@ fn color_refs(color: &str, vivid: bool) -> &'static [(u8, u8, u8)] {
     }
 }
 
-fn hue_ok(color: &str, r: i32, g: i32, b: i32) -> bool {
-    let rg = r - g;
-    let gb = g - b;
-    match color {
-        "blue" => b - r >= 25,
-        "green" => rg <= -12,
-        "yellow" => rg <= 2 && gb >= 15,
-        "white" => rg.abs() <= 16 && (r - b).abs() <= 16,
-        "red" => rg >= 16 && gb <= 10,
-        "orange" => rg >= 5 && gb >= 4,
-        "purple" => r >= g && b >= g && b - r <= 30,
-        _ => true,
-    }
-}
-
 /// Port of `find_highlighted_line_endpoint`: right end of the (bright) player line.
 pub fn line_endpoint(
     frame: &RgbFrame,
@@ -516,83 +500,3 @@ pub fn detect_icons(frame: &RgbFrame) -> Vec<DetectedIcon> {
     dedup
 }
 
-pub struct WinnerOutcome {
-    pub status: &'static str,
-    pub winning_side: Option<String>,
-    pub winning_slot: Option<u64>,
-    pub detail: String,
-}
-
-/// Resolve the winning side from icon/line data: any player whose highlighted
-/// line reaches the victory coin wins; a missing line means surrender.
-pub fn resolve_winner(
-    frame: &RgbFrame,
-    players: &[PlayerInfo],
-    icons: &[DetectedIcon],
-) -> WinnerOutcome {
-    let max_x_gap = 80.0f64;
-    let max_y_gap = 60.0f64;
-    let mut slots: Vec<u64> = players.iter().map(|p| p.slot).collect();
-    slots.sort_unstable();
-    slots.dedup();
-
-    let mut surrendered_slot: Option<u64> = None;
-    for slot in slots {
-        let Some(player) = players.iter().find(|p| p.slot == slot) else { continue };
-        let Some((x_end, y_end)) = line_endpoint(frame, &player.color, icons, true) else {
-            surrendered_slot = Some(slot);
-            break;
-        };
-        let mut candidates: Vec<&DetectedIcon> = icons
-            .iter()
-            .filter(|icon| (icon.x - x_end).abs() <= max_x_gap && (icon.y - y_end).abs() <= max_y_gap)
-            .collect();
-        candidates.sort_by(|l, r| {
-            let dl = (l.x - x_end).hypot(l.y - y_end);
-            let dr = (r.x - x_end).hypot(r.y - y_end);
-            dl.partial_cmp(&dr).unwrap_or(std::cmp::Ordering::Equal)
-        });
-        if let Some(icon) = candidates.first() {
-            if icon.kind == "victory" {
-                return WinnerOutcome {
-                    status: "COMPLETED",
-                    winning_side: Some(player.side.clone()),
-                    winning_slot: Some(slot),
-                    detail: format!("slot {} ({}) reached the victory coin", slot, player.color),
-                };
-            }
-            // defeat icon: keep scanning the next slot
-        } else {
-            surrendered_slot = Some(slot);
-            break;
-        }
-    }
-    if let Some(slot) = surrendered_slot {
-        if let Some(player) = players.iter().find(|p| p.slot == slot) {
-            let other = players.iter().find(|p| p.side != player.side);
-            return WinnerOutcome {
-                status: "SURRENDER",
-                winning_side: other.map(|p| p.side.clone()),
-                winning_slot: None,
-                detail: format!("slot {} ({}) surrendered or left the match", slot, player.color),
-            };
-        }
-    }
-    WinnerOutcome { status: "UNKNOWN", winning_side: None, winning_slot: None, detail: "no conclusive victory icon found".into() }
-}
-
-pub fn result_json(outcome: &WinnerOutcome, started: Instant) -> Value {
-    json!({
-        "status": outcome.status,
-        "winningTeam": outcome.winning_side,
-        "winningSlot": outcome.winning_slot,
-        "detail": outcome.detail,
-        "elapsedSec": started.elapsed().as_secs(),
-    })
-}
-
-pub const SCORE_SCREEN_POLL: Duration = Duration::from_millis(500);
-pub const ANALYSIS_TIMEOUT: Duration = Duration::from_secs(30);
-pub const RETRY_DELAY: Duration = Duration::from_millis(400);
-pub const TAB_SETTLE: Duration = Duration::from_millis(600);
-pub const SLOT_SETTLE: Duration = Duration::from_millis(400);

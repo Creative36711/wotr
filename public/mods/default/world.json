@@ -424,63 +424,63 @@
       "culture": null,
       "extraRecruitables": [],
       "blockedRecruitables": [],
-      "rtsMapId": "maps\\map wor ang amon sul\\map wor ang amon sul.map",
+      "rtsMapId": "maps\\map mp weathertop\\map mp weathertop.map",
       "rtsMapCache": {
         "assetId": "amon-sul",
         "originalFileName": "__wotr_maps_cache.big",
         "storageName": "rts/map-caches/locations/amon-sul.big",
-        "size": 1015,
-        "cacheKey": "maps_5Cmap_20wor_20ang_20amon_20sul_5Cmap_20wor_20ang_20amon_20sul_2Emap",
-        "mapPath": "maps\\map wor ang amon sul\\map wor ang amon sul.map",
-        "mapName": "map wor ang amon sul",
+        "size": 993,
+        "cacheKey": "maps_5Cmap_20mp_20weathertop_5Cmap_20mp_20weathertop_2Emap",
+        "mapPath": "maps\\map mp weathertop\\map mp weathertop.map",
+        "mapName": "map mp weathertop",
         "numPlayers": 8,
         "playerStarts": [
           {
             "slot": 1,
-            "x": 1216.58,
-            "y": 727.29,
+            "x": 542.87,
+            "y": 2922.56,
             "z": 0.0
           },
           {
             "slot": 2,
-            "x": 2864.24,
-            "y": 2411.61,
+            "x": 1207.42,
+            "y": 3066.33,
             "z": 0.0
           },
           {
             "slot": 3,
-            "x": 1386.33,
-            "y": 1340.99,
+            "x": 2919.08,
+            "y": 3293.94,
             "z": 0.0
           },
           {
             "slot": 4,
-            "x": 583.87,
-            "y": 570.5,
+            "x": 3595.9,
+            "y": 3098.95,
             "z": 0.0
           },
           {
             "slot": 5,
-            "x": 1887.6,
-            "y": 808.21,
+            "x": 541.99,
+            "y": 1186.72,
             "z": 0.0
           },
           {
             "slot": 6,
-            "x": 2246.13,
-            "y": 1602.29,
+            "x": 1197.26,
+            "y": 990.52,
             "z": 0.0
           },
           {
             "slot": 7,
-            "x": 2762.59,
-            "y": 1821.17,
+            "x": 3530.02,
+            "y": 1140.47,
             "z": 0.0
           },
           {
             "slot": 8,
-            "x": 2737.44,
-            "y": 1208.43,
+            "x": 2862.02,
+            "y": 966.86,
             "z": 0.0
           }
         ]
@@ -493,38 +493,38 @@
       "rtsPositions": {
         "defense": [
           {
-            "x": 0.4602,
-            "y": 0.4236
+            "x": 0.457,
+            "y": 0.3403
           },
           {
-            "x": 0.4828,
-            "y": 0.4153
+            "x": 0.4727,
+            "y": 0.3361
           },
           {
-            "x": 0.4875,
-            "y": 0.3722
+            "x": 0.5125,
+            "y": 0.3264
           },
           {
-            "x": 0.5047,
-            "y": 0.4125
+            "x": 0.5289,
+            "y": 0.3347
           }
         ],
         "attack": [
           {
-            "x": 0.5383,
-            "y": 0.3083
+            "x": 0.4555,
+            "y": 0.4111
           },
           {
-            "x": 0.5344,
-            "y": 0.3486
+            "x": 0.4734,
+            "y": 0.4222
           },
           {
-            "x": 0.5156,
-            "y": 0.3625
+            "x": 0.507,
+            "y": 0.4208
           },
           {
-            "x": 0.5352,
-            "y": 0.3889
+            "x": 0.5273,
+            "y": 0.4153
           }
         ]
       }

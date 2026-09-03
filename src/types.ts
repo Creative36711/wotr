@@ -89,6 +89,10 @@ export interface RtsFortressSettings {
 export interface RtsPositionSet {
   defense: Array<{ x: number; y: number }>
   attack: Array<{ x: number; y: number }>
+  /** Index (0-3) of the defense point designated as the fortress owner's main
+   *  position. Null/undefined = no designation: all points randomize like a
+   *  regular location. */
+  fortressDefenseIndex?: number | null
 }
 
 export interface ModDefinition {

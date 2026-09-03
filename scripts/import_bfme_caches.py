@@ -18,7 +18,6 @@ CACHE_DIR = os.path.join(ROOT, 'public', 'mods', 'default', 'rts', 'map-caches',
 # map key (folder name in out/) -> (locationId, comment)
 ASSIGN = {
     # --- War of the Ring world maps ---
-    'map wor ang amon sul':      ('amon-sul', 'Weathertop = Amon Sûl'),
     'map wor ang angmar':        ('angmar-foothills', 'регион Ангмара представлен локацией «Предгорья Ангмара»'),
     'map wor ang barrow downs':  ('barrow-downs', ''),
     'map wor ang carn dum':      ('carn-dum', ''),
@@ -67,6 +66,7 @@ ASSIGN = {
     'map mp paths of the dead':  ('paths-of-the-dead', ''),
     'map mp tournament udun':    ('udun', 'турнирная версия Удуна'),
     'map mp tournament westmarch': ('map-object-mt9dzg03', 'Westmarch = Западная марка'),
+    'map mp weathertop':         ('amon-sul', 'Weathertop = Amon Sûl (mp-версия карты)'),
     'map mp umbar':              ('umbar', ''),
     'map mp weather hills':      ('weather-hills', ''),
     'map mp withered heath':     ('withered-heath', ''),
@@ -84,9 +84,9 @@ UNMATCHED = {
     'map wor mordor':       'имя региона Мордор; отдельной локации «Мордор» нет (Барад-дур, Горгорот и Ородруин — другие карты)',
     'map wor rhun':         'имя региона Рун; есть «Море Рун» и «Прирунье» — без калибровки не выбрать',
     'map wor rohan':        'имя региона Рохан; отдельной локации «Рохан» нет (Эдорас и Хельмова Падь имеют собственные карты)',
-    'map mp amon sul fortress': 'дубль: Заверти уже назначена карта map wor ang amon sul',
+    'map wor ang amon sul':  'дубль: Заверти назначена mp-версия map mp weathertop',
+    'map mp amon sul fortress': 'дубль: Заверти назначена mp-версия map mp weathertop',
     'map mp harlindon':     'дубль: Харлиндону уже назначена карта map wor harlindon',
-    'map mp weathertop':    'дубль: Заверти уже назначена карта map wor ang amon sul',
     'map mp tournament gundabad': 'дубль: Гундабаду уже назначена карта map wor ang gundabad',
     'map mp fall back 4p':  'турнирная карта без соответствия на глобальной карте',
     'map mp the heubris':   'турнирная карта без соответствия на глобальной карте',

@@ -5,7 +5,9 @@ import { heroIsDeployed, heroUnlockSatisfied } from './heroes'
 import { recruitableUnitsAtLocation } from './recruitment'
 import { captainHireEconomicTypes } from './economicTypes'
 import { cellMovementCost, findPath, hexDistance, locationHexId, neighborIds, resolveGrid } from '../hex/hexGrid'
-import type { AlliedMovementPlan, Army, CampaignState, CaptainType, FactionDefinition, Hero, HexGridData, LogicalHex, MapLocation, Region, StrategicSide, UnitType } from '../types'
+import { canBuild, createBuildingInstance } from './buildings'
+import { chooseRingCarrier, investmentCost, ringProgress } from './ring'
+import type { AlliedMovementPlan, Army, BuildingTypeDefinition, CampaignState, CaptainType, FactionDefinition, Hero, HexGridData, LogicalHex, MapLocation, Region, RingForgingSettings, StrategicSide, UnitType } from '../types'
 
 const aiId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -20,6 +22,8 @@ export function runAiPlanning(
   captains: CaptainType[],
   grid: HexGridData,
   excludedFactionId: string | null = campaign.playerFactionId,
+  buildingTypes: BuildingTypeDefinition[] = [],
+  ringForging: RingForgingSettings | null = null,
 ) {
   const nextArmies = armies.map((army) => ({ ...army, commander: army.commander ? { ...army.commander } : null, unitSlots: army.unitSlots.map((slot) => ({ ...slot })), heroSlots: army.heroSlots.map((slot) => ({ ...slot })) }))
   const sideFactions = factions.filter((faction) => faction.playable && faction.alignment === side && faction.id !== excludedFactionId && factionIsActive(campaign, faction.id))
@@ -28,6 +32,45 @@ export function runAiPlanning(
     const treasury = campaign.treasuries[faction.id]
     if (!treasury) continue
     const owned = locations.filter((location) => location.side === faction.id)
+
+    // --- Строительство (§3.6): ИИ занимает свободные слоты в крупных объектах,
+    // приоритет — кузня/оружейная (постоянные апгрейды), затем лагерь и хранилище.
+    const buildPriority = ['forge', 'armory', 'training-camp', 'banner-workshop', 'storehouse', 'beacon', 'barracks-annex', 'palantir-tower']
+    const buildBudget = () => treasury.gold - 400
+    for (const location of [...owned].sort((left, right) => (right.income.gold ?? 0) - (left.income.gold ?? 0))) {
+      if (buildBudget() <= 0) break
+      const ordered = [...buildingTypes].sort((left, right) => buildPriority.indexOf(left.id) - buildPriority.indexOf(right.id))
+      for (const definition of ordered) {
+        if (definition.cost > buildBudget()) continue
+        const availability = canBuild(definition, location, campaign, faction.id, treasury.gold)
+        if (!availability.allowed) continue
+        treasury.gold -= definition.cost
+        campaign.buildings.push(createBuildingInstance(definition, location, faction.id, campaign.round))
+        break
+      }
+    }
+
+    // --- Ковка Кольца (§4.8): ИИ вкладывается, когда казна позволяет, и тем
+    // охотнее, чем ближе он к завершению или чем сильнее отстаёт лидер.
+    if (ringForging?.enabled && !campaign.ringState.forged) {
+      const progress = ringProgress(campaign, faction.id)
+      const leader = Math.max(0, ...Object.values(campaign.ringState.factionProgress))
+      const eagerness = progress >= leader ? 1 : leader - progress >= 5 ? 1 : 0.5
+      for (let amount = ringForging.maxInvestmentPerTurn; amount >= 1; amount -= 1) {
+        const cost = investmentCost(ringForging, amount)
+        if (treasury.gold - cost < 300 / eagerness) continue
+        treasury.gold -= cost
+        campaign.ringState.factionProgress[faction.id] = progress + amount
+        if (campaign.ringState.factionProgress[faction.id] >= ringForging.requiredProgress) {
+          campaign.ringState.forged = true
+          campaign.ringState.ownerFactionId = faction.id
+          campaign.ringState.forgedOnTurn = campaign.round
+          campaign.ringState.carrierArmyId = chooseRingCarrier(faction.id, nextArmies, locations, unitTypes, heroes, (location) => locationHexId(location, grid.config))
+          campaign.turnEvents.push({ id: aiId('event'), round: campaign.round, factionId: null, kind: 'ring_forged', text: `Кольцо Всевластья выковано фракцией «${faction.label}»!` })
+        }
+        break
+      }
+    }
     const summonableHeroes = heroes.filter((hero) => hero.factionId === faction.id && campaign.heroStates[hero.id]?.status === 'available' && !campaign.heroStates[hero.id]?.summoned && heroUnlockSatisfied(hero, campaign, locations))
       .sort((left, right) => right.battlePower - left.battlePower || left.name.localeCompare(right.name, 'ru'))
     for (const hero of summonableHeroes) {

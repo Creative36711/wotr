@@ -1064,7 +1064,7 @@ export const useMapStore = create<MapState>((set) => ({
     let prepared = preparePlanningSide({ ...workingState, armies, heroes } as MapState, campaign, armies, heroes, 'good')
     armies = prepared.armies
     heroes = prepared.heroes
-    if (campaign.aiEnabled && campaign.playerSide !== 'good') armies = runAiPlanning('good', campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.unitTypes, heroes, gameWorld.captains, gameWorld.grid, playerFaction.id)
+    if (campaign.aiEnabled && campaign.playerSide !== 'good') armies = runAiPlanning('good', campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.unitTypes, heroes, gameWorld.captains, gameWorld.grid, playerFaction.id, gameWorld.buildingTypes, gameWorld.ringForging)
     if (campaign.playerSide === 'evil') {
       campaign.phase = 'planning_evil'
       prepared = preparePlanningSide({ ...workingState, armies, heroes, campaign } as MapState, campaign, armies, heroes, 'evil')
@@ -1647,7 +1647,7 @@ export const useMapStore = create<MapState>((set) => ({
 
     const runSideAiPlanning = (side: StrategicSide) => {
       if (!campaign.aiEnabled) return
-      armies = runAiPlanning(side, campaign, armies, locations, state.factions, state.unitTypes, heroes, state.captains, state.grid, campaign.playerFactionId)
+      armies = runAiPlanning(side, campaign, armies, locations, state.factions, state.unitTypes, heroes, state.captains, state.grid, campaign.playerFactionId, state.buildingTypes, state.ringForging)
       campaign.log.unshift(campaignEvent(campaign, `ИИ завершил планирование остальных фракций стороны «${side === 'good' ? 'Свет' : 'Тьма'}».`, 'system', null))
     }
     const runSideAiMovement = (side: StrategicSide) => {

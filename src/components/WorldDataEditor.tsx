@@ -14,11 +14,14 @@ import { localizedTranslationsPatch, localizedValue, useI18n } from '../i18n'
 import LocalizedNameFields from './LocalizedNameFields'
 import { createAssetId, NETWORK_COMMAND_VALUES, NETWORK_RESOURCE_VALUES, networkRuleParts, RTS_COLORS, validBigFileName, withNetworkRulePart } from '../rts'
 import { deleteRtsAsset, pickAndImportRtsAsset, uploadRtsAsset } from '../dataService'
-import type { HeroUnlockType, ModDefinition, RtsStoredFile, SettlementType, UnitCategory } from '../types'
+import type { EconomicTypeDefinition, HeroUnlockType, ModDefinition, OwnerBattleModifiers, RtsStoredFile, SettlementType, UnitCategory } from '../types'
+import { ARMY_UPGRADE_IDS } from '../types'
 
-type Tab = 'factions' | 'economy' | 'units' | 'heroes' | 'captains' | 'armies' | 'regions' | 'rts'
+const UPGRADE_TITLES: Record<typeof ARMY_UPGRADE_IDS[number], string> = { weaponUpgrade: 'Оружие', armorUpgrade: 'Броня', bannerUpgrade: 'Знамя' }
+
+type Tab = 'factions' | 'economy' | 'buildings' | 'ring' | 'units' | 'heroes' | 'captains' | 'armies' | 'regions' | 'rts'
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: 'factions', label: 'Фракции', icon: '⚑' }, { id: 'economy', label: 'Экономика', icon: '¤' }, { id: 'units', label: 'Юниты', icon: '⚔' }, { id: 'heroes', label: 'Герои', icon: '♛' }, { id: 'captains', label: 'Капитаны', icon: '◆' }, { id: 'armies', label: 'Стартовые армии', icon: '♜' }, { id: 'regions', label: 'Регионы', icon: '⬡' }, { id: 'rts', label: 'BFME', icon: '◈' },
+  { id: 'factions', label: 'Фракции', icon: '⚑' }, { id: 'economy', label: 'Экономика', icon: '¤' }, { id: 'units', label: 'Юниты', icon: '⚔' }, { id: 'heroes', label: 'Герои', icon: '♛' }, { id: 'captains', label: 'Капитаны', icon: '◆' }, { id: 'armies', label: 'Стартовые армии', icon: '♜' }, { id: 'buildings', label: 'Постройки', icon: '▣' }, { id: 'ring', label: 'Кольцо', icon: '◎' }, { id: 'regions', label: 'Регионы', icon: '⬡' }, { id: 'rts', label: 'BFME', icon: '◈' },
 ]
 const CATEGORIES: Array<[UnitCategory, string]> = [['infantry', 'Пехота'], ['archers', 'Стрелки'], ['cavalry', 'Кавалерия'], ['monsters', 'Монстры'], ['siege', 'Осада']]
 /** Suggested distinct hues for global-map faction colors; any custom color is allowed via the picker. */
@@ -61,6 +64,21 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
   const selectArmy = useMapStore((state) => state.selectArmy)
   const economicTypes = useMapStore((state) => state.economicTypes)
   const updateEconomicType = useMapStore((state) => state.updateEconomicType)
+  const buildingTypes = useMapStore((state) => state.buildingTypes)
+  const addBuildingType = useMapStore((state) => state.addBuildingType)
+  const removeBuildingType = useMapStore((state) => state.removeBuildingType)
+  const updateBuildingType = useMapStore((state) => state.updateBuildingType)
+  const ringForging = useMapStore((state) => state.ringForging)
+  const updateRingForging = useMapStore((state) => state.updateRingForging)
+  const palantirSettings = useMapStore((state) => state.palantirSettings)
+  const updatePalantirSettings = useMapStore((state) => state.updatePalantirSettings)
+  const defaultUnitMaxLevel = useMapStore((state) => state.defaultUnitMaxLevel)
+  const defaultHeroMaxLevel = useMapStore((state) => state.defaultHeroMaxLevel)
+  const setDefaultMaxLevels = useMapStore((state) => state.setDefaultMaxLevels)
+  const updateOwnerModifier = (item: EconomicTypeDefinition, key: keyof OwnerBattleModifiers, value: number | boolean) => {
+    const owner = { ...(item.battleModifiers?.owner ?? {}), [key]: value }
+    updateEconomicType(item.id, { battleModifiers: { owner } })
+  }
   const updateRegion = useMapStore((state) => state.updateRegion)
   const addRegion = useMapStore((state) => state.addRegion)
   const removeRegion = useMapStore((state) => state.removeRegion)
@@ -177,8 +195,77 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
                     <label className="inline-check"><input type="checkbox" checked={item.allowedForDomain} onChange={(event) => updateEconomicType(item.id, { allowedForDomain: event.target.checked })} />Для владений</label>
                     <label className="inline-check"><input type="checkbox" checked={item.allowedForStronghold} onChange={(event) => updateEconomicType(item.id, { allowedForStronghold: event.target.checked })} />Для оплотов</label>
                   </div>
+                  <details className="economy-battle-modifiers">
+                    <summary>Слоты построек и боевые бонусы владельца</summary>
+                    <div className="economy-type-grid">
+                      <label><span>Слоты построек</span><input type="number" min="0" max="8" value={item.buildingSlots ?? 0} onChange={(event) => updateEconomicType(item.id, { buildingSlots: Number(event.target.value) })} /></label>
+                      <label><span>Стартовые ресурсы (BFME)</span><input type="number" min="0" step="50" value={item.battleModifiers?.owner.startingResources ?? 0} onChange={(event) => updateOwnerModifier(item, 'startingResources', Number(event.target.value))} /></label>
+                      <label><span>Командные очки</span><input type="number" min="0" step="10" value={item.battleModifiers?.owner.commandPointBonus ?? 0} onChange={(event) => updateOwnerModifier(item, 'commandPointBonus', Number(event.target.value))} /></label>
+                      <label><span>Стартовые PP палантира</span><input type="number" min="0" max={palantirSettings.maxStartingPointsFromModifiers} value={item.battleModifiers?.owner.palantirStartingPoints ?? 0} onChange={(event) => updateOwnerModifier(item, 'palantirStartingPoints', Number(event.target.value))} /></label>
+                      <label><span>PP за интервал</span><input type="number" min="0" max={palantirSettings.maxIncomePerIntervalFromModifiers} value={item.battleModifiers?.owner.palantirIncomePerInterval ?? 0} onChange={(event) => updateOwnerModifier(item, 'palantirIncomePerInterval', Number(event.target.value))} /></label>
+                      <label><span>Бонус обороны в автобое, %</span><input type="number" min="0" max="100" value={Math.round((item.battleModifiers?.owner.defenseBonus ?? 0) * 100)} onChange={(event) => updateOwnerModifier(item, 'defenseBonus', Number(event.target.value) / 100)} /></label>
+                      <label><span>Бонус засады, %</span><input type="number" min="0" max="100" value={Math.round((item.battleModifiers?.owner.ambushBonus ?? 0) * 100)} onChange={(event) => updateOwnerModifier(item, 'ambushBonus', Number(event.target.value) / 100)} /></label>
+                      <label><span>Штраф местности, %</span><input type="number" min="0" max="100" value={Math.round((item.battleModifiers?.owner.terrainDebuff ?? 0) * 100)} onChange={(event) => updateOwnerModifier(item, 'terrainDebuff', Number(event.target.value) / 100)} /></label>
+                    </div>
+                    <label className="inline-check"><input type="checkbox" checked={Boolean(item.battleModifiers?.owner.signalFire)} onChange={(event) => updateOwnerModifier(item, 'signalFire', event.target.checked)} />Сигнальный огонь в бою</label>
+                  </details>
                 </article>
               })}
+            </div>
+          </>}
+
+          {tab === 'buildings' && <>
+            <div className="database-toolbar"><span>Типов построек: {buildingTypes.length}</span><button type="button" onClick={addBuildingType}>＋ Добавить постройку</button></div>
+            <p className="database-help">Постройки занимают слоты локации (их число задаётся в экономических типах). Апгрейды выдаются армиям владельца в начале хода и остаются навсегда. Кольцекузня даёт бесплатный прогресс ковки Кольца.</p>
+            <div className="economy-type-list">{buildingTypes.map((item) => <article key={item.id} className="economy-type-card">
+              <header><div><small>ID · {item.id}</small><b>{item.icon} {item.name}</b></div><button type="button" onClick={() => removeBuildingType(item.id)}>Удалить</button></header>
+              <LocalizedNameFields label="Название" canonical={item.name} translations={item.nameTranslations} language={language} supportedLocales={supportedLocales} onAddLocale={addSupportedLocale} onChange={(name, nameTranslations) => updateBuildingType(item.id, { name, nameTranslations })} />
+              <div className="economy-type-grid">
+                <label><span>Иконка</span><input value={item.icon} onChange={(event) => updateBuildingType(item.id, { icon: event.target.value })} /></label>
+                <label><span>Стоимость, золото</span><input type="number" min="0" step="25" value={item.cost} onChange={(event) => updateBuildingType(item.id, { cost: Number(event.target.value) })} /></label>
+                <label><span>Время постройки, ходов</span><input type="number" min="0" max="10" value={item.buildTime} onChange={(event) => updateBuildingType(item.id, { buildTime: Number(event.target.value) })} /></label>
+                <label><span>Максимум в локации</span><input type="number" min="1" max="4" value={item.maxPerLocation} onChange={(event) => updateBuildingType(item.id, { maxPerLocation: Number(event.target.value) })} /></label>
+                <label><span>Максимум у фракции (0 = без лимита)</span><input type="number" min="0" max="20" value={item.maxPerFaction} onChange={(event) => updateBuildingType(item.id, { maxPerFaction: Number(event.target.value) })} /></label>
+                <label><span>Бонус уровня найма</span><input type="number" min="0" max="5" value={item.effects.recruitLevelBonus} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, recruitLevelBonus: Number(event.target.value) } })} /></label>
+                <label><span>Прогресс ковки Кольца / ход</span><input type="number" min="0" max="10" value={item.effects.ringForgeBonus} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, ringForgeBonus: Number(event.target.value) } })} /></label>
+              </div>
+              <div className="economy-type-flags">
+                {ARMY_UPGRADE_IDS.map((upgrade) => <label className="inline-check" key={upgrade}><input type="checkbox" checked={item.effects.armyUpgrades.includes(upgrade)} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, armyUpgrades: event.target.checked ? [...item.effects.armyUpgrades, upgrade] : item.effects.armyUpgrades.filter((id) => id !== upgrade) } })} />{UPGRADE_TITLES[upgrade]}</label>)}
+                <label className="inline-check"><input type="checkbox" checked={item.destroyedOnCapture} onChange={(event) => updateBuildingType(item.id, { destroyedOnCapture: event.target.checked })} />Разрушается при захвате</label>
+              </div>
+              <div className="economy-type-grid">
+                <label><span>Ресурсы в бою</span><input type="number" min="0" step="50" value={item.effects.battleModifiers.owner.startingResources ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, startingResources: Number(event.target.value) } } } })} /></label>
+                <label><span>Командные очки</span><input type="number" min="0" step="10" value={item.effects.battleModifiers.owner.commandPointBonus ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, commandPointBonus: Number(event.target.value) } } } })} /></label>
+                <label><span>Стартовые PP</span><input type="number" min="0" value={item.effects.battleModifiers.owner.palantirStartingPoints ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, palantirStartingPoints: Number(event.target.value) } } } })} /></label>
+                <label><span>PP за интервал</span><input type="number" min="0" value={item.effects.battleModifiers.owner.palantirIncomePerInterval ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, palantirIncomePerInterval: Number(event.target.value) } } } })} /></label>
+              </div>
+              <label className="inline-check"><input type="checkbox" checked={Boolean(item.effects.battleModifiers.owner.signalFire)} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, signalFire: event.target.checked } } } })} />Сигнальный огонь</label>
+            </article>)}</div>
+          </>}
+
+          {tab === 'ring' && <>
+            <div className="database-toolbar"><span>Ковка Кольца Всевластья</span></div>
+            <p className="database-help">Каждая фракция может вкладывать золото в ковку; первая достигшая нужного прогресса получает Кольцо. Кольцо носит конкретная армия и переходит победителю, если носитель уничтожен.</p>
+            <div className="economy-type-grid">
+              <label className="inline-check"><input type="checkbox" checked={ringForging.enabled} onChange={(event) => updateRingForging({ enabled: event.target.checked })} />Ковка включена</label>
+              <label><span>Нужный прогресс</span><input type="number" min="1" max="200" value={ringForging.requiredProgress} onChange={(event) => updateRingForging({ requiredProgress: Number(event.target.value) })} /></label>
+              <label><span>Максимум вложений за ход</span><input type="number" min="1" max="10" value={ringForging.maxInvestmentPerTurn} onChange={(event) => updateRingForging({ maxInvestmentPerTurn: Number(event.target.value) })} /></label>
+              <label><span>Стоимости вложений (через запятую)</span><input value={ringForging.investmentCosts.join(', ')} onChange={(event) => updateRingForging({ investmentCosts: event.target.value.split(',').map((part) => Number(part.trim())).filter((value) => Number.isFinite(value) && value > 0) })} /></label>
+              <label><span>Бонус автобоя владельцу, %</span><input type="number" min="0" max="100" value={Math.round(ringForging.effects.autoBattleBonus * 100)} onChange={(event) => updateRingForging({ effects: { ...ringForging.effects, autoBattleBonus: Number(event.target.value) / 100 } })} /></label>
+              <label><span>Фора всем врагам, %</span><input type="number" min="0" max="95" value={Math.round(ringForging.effects.handicapToAllEnemies * 100)} onChange={(event) => updateRingForging({ effects: { ...ringForging.effects, handicapToAllEnemies: Number(event.target.value) / 100 } })} /></label>
+            </div>
+            <h4 className="database-subhead">Палантир</h4>
+            <div className="economy-type-grid">
+              <label><span>Базовые стартовые PP</span><input type="number" min="0" max="10" value={palantirSettings.baseStartingPoints} onChange={(event) => updatePalantirSettings({ baseStartingPoints: Number(event.target.value) })} /></label>
+              <label><span>Максимум стартовых PP</span><input type="number" min="0" max="10" value={palantirSettings.maxStartingPointsFromModifiers} onChange={(event) => updatePalantirSettings({ maxStartingPointsFromModifiers: Number(event.target.value) })} /></label>
+              <label><span>Базовый прирост PP</span><input type="number" min="0" max="10" value={palantirSettings.baseIncomePerInterval} onChange={(event) => updatePalantirSettings({ baseIncomePerInterval: Number(event.target.value) })} /></label>
+              <label><span>Максимум прироста PP</span><input type="number" min="0" max="10" value={palantirSettings.maxIncomePerIntervalFromModifiers} onChange={(event) => updatePalantirSettings({ maxIncomePerIntervalFromModifiers: Number(event.target.value) })} /></label>
+              <label><span>Интервал прироста, мин.</span><input type="number" min="1" max="10" value={palantirSettings.incomeIntervalMinutes} onChange={(event) => updatePalantirSettings({ incomeIntervalMinutes: Number(event.target.value) })} /></label>
+            </div>
+            <h4 className="database-subhead">Уровни по умолчанию</h4>
+            <div className="economy-type-grid">
+              <label><span>Максимальный уровень отряда</span><input type="number" min="1" max="10" value={defaultUnitMaxLevel} onChange={(event) => setDefaultMaxLevels(Number(event.target.value), defaultHeroMaxLevel)} /></label>
+              <label><span>Максимальный уровень героя</span><input type="number" min="1" max="10" value={defaultHeroMaxLevel} onChange={(event) => setDefaultMaxLevels(defaultUnitMaxLevel, Number(event.target.value))} /></label>
             </div>
           </>}
 
@@ -204,7 +291,7 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
                 <input type="number" min="0" value={unit.upkeep} title="Содержание в золоте за ход" onChange={(event) => updateUnitType(unit.id, { upkeep: Number(event.target.value) })} />
                 <input type="number" min="0" max="999" value={unit.siegePower} title="Помогает атакующей армии преодолеть штраф при осаде крепости. Для обычных войск обычно 0." onChange={(event) => updateUnitType(unit.id, { siegePower: Number(event.target.value) })} />
                 <button type="button" onClick={() => removeUnitType(unit.id)}>×</button>
-              </div><div className="unit-recruitment-rules"><fieldset><legend>Допустимые типы локаций</legend>{ALL_SETTLEMENT_TYPES.map((type) => <label key={type}><input type="checkbox" checked={unit.requiredLocationTypes.includes(type)} onChange={(event) => updateUnitType(unit.id, { requiredLocationTypes: event.target.checked ? [...unit.requiredLocationTypes, type] : unit.requiredLocationTypes.filter((item) => item !== type) })} />{economicTypeLabel(type, language)}</label>)}</fieldset><label className="unit-transformation-source"><span>Способ получения</span><select value={unit.transformationSourceUnitId ?? ''} onChange={(event) => updateUnitType(unit.id, { transformationSourceUnitId: event.target.value || null })}><option value="">Прямой найм</option>{orderedUnits.filter((candidate) => candidate.factionId === unit.factionId && candidate.id !== unit.id && !candidate.transformationSourceUnitId).map((candidate) => <option key={candidate.id} value={candidate.id}>Преобразование: {candidate.name}</option>)}</select><small>{unit.transformationSourceUnitId ? 'Цена выше считается доплатой за преобразование исходного объекта.' : 'Отряд доступен в обычном списке найма.'}</small></label><label className="unit-required-tags"><span>Обязательные теги локации</span><input value={unit.requiredLocationTags.join(', ')} placeholder="коневодческий регион, промышленный центр…" onChange={(event) => updateUnitType(unit.id, { requiredLocationTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} /></label><label className="unit-occupation-toggle"><input type="checkbox" checked={unit.recruitDuringOccupation} onChange={(event) => updateUnitType(unit.id, { recruitDuringOccupation: event.target.checked })} /><span><b>Найм во время оккупации</b><small>Разрешить этот отряд до полного подчинения локации</small></span></label></div></div>)}
+              </div><div className="unit-recruitment-rules"><fieldset><legend>Допустимые типы локаций</legend>{ALL_SETTLEMENT_TYPES.map((type) => <label key={type}><input type="checkbox" checked={unit.requiredLocationTypes.includes(type)} onChange={(event) => updateUnitType(unit.id, { requiredLocationTypes: event.target.checked ? [...unit.requiredLocationTypes, type] : unit.requiredLocationTypes.filter((item) => item !== type) })} />{economicTypeLabel(type, language)}</label>)}</fieldset><label className="unit-transformation-source"><span>Способ получения</span><select value={unit.transformationSourceUnitId ?? ''} onChange={(event) => updateUnitType(unit.id, { transformationSourceUnitId: event.target.value || null })}><option value="">Прямой найм</option>{orderedUnits.filter((candidate) => candidate.factionId === unit.factionId && candidate.id !== unit.id && !candidate.transformationSourceUnitId).map((candidate) => <option key={candidate.id} value={candidate.id}>Преобразование: {candidate.name}</option>)}</select><small>{unit.transformationSourceUnitId ? 'Цена выше считается доплатой за преобразование исходного объекта.' : 'Отряд доступен в обычном списке найма.'}</small></label><label className="unit-required-tags"><span>Обязательные теги локации</span><input value={unit.requiredLocationTags.join(', ')} placeholder="коневодческий регион, промышленный центр…" onChange={(event) => updateUnitType(unit.id, { requiredLocationTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} /></label><label className="unit-max-level"><span>Максимальный уровень</span><input type="number" min="1" max="10" value={unit.maxLevel ?? defaultUnitMaxLevel} onChange={(event) => updateUnitType(unit.id, { maxLevel: Math.max(1, Math.min(10, Number(event.target.value))) })} /></label><fieldset><legend>Доступные апгрейды</legend>{ARMY_UPGRADE_IDS.map((upgrade) => <label key={upgrade}><input type="checkbox" checked={(unit.availableUpgrades ?? [...ARMY_UPGRADE_IDS]).includes(upgrade)} onChange={(event) => { const current = unit.availableUpgrades ?? [...ARMY_UPGRADE_IDS]; updateUnitType(unit.id, { availableUpgrades: event.target.checked ? [...current, upgrade] : current.filter((id) => id !== upgrade) }) }} />{UPGRADE_TITLES[upgrade]}</label>)}</fieldset><label className="unit-occupation-toggle"><input type="checkbox" checked={unit.recruitDuringOccupation} onChange={(event) => updateUnitType(unit.id, { recruitDuringOccupation: event.target.checked })} /><span><b>Найм во время оккупации</b><small>Разрешить этот отряд до полного подчинения локации</small></span></label></div></div>)}
             </div>
             <p className="database-help">Object ID можно заменить точным идентификатором из вашего мода BFME. «Сила» используется в автоматическом бою. «ОД» задаёт стратегическую скорость отряда; армия движется со скоростью самого медленного. «Осадная сила» уменьшает штраф атакующей армии при штурме крепости; для обычных отрядов можно оставить 0. В RTS объект будет создан по Object ID.</p>
           </>}
@@ -282,6 +369,14 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
                 <div className="region-readonly-field"><span>Владений / оплотов</span><b>{domains.length} / {strongholds.length}</b></div>
                 <div className="region-readonly-field"><span>Полный контроль</span><b style={{ color: owner?.color }}>{owner?.label ?? 'Нет'}</b></div>
                 <label className="region-description"><span>Описание</span><textarea value={localizedValue(region.description, region.descriptionTranslations, language)} onChange={(event) => { const localized = localizedTranslationsPatch(language, region.description, region.descriptionTranslations, event.target.value); updateRegion(region.id, { description: localized.canonical, descriptionTranslations: localized.translations }) }} /></label>
+                <details className="region-full-control">
+                  <summary>Бонусы полного контроля</summary>
+                  <div className="economy-type-grid">
+                    <label><span>Бонус автобоя, %</span><input type="number" min="0" max="100" value={Math.round((region.fullControlBonus?.autoBattleBonus ?? 0) * 100)} onChange={(event) => updateRegion(region.id, { fullControlBonus: { battleModifiers: region.fullControlBonus?.battleModifiers ?? { owner: {} }, autoBattleBonus: Number(event.target.value) / 100 } })} /></label>
+                    <label><span>Ресурсы в бою</span><input type="number" min="0" step="50" value={region.fullControlBonus?.battleModifiers.owner.startingResources ?? 0} onChange={(event) => updateRegion(region.id, { fullControlBonus: { autoBattleBonus: region.fullControlBonus?.autoBattleBonus ?? 0, battleModifiers: { owner: { ...(region.fullControlBonus?.battleModifiers.owner ?? {}), startingResources: Number(event.target.value) } } } })} /></label>
+                    <label><span>Командные очки</span><input type="number" min="0" step="10" value={region.fullControlBonus?.battleModifiers.owner.commandPointBonus ?? 0} onChange={(event) => updateRegion(region.id, { fullControlBonus: { autoBattleBonus: region.fullControlBonus?.autoBattleBonus ?? 0, battleModifiers: { owner: { ...(region.fullControlBonus?.battleModifiers.owner ?? {}), commandPointBonus: Number(event.target.value) } } } })} /></label>
+                  </div>
+                </details>
                 <div className="region-object-list"><small>Объекты внутри региона</small>{objects.length ? objects.map((location) => <span key={location.id}>{location.structuralType === 'stronghold' ? '♜' : '●'} {location.name}</span>) : <i>Пусто</i>}</div>
                 <div className="army-editor-actions">
                   <button type="button" onClick={() => { setHexEdit(true); setViewMode('strategic'); selectHexes(region.hexes); onClose() }}>Редактировать гексы</button>

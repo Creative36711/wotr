@@ -13,11 +13,13 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.46.8
-world.json: 43
-roster.json: 16
-savegame.json: 60
+Application: 0.48.0
+world.json: 44
+roster.json: 17
+savegame.json: 61
 ```
+
+0.48.0 adds the permanent army layer, contextual battle modifiers, strategic buildings and the Ring-forging race. Units and heroes now keep a level (`maxLevel` in roster.json, +1 per battle for every survivor, no decay) and three ratchet upgrades — weapons, armor and banner — gated per unit by `availableUpgrades`; both feed the auto-battle power multiplicatively and are exported to BFME as level auras and upgrade auras. Economic types gained `buildingSlots` and an owner-side `battleModifiers` block (starting resources, command points, palantír points and income, signal fire, defense/ambush bonuses, terrain debuff), regions gained a `fullControlBonus`, and `world.json` gained `buildingTypes`, `palantirSettings`, `ringForging`, `defaultUnitMaxLevel` and `defaultHeroMaxLevel`. Locations can host buildings (forge, armory, banner workshop, beacon, training camp, storehouse, barracks annex, palantír tower, ring forge) that build over several turns, grant permanent upgrades to armies stationed at the location, raise the recruitment start level, and are destroyed or captured with the location. The Ring-forging race lets every faction invest gold each turn (ring forges add free progress); the first faction to finish receives the One Ring, which is carried by a specific army, can be handed to another army in the same hex, and passes to the victor when its bearer is annihilated. All of this reaches real BFME battles through the spawn bridge (starting-gold crates, command-point bonuses, signal fires, palantír start/rate objects, the faction Ring hero) and through the room handicap: demoralization, forced marches and an enemy Ring are summed into a single penalty and snapped to the BFME −5 % grid. The editor gained Buildings and Ring tabs plus per-unit level/upgrade fields and full-control bonus fields for regions, and the turn panel gained building and Ring-forging sections. These data revisions are intentionally incompatible with previous campaign saves.
 
 0.46.0 integrates the real RTS battle flow end to end: 51 imported BFME MapCaches with calibrated minimap coordinates, randomized start positions (the fortress owner always takes the main defense point of a stronghold), a coordinate-calibration tool and a coordinate-test tool in the editor, automatic score-screen winner detection, and automatic BFME shutdown after the winner is determined. The default «Vanilla 2.01» mod now ships its `_patch201ini.big` and `__wotr_maps.big` archives plus every default MapCache embedded in the executable and restores them into `portable_data` on the first launch, so BIG files no longer need to be installed manually.
 

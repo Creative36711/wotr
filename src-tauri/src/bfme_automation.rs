@@ -1031,6 +1031,20 @@ const DIFF_OFFSETS: [f64; 4] = [0.0865, 0.1160, 0.1439, 0.1713];
 const DROP_STEP: f64 = 0.029;
 #[cfg(target_os = "windows")]
 const DROP_GAP: f64 = 0.033;
+/// Handicap («фора») column: 0 %, −5 % … −95 % (20 rows), see the reference
+/// automation in _test_integration-bfme/bridge/room.py.
+#[cfg(target_os = "windows")]
+const HANDICAP_COLUMN: f64 = 0.8031;
+#[cfg(target_os = "windows")]
+const HANDICAP_ROWS: usize = 20;
+
+/// Map a strategic handicap percentage (0 or negative multiple of 5) onto the
+/// BFME dropdown row index.
+#[cfg(target_os = "windows")]
+fn handicap_index(percent: f64) -> usize {
+    let steps = (percent.abs() / 5.0).round() as usize;
+    steps.min(HANDICAP_ROWS - 1)
+}
 /// Rating-column slot click coordinates on the «Счёт» screen (fractions of the
 /// window), ported from the Python detector config. Slot 1 is selected by default.
 #[cfg(target_os = "windows")]
@@ -1761,6 +1775,27 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
                 let adjusted = color - usize::from(color > player_color);
                 pick_dropdown(view, index + 1, 0.744, adjusted)?;
                 used_colors.push(color);
+            }
+
+            // Фора («handicap»): суммарный штраф стратегического слоя (§7).
+            for (index, participant) in participants.iter().enumerate() {
+                let percent = participant
+                    .get("handicapPercent")
+                    .and_then(Value::as_f64)
+                    .unwrap_or(0.0);
+                if percent >= 0.0 {
+                    continue;
+                }
+                let row = handicap_index(percent);
+                if row == 0 {
+                    continue;
+                }
+                log.write(format!(
+                    "[room] slot {} handicap {}%",
+                    index + 1,
+                    percent.round()
+                ));
+                pick_dropdown(view, index + 1, HANDICAP_COLUMN, row)?;
             }
         }
 

@@ -7,6 +7,7 @@ import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import { useMapStore } from '../store/useMapStore'
 import { getDisplayName, translateText, useI18n } from '../i18n'
 import { sortByText } from '../utils/sort'
+import { investmentCost, ringProgress } from '../game/ring'
 import type { FactionId, StructuralType } from '../types'
 
 interface SidebarProps { onFocus: (id: string) => void }
@@ -29,6 +30,10 @@ function CampaignSidebar({onFocus}:SidebarProps) {
   const selectConflict = useMapStore((state) => state.selectConflict)
   const advancePhase = useMapStore((state) => state.advancePhase)
   const setFogOverlayVisible = useMapStore((state) => state.setFogOverlayVisible)
+  const buildingTypes = useMapStore((state) => state.buildingTypes)
+  const ringForging = useMapStore((state) => state.ringForging)
+  const investRingForging = useMapStore((state) => state.investRingForging)
+  const demolishBuilding = useMapStore((state) => state.demolishBuilding)
   const playerFaction = getFaction(factions, campaign.playerFactionId)
   const side = activeSide(campaign) ?? campaign.playerSide
   const sideName = side === 'good' ? 'Свет' : 'Тьма'
@@ -81,6 +86,35 @@ function CampaignSidebar({onFocus}:SidebarProps) {
     <header className="panel-heading"><div><span className="eyebrow">Раунд {campaign.round}</span><h2>{phaseTitle}</h2></div><span className="turn-orb" style={{ background: playerFaction.color }} /></header>
     <div className="active-turn-card" style={{ '--faction-color': playerFaction.color } as CSSProperties}><span>Фракция игрока</span><b>{playerFaction.label}</b><small>{campaign.phase.startsWith('planning_') ? 'Нанимайте войска, управляйте резервом и перемещайте армии в любом порядке. После завершения хода ИИ выполнит свои действия.' : campaign.phase.startsWith('movement_') ? `Завершение приказов движения. Сейчас действует сторона «${sideName}».` : campaign.phase === 'conflicts' ? `Ваших нерешённых сражений: ${pendingConflicts}` : 'Все сражения, захваты, ранения и экономические изменения этого хода применены.'}</small><button type="button" onClick={advancePhase} disabled={campaign.phase === 'conflicts'}>{actionLabel}</button><label className="fog-sidebar-toggle"><input type="checkbox" checked={campaign.fogOfWar.overlayVisible} disabled={!campaign.fogOfWar.enabled} onChange={(event) => setFogOverlayVisible(event.target.checked)} /><span>{campaign.fogOfWar.enabled ? 'Показывать затемнение' : 'Туман войны отключён'}</span><b>{campaign.fogOfWar.enabled ? campaign.fogOfWar.overlayVisible ? 'Видно' : 'Скрыто' : 'Нет'}</b></label></div>
     <div className="campaign-economy"><div><span>Золото</span><b>{treasury?.gold ?? 0}</b></div><div><span>Материалы</span><b>{treasury?.materials ?? 0}</b></div><div><span>Доход</span><b>+{treasury?.lastIncome.gold ?? 0}</b></div><div><span>Содержание</span><b>−{treasury?.lastUpkeep ?? 0}</b></div><strong className={balance >= 0 ? 'positive' : 'negative'}>{balance >= 0 ? '+' : ''}{balance}</strong></div>
+    {campaign.phase.startsWith('planning_')&&<section className="campaign-buildings-panel">
+      <header><span>▣</span><div><b>{translateText('Постройки')}</b><small>{translateText('Строительство ведётся в инспекторе локации')}</small></div><strong>{campaign.buildings.filter((building)=>building.ownerFactionId===campaign.playerFactionId).length}</strong></header>
+      {campaign.buildings.filter((building)=>building.ownerFactionId===campaign.playerFactionId).slice(0,8).map((building)=>{
+        const definition=buildingTypes.find((type)=>type.id===building.buildingTypeId)
+        const location=locations.find((candidate)=>candidate.id===building.locationId)
+        return <article key={building.id} onClick={()=>location&&onFocus(location.id)}>
+          <span>{definition?.icon??'▣'}</span>
+          <div><b>{getDisplayName(definition)}</b><small>{location?.name??building.locationId}</small><i>{building.turnsRemaining>0?`${translateText('Строится')} · ${building.turnsRemaining}`:translateText('Готово')}</i></div>
+          <button type="button" onClick={(event)=>{event.stopPropagation();demolishBuilding(building.id)}}>×</button>
+        </article>
+      })}
+      {!campaign.buildings.some((building)=>building.ownerFactionId===campaign.playerFactionId)&&<p className="empty-hint">{translateText('Построек нет')}</p>}
+    </section>}
+    {campaign.phase.startsWith('planning_')&&ringForging.enabled&&<section className="campaign-ring-panel">
+      {(() => {
+        const progress=campaign.playerFactionId?ringProgress(campaign,campaign.playerFactionId):0
+        const forged=campaign.ringState.forged
+        const owner=campaign.ringState.ownerFactionId?getFaction(factions,campaign.ringState.ownerFactionId):null
+        return <>
+          <header><span>◎</span><div><b>{translateText('Ковка Кольца')}</b><small>{forged?`${translateText('Кольцо выковано')}: ${owner?.label??'?'}`:`${progress} / ${ringForging.requiredProgress}`}</small></div></header>
+          {!forged&&<div className="ring-invest-row">{Array.from({length:ringForging.maxInvestmentPerTurn},(_unused,index)=>index+1).map((amount)=>{
+            const cost=investmentCost(ringForging,amount)
+            const affordable=(treasury?.gold??0)>=cost
+            return <button key={amount} type="button" disabled={!affordable} onClick={()=>investRingForging(amount)}>+{amount} · {cost}⛁</button>
+          })}</div>}
+          {forged&&campaign.ringState.carrierArmyId&&<p className="ring-carrier">{translateText('Носитель')}: {armies.find((army)=>army.id===campaign.ringState.carrierArmyId)?.name??'—'}</p>}
+        </>
+      })()}
+    </section>}
     {woundedHeroes.length>0&&<section className="wounded-heroes-panel"><header><span>✚</span><div><b>Раненые герои</b><small>Недоступны до полного восстановления</small></div><strong>{woundedHeroes.length}</strong></header>{woundedHeroes.map((hero)=>{const state=campaign.heroStates[hero.id];const recovery=locations.find((location)=>location.id===state?.recoveryLocationId);return <article key={hero.id} onClick={()=>recovery&&onFocus(recovery.id)}><span className="wounded-hero-portrait" style={hero.portrait?{backgroundImage:`url(${hero.portrait})`}:undefined}/><div><b>{hero.name}</b><small>Ранен · осталось ходов: {state?.healTurnsLeft??0}</small>{recovery&&<i>Восстановление: {recovery.name}</i>}</div></article>})}</section>}
     {campaign.phase==='aftermath'&&<section className="turn-summary-panel"><header><b>{translateText('Итоги хода')} {campaign.round}</b><small>{translateText('Передвижения всех фракций')}</small></header>
       {(() => {
@@ -108,6 +142,12 @@ function CampaignSidebar({onFocus}:SidebarProps) {
             })}
           </div>
         ))
+      })()}
+      {(() => {
+        const events=campaign.turnEvents.filter((event)=>event.round===campaign.round&&(event.factionId===null||event.factionId===campaign.playerFactionId))
+        const glyph:Record<string,string>={building_completed:'▣',upgrade_granted:'⚒',ring_progress:'◎',ring_forged:'◉',ring_carrier:'◉',level_up:'★'}
+        if(!events.length)return null
+        return <><h4 className="summary-group">{translateText('Постройки и Кольцо')}</h4>{events.map((event)=><p key={event.id}><span>{glyph[event.kind]??'·'}</span><span>{event.text}</span></p>)}</>
       })()}
       {roundLogEntries.length>0&&<><h4 className="summary-group">{translateText('Прочие события')}</h4>{roundLogEntries.map((entry)=><p key={entry.id}><span>{entry.kind==='battle'?'⚔':entry.kind==='capture'?'◆':entry.kind==='retreat'?'↩':entry.kind==='hero'?'★':entry.kind==='army_destroyed'?'×':'·'}</span><span>{entry.text}</span></p>)}</>}
     </section>}

@@ -207,7 +207,12 @@
           }
         ]
       },
-      "rtsFortress": null,
+      "rtsFortress": {
+        "defenderStartPosition": {
+          "x": 0.5023,
+          "y": 0.3264
+        }
+      },
       "hex": "14:14",
       "structuralType": "stronghold",
       "economicType": "capital",
@@ -248,7 +253,8 @@
             "x": 0.4969,
             "y": 0.4361
           }
-        ]
+        ],
+        "fortressDefenseIndex": 0
       }
     },
     {
@@ -1046,7 +1052,12 @@
           }
         ]
       },
-      "rtsFortress": null,
+      "rtsFortress": {
+        "defenderStartPosition": {
+          "x": 0.4656,
+          "y": 0.3792
+        }
+      },
       "hex": "8:22",
       "structuralType": "stronghold",
       "economicType": "fortress",
@@ -1087,7 +1098,8 @@
             "x": 0.5484,
             "y": 0.4264
           }
-        ]
+        ],
+        "fortressDefenseIndex": 0
       }
     },
     {
@@ -1258,7 +1270,7 @@
       "rtsFortress": {
         "defenderStartPosition": {
           "x": 0.5203,
-          "y": 0.3083
+          "y": 0.3222
         }
       },
       "hex": "7:25",
@@ -1301,7 +1313,8 @@
             "x": 0.5117,
             "y": 0.4236
           }
-        ]
+        ],
+        "fortressDefenseIndex": 0
       }
     },
     {
@@ -1566,7 +1579,12 @@
           }
         ]
       },
-      "rtsFortress": null,
+      "rtsFortress": {
+        "defenderStartPosition": {
+          "x": 0.4922,
+          "y": 0.3528
+        }
+      },
       "hex": "14:27",
       "structuralType": "stronghold",
       "economicType": "capital",
@@ -1607,7 +1625,8 @@
             "x": 0.4656,
             "y": 0.4292
           }
-        ]
+        ],
+        "fortressDefenseIndex": 0
       }
     },
     {
@@ -2053,7 +2072,12 @@
           }
         ]
       },
-      "rtsFortress": null,
+      "rtsFortress": {
+        "defenderStartPosition": {
+          "x": 0.5266,
+          "y": 0.3167
+        }
+      },
       "hex": "17:27",
       "structuralType": "stronghold",
       "economicType": "fortress",
@@ -2094,7 +2118,8 @@
             "x": 0.4953,
             "y": 0.4444
           }
-        ]
+        ],
+        "fortressDefenseIndex": 0
       }
     },
     {
@@ -2456,7 +2481,12 @@
           }
         ]
       },
-      "rtsFortress": null,
+      "rtsFortress": {
+        "defenderStartPosition": {
+          "x": 0.5328,
+          "y": 0.3083
+        }
+      },
       "hex": "24:12",
       "structuralType": "stronghold",
       "economicType": "mine",
@@ -2497,7 +2527,8 @@
             "x": 0.4742,
             "y": 0.4486
           }
-        ]
+        ],
+        "fortressDefenseIndex": 0
       }
     },
     {
@@ -2846,7 +2877,12 @@
           }
         ]
       },
-      "rtsFortress": null,
+      "rtsFortress": {
+        "defenderStartPosition": {
+          "x": 0.5164,
+          "y": 0.3528
+        }
+      },
       "hex": "16:18",
       "structuralType": "stronghold",
       "economicType": "fortress",
@@ -2887,7 +2923,8 @@
             "x": 0.5234,
             "y": 0.4444
           }
-        ]
+        ],
+        "fortressDefenseIndex": 0
       }
     },
     {

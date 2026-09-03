@@ -500,3 +500,10 @@ pub fn detect_icons(frame: &RgbFrame) -> Vec<DetectedIcon> {
     dedup
 }
 
+
+/// Timing constants shared with the automation flow (bfme_automation).
+pub const SCORE_SCREEN_POLL: Duration = Duration::from_millis(500);
+pub const ANALYSIS_TIMEOUT: Duration = Duration::from_secs(30);
+pub const RETRY_DELAY: Duration = Duration::from_millis(400);
+pub const TAB_SETTLE: Duration = Duration::from_millis(600);
+pub const SLOT_SETTLE: Duration = Duration::from_millis(400);

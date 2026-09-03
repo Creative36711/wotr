@@ -14,7 +14,7 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.46.3";
+const GAME_VERSION: &str = "0.46.4";
 const SAVE_VERSION: u64 = 60;
 
 // Bundled RTS assets for the default «Vanilla 2.01» mod (Requirement: the mod

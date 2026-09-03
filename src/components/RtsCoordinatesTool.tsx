@@ -81,7 +81,7 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
       updateLocation(location.id, { rtsPositions: next })
       setCalibrating(false)
       setCurrentStep(null)
-      setMessage(`Координаты сохранены: защита ${next.defense.length}, атака ${next.attack.length}. Проверьте их кнопкой «Тест координат».`)
+      setMessage(`Координаты сохранены: защита ${next.defense.length}, атака ${next.attack.length}. Игра закрывается автоматически. Проверьте координаты кнопкой «Тест координат».`)
     } else if (event.type === 'stopped') {
       setCalibrating(false)
       setCurrentStep(null)

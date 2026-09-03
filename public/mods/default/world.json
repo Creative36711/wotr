@@ -5888,7 +5888,45 @@
         "5:31",
         "5:32",
         "6:31"
-      ]
+      ],
+      "rtsPositions": {
+        "defense": [
+          {
+            "x": 0.5164,
+            "y": 0.4069
+          },
+          {
+            "x": 0.5,
+            "y": 0.3931
+          },
+          {
+            "x": 0.5203,
+            "y": 0.3764
+          },
+          {
+            "x": 0.5227,
+            "y": 0.3528
+          }
+        ],
+        "attack": [
+          {
+            "x": 0.4781,
+            "y": 0.3347
+          },
+          {
+            "x": 0.475,
+            "y": 0.3125
+          },
+          {
+            "x": 0.4906,
+            "y": 0.3139
+          },
+          {
+            "x": 0.5078,
+            "y": 0.3097
+          }
+        ]
+      }
     },
     {
       "id": "anfalas",
@@ -11138,11 +11176,11 @@
         "ru": "Холм Древоборода"
       },
       "side": "civilian",
-      "structuralType": "domain",
+      "structuralType": "stronghold",
       "hex": "11:21",
       "regionId": "region-rohan",
       "image": "",
-      "economicType": "forest",
+      "economicType": "camp",
       "income": {
         "gold": 10,
         "materials": 20
@@ -11157,14 +11195,7 @@
       "rtsMapId": "",
       "rtsMapCache": null,
       "rtsFortress": null,
-      "armyLimitBonus": 0,
-      "hexes": [
-        "11:21",
-        "11:22",
-        "12:20",
-        "12:21",
-        "13:20"
-      ]
+      "armyLimitBonus": 0
     },
     {
       "id": "map-object-mt9gkcpf",
@@ -19952,7 +19983,7 @@
       "emblem": "",
       "playable": true,
       "alignment": "evil",
-      "rtsColor": "black",
+      "rtsColor": "white",
       "baseArmyLimit": 2,
       "startingTreasury": {
         "gold": 500,

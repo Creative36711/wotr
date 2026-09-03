@@ -2668,10 +2668,13 @@ fn calibration_session(executable: &Path, options: &Value, temp_directory: &Path
                         let attack: Vec<Value> =
                             captured[4..8].iter().map(|(x, y)| json!({"x":x,"y":y})).collect();
                         log.write("[cal] все 8 точек сняты — калибровка завершена");
+                        restore.restore_now(&log);
                         write_calibration_status(
                             &status_path,
                             &json!({"type":"finished","defense":defense,"attack":attack}),
                         );
+                        log.write("[cal] закрываю игру после калибровки");
+                        stop_game();
                         unsafe {
                             UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
                             UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);

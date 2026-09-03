@@ -134,6 +134,7 @@ interface MapState extends WorldSnapshot {
   queueRecruitment: (locationId: string, unitId: string) => void
   transformReserveUnit: (locationId: string, slotId: string, targetUnitId: string) => void
   transferReserveToArmy: (locationId: string, armyId: string, slotId: string) => void
+  transferArmyUnit: (sourceArmyId: string, targetArmyId: string, slotId: string) => void
   transferArmyToReserve: (locationId: string, armyId: string, slotId: string) => void
   formArmy: (locationId: string, commanderChoice: string) => void
   disbandArmy: (locationId: string, armyId: string) => void
@@ -1700,6 +1701,10 @@ export const useMapStore = create<MapState>((set) => ({
     const campaign = cloneCampaign(state.campaign)
     const locationState = campaign.locationStates[locationId] ?? { locationId, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
     if (locationState.recruitmentQueue.length >= location.recruitmentSlots) return state
+    // Найм ограничен пределом ОК локации: резерв + уже заказанное + новый отряд.
+    const reservedCp = reserveCommandPoints(locationState.reserve, state.unitTypes, state.heroes)
+      + locationState.recruitmentQueue.reduce((total, item) => total + (state.unitTypes.find((candidate) => candidate.id === item.entityId)?.commandPoints ?? 0), 0)
+    if (reservedCp + (unit.commandPoints ?? 0) > location.commandPointLimit) return state
     const treasury = campaign.treasuries[location.side]
     if (!treasury || treasury.gold < unit.recruitCost.gold || treasury.materials < unit.recruitCost.materials) return state
     treasury.gold -= unit.recruitCost.gold
@@ -1754,6 +1759,27 @@ export const useMapStore = create<MapState>((set) => ({
     changed.name = generateArmyName(changed, armies, state.factions, state.locations, state.heroes, state.grid.config)
     changed.movementRemaining = changed.exhaustedUntilRound !== null && changed.exhaustedUntilRound >= state.campaign.round ? 0 : armyMovementCap(changed, state.heroes, state.captains, state.unitTypes)
     return gameCommit(state, { campaign, armies })
+  }),
+
+  transferArmyUnit: (sourceArmyId, targetArmyId, slotId) => set((state) => {
+    if (state.mode !== 'game' || !state.campaign.phase.startsWith('planning_')) return state
+    const source = state.armies.find((item) => item.id === sourceArmyId)
+    const target = state.armies.find((item) => item.id === targetArmyId)
+    const slot = source?.unitSlots.find((item) => item.slotId === slotId)
+    if (!source || !target || !slot || source === target || source.factionId !== target.factionId || source.hexId !== target.hexId) return state
+    const unit = state.unitTypes.find((item) => item.id === slot.entityId)
+    if (!unit || armyCommandPoints(target, state.unitTypes, state.heroes) + (unit.commandPoints ?? 0) > armyCommandPointLimit(target, state.heroes, state.captains)) return state
+    if (source.unitSlots.length <= 1) return state
+    const armies = cloneArmies(state.armies)
+    const from = armies.find((item) => item.id === sourceArmyId)!
+    const to = armies.find((item) => item.id === targetArmyId)!
+    from.unitSlots = from.unitSlots.filter((item) => item.slotId !== slotId)
+    to.unitSlots.push({ ...slot })
+    for (const changed of [from, to]) {
+      changed.name = generateArmyName(changed, armies, state.factions, state.locations, state.heroes, state.grid.config)
+      changed.movementRemaining = changed.exhaustedUntilRound !== null && changed.exhaustedUntilRound >= state.campaign.round ? 0 : armyMovementCap(changed, state.heroes, state.captains, state.unitTypes)
+    }
+    return gameCommit(state, { armies })
   }),
 
   transferArmyToReserve: (locationId, armyId, slotId) => set((state) => {
@@ -1822,14 +1848,26 @@ export const useMapStore = create<MapState>((set) => ({
     const army = state.armies.find((item) => item.id === armyId)
     const locationState = state.campaign.locationStates[locationId]
     if (!location || !army || !locationState || !canFactionPlan(state.campaign, state.factions, location.side) || army.factionId !== location.side || army.hexId !== locationHexId(location, state.grid.config)) return state
-    const additions = [...army.unitSlots, ...army.heroSlots]
-    if (army.commander?.kind === 'hero') additions.push({ slotId: `reserve-hero-${army.commander.entityId}-${Date.now().toString(36)}`, kind: 'hero', entityId: army.commander.entityId, objectId: army.commander.objectId! })
     const campaign = cloneCampaign(state.campaign)
     if (army.commander?.kind === 'captain') releaseCaptain(campaign, army.factionId, army.commander)
     campaign.pendingOrders=campaign.pendingOrders.filter((order)=>order.armyId!==armyId)
     campaign.alliedPlans=campaign.alliedPlans.filter((plan)=>plan.armyId!==armyId)
-    const free = Math.max(0, location.commandPointLimit - reserveCommandPoints(campaign.locationStates[locationId].reserve, state.unitTypes, state.heroes))
-    campaign.locationStates[locationId].reserve.push(...additions.slice(0, free).map((slot) => ({ ...slot })))
+    // Герои всегда попадают в резерв; отряды — пока влезают в предел ОК
+    // локации, остальные распускаются насовсем (не переполняют резерв).
+    let usedCp = reserveCommandPoints(campaign.locationStates[locationId].reserve, state.unitTypes, state.heroes)
+    const heroesMoving = [...army.heroSlots, ...(army.commander?.kind === 'hero' ? [{ slotId: `reserve-hero-${army.commander.entityId}-${Date.now().toString(36)}`, kind: 'hero', entityId: army.commander.entityId, objectId: army.commander.objectId! }] : [])]
+    const movedUnits = []
+    const lostUnits = []
+    for (const slot of army.unitSlots) {
+      const cp = state.unitTypes.find((unit) => unit.id === slot.entityId)?.commandPoints ?? 0
+      if (usedCp + cp <= location.commandPointLimit) { movedUnits.push(slot); usedCp += cp }
+      else lostUnits.push(slot)
+    }
+    for (const slot of heroesMoving) {
+      usedCp += state.heroes.find((hero) => hero.id === slot.entityId)?.commandPoints ?? 0
+    }
+    campaign.locationStates[locationId].reserve.push(...[...heroesMoving, ...movedUnits].map((slot) => ({ ...slot })))
+    if (lostUnits.length) campaign.log.unshift(campaignEvent(campaign, `При расформировании «${army.name}» ${lostUnits.length} отряд(ов) не поместились в резерв (предел ${location.commandPointLimit} ОК) и распущены.`, 'army_destroyed', army.factionId))
     return { ...gameCommit(state, { campaign, armies: state.armies.filter((item) => item.id !== armyId) }), selectedArmyId: state.selectedArmyId === armyId ? null : state.selectedArmyId }
   }),
 

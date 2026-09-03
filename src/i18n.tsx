@@ -1097,7 +1097,8 @@ function DocumentLocalizer({ language }: { language: AppLanguage }) {
   useEffect(() => {
     currentLanguage = language
     document.documentElement.lang = language
-    document.title = language === 'en' ? 'War of the Ring — Map Editor' : 'Война за Кольцо — редактор карты'
+    // Window title is always English regardless of the UI language.
+    document.title = 'War of the Ring — Map Editor'
 
     const refresh=()=>translateDomNode(document.body,language)
     refresh()

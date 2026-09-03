@@ -8,7 +8,7 @@ use std::{
     ptr::{null, null_mut},
     sync::{
         atomic::{AtomicBool, Ordering},
-        mpsc, Mutex, OnceLock,
+        mpsc, OnceLock,
     },
     thread,
     time::{Duration, Instant},
@@ -2602,7 +2602,7 @@ fn calibration_session(executable: &Path, options: &Value, temp_directory: &Path
     );
     log.write("[cal] шаг 1/8: 1-я позиция ЗАЩИТЫ — наведите курсор и нажмите F9");
 
-    let quit_session = |captured: &[(f64, f64)], reason: &str| {
+    let quit_session = |captured: &[(f64, f64)], reason: &str, restore: &mut ResolutionRestore| {
         log.write(reason);
         restore.restore_now(&log);
         write_calibration_status(&status_path, &json!({"type":"stopped","points":calibration_points_value(captured)}));
@@ -2614,7 +2614,7 @@ fn calibration_session(executable: &Path, options: &Value, temp_directory: &Path
     let mut message: Message = unsafe { zeroed() };
     loop {
         if stop_flag.exists() {
-            quit_session(&captured, "[cal] остановлено из редактора: закрываю игру");
+            quit_session(&captured, "[cal] остановлено из редактора: закрываю игру", &mut restore);
             break;
         }
         // Возврат разрешения: фиксированно через 30 секунд после запуска.
@@ -2628,7 +2628,7 @@ fn calibration_session(executable: &Path, options: &Value, temp_directory: &Path
             }
             match message.w_param as i32 {
                 HOTKEY_QUIT_ID => {
-                    quit_session(&captured, "[cal] остановлено пользователем (F10): закрываю игру");
+                    quit_session(&captured, "[cal] остановлено пользователем (F10): закрываю игру", &mut restore);
                     unsafe {
                         UnregisterHotKey(null_mut(), HOTKEY_CAPTURE_ID);
                         UnregisterHotKey(null_mut(), HOTKEY_QUIT_ID);

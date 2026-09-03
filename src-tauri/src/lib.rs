@@ -14,7 +14,7 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.46.6";
+const GAME_VERSION: &str = "0.46.7";
 const SAVE_VERSION: u64 = 60;
 
 // Bundled RTS assets for the default «Vanilla 2.01» mod (Requirement: the mod
@@ -164,7 +164,7 @@ fn prepare_and_start_rts_battle(app:AppHandle,mod_id:String,executable_path:Stri
  if !exe.is_file(){return Err(if language=="en"{format!("BFME executable was not found: {}",exe.display())}else{format!("Исполняемый файл BFME не найден: {}",exe.display())})}
  let game_dir=exe.parent().ok_or_else(||if language=="en"{"Could not determine the game folder".to_string()}else{"Не удалось определить папку игры".to_string()})?;
  let cache_expected=battle_config.get("map").and_then(|value|value.get("expectedSize")).and_then(Value::as_u64).unwrap_or(0);
- let (mut deployment,errors)=plan_mod_rts_deployment(&app,&mod_id,game_dir,&cache_scope,&entity_id,cache_expected,&language);
+ let (mut deployment,mut errors)=plan_mod_rts_deployment(&app,&mod_id,game_dir,&cache_scope,&entity_id,cache_expected,&language);
  let temp=data_root(&app)?.join("temp");fs::create_dir_all(&temp).map_err(|error|error.to_string())?;
  let conflict_id=battle_config.get("conflictId").and_then(Value::as_str).unwrap_or("last").to_string();
  let battle_result_path_value=battle_result_path(&temp,&conflict_id).to_string_lossy().to_string();

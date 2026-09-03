@@ -13,7 +13,7 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.46.6
+Application: 0.46.7
 world.json: 43
 roster.json: 16
 savegame.json: 60
@@ -29,7 +29,7 @@ savegame.json: 60
 
 0.46.4 restores the timing constants accidentally removed from `match_detector.rs` together with the dead code cleanup (broke the build), and designates the main defense point for the seven strongholds.
 
-0.46.5 reworks the calibration session to run entirely inside the elevated helper, mirroring `tools/calibrate.py` (which elevated itself via `ensure_admin`): system hotkeys (`RegisterHotKey` F9/F10 with a message loop, as in `tools/hotkey.py`) are used instead of a low-level keyboard hook — an LL hook in the non-elevated app never receives keys while the elevated game window has focus (UIPI), which made F9 dead. Progress is published to `rts_calibration_status.json` and polled by the UI; the editor Stop button and F10 both close the game. The windowed resolution is restored by a fixed 30-second timer (the game has read Options.ini by then even on a cold start). After closing an already-running game every flow waits 5 seconds before relaunching so RotWK does not report «game already running». Calibration now deploys the same files as the coordinate test (mod BIGs + the location MapCache) before launching the game, so the calibrated map is the one actually loaded; the deployment plan comes from a shared planner used by both flows, and calibration requires an uploaded MapCache.
+0.46.5 reworks the calibration session to run entirely inside the elevated helper, mirroring `tools/calibrate.py` (which elevated itself via `ensure_admin`): system hotkeys (`RegisterHotKey` F9/F10 with a message loop, as in `tools/hotkey.py`) are used instead of a low-level keyboard hook — an LL hook in the non-elevated app never receives keys while the elevated game window has focus (UIPI), which made F9 dead. Progress is published to `rts_calibration_status.json` and polled by the UI; the editor Stop button and F10 both close the game. The windowed resolution is restored by a fixed 30-second timer (the game has read Options.ini by then even on a cold start). After closing an already-running game every flow waits 5 seconds before relaunching so RotWK does not report «game already running». Calibration now deploys the same files as the coordinate test (mod BIGs + the location MapCache) before launching the game, so the calibrated map is the one actually loaded; the deployment plan comes from a shared planner used by both flows, and calibration requires an uploaded MapCache. 0.46.7 fixes three compile errors introduced by that change (unused Mutex import, a closure double-mutable-borrow of the resolution restore, and a missing `mut` on the deployment error list).
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 

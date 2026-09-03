@@ -1,6 +1,6 @@
 [package]
 name = "war-of-the-ring"
-version = "0.46.6"
+version = "0.46.7"
 description = "War of the Ring global campaign for BFME2"
 authors = ["WotR Remaster Team"]
 edition = "2021"

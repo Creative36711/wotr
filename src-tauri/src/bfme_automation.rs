@@ -2403,6 +2403,13 @@ pub fn run_helper_if_requested() -> bool {
         if job.get("mode").and_then(Value::as_str) == Some("calibrate") {
             let log = AutomationLog::start();
             stop_game_if_running(&log);
+            let language = job
+                .get("language")
+                .and_then(Value::as_str)
+                .unwrap_or("ru");
+            // Кэш карты и файлы мода разворачиваются до запуска игры — как при
+            // тесте координат, чтобы калибровка шла по карте этой локации.
+            deploy_job_files(job.get("deployment").unwrap_or(&Value::Null), language)?;
             let options = job.get("options").cloned().unwrap_or_else(|| json!({}));
             calibration_session(&executable, &options, &temp_directory);
             return Ok((Vec::new(), None));
@@ -2692,7 +2699,7 @@ fn calibration_session(executable: &Path, options: &Value, temp_directory: &Path
 /// game window, resolution restore) must run elevated — exactly like
 /// tools/calibrate.py, which called elevate.ensure_admin() up front.
 #[cfg(target_os = "windows")]
-pub fn spawn_calibration(executable: PathBuf, options: Value, temp_directory: PathBuf) -> Result<Value, String> {
+pub fn spawn_calibration(executable: PathBuf, options: Value, temp_directory: PathBuf, deployment: Value) -> Result<Value, String> {
     if !executable.is_file() {
         return Err(format!(
             "Исполняемый файл BFME не найден: {}",
@@ -2706,8 +2713,10 @@ pub fn spawn_calibration(executable: PathBuf, options: Value, temp_directory: Pa
     let _ = std::fs::remove_file(&result_path);
     let job = json!({
         "mode": "calibrate",
+        "language": options.get("language").and_then(Value::as_str).unwrap_or("ru"),
         "executablePath": executable.to_string_lossy(),
         "options": options,
+        "deployment": deployment,
     });
     std::fs::write(
         &job_path,
@@ -2729,7 +2738,7 @@ pub fn spawn_calibration(executable: PathBuf, options: Value, temp_directory: Pa
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn spawn_calibration(_executable: PathBuf, _options: Value, _temp_directory: PathBuf) -> Result<Value, String> {
+pub fn spawn_calibration(_executable: PathBuf, _options: Value, _temp_directory: PathBuf, _deployment: Value) -> Result<Value, String> {
     Err("Калибровка координат поддерживается только в Windows".into())
 }
 

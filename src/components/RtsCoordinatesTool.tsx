@@ -95,11 +95,12 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
 
   const startCalibration = async () => {
     if (!desktopRuntime) { setMessage('Калибровка доступна только в Tauri-приложении.'); return }
+    if (!activeMod || !location.rtsMapCache) { setMessage('Для калибровки нужен загруженный MapCache BIG — кэш карты копируется в папку игры, чтобы калибровать именно её.'); return }
     if (!executablePath) { setMessage('Сначала выберите lotrbfme2ep1.exe в главном меню.'); return }
     if (pollRef.current !== null) { window.clearTimeout(pollRef.current); pollRef.current = null }
-    setMessage('Запуск помощника калибровки: подтвердите запрос Windows UAC. Игра откроется в окне 1280×720; наведите курсор на точку и нажмите F9. F10 — выход (игра закроется).')
+    setMessage('Запуск помощника калибровки: подтвердите запрос Windows UAC. Файлы мода и кэш карты «' + location.rtsMapCache.mapName + '» копируются в папку игры, игра откроется в окне 1280×720; наведите курсор на точку и нажмите F9. F10 — выход (игра закроется).')
     try {
-      await startRtsCalibration(executablePath, { isFortress: isFortressSite, attach: false })
+      await startRtsCalibration(activeMod.id, executablePath, location.id, { isFortress: isFortressSite, attach: false, expectedSize: location.rtsMapCache.size })
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error))
       return
@@ -211,6 +212,11 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
     }
   }
 
+  const calibrateBlockedReason = !desktopRuntime ? 'Калибровка доступна только в Tauri-приложении.'
+    : !activeMod ? 'Мод не загружен.'
+      : !location.rtsMapCache ? 'Для объекта не загружен MapCache BIG — калибровка невозможна без кэша карты.'
+        : !executablePath ? 'Не выбран lotrbfme2ep1.exe.'
+          : null
   const testBlockedReason = !desktopRuntime ? 'Тест доступен только в Tauri-приложении.'
     : !executablePath ? 'Не выбран lotrbfme2ep1.exe.'
       : !activeMod?.rts.enabled ? 'RTS-интеграция отключена в настройках мода.'
@@ -244,7 +250,7 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
       <footer>
         {calibrating
           ? <button type="button" className="danger" onClick={() => void stopCalibration()}>■ Стоп (F10)</button>
-          : <button type="button" onClick={() => void startCalibration()} title="Запустить игру в окне 1280×720 и снять 8 точек">◎ Калибровать координаты</button>}
+          : <button type="button" disabled={calibrateBlockedReason !== null} title={calibrateBlockedReason ?? 'Запустить игру в окне 1280×720 (с кэшем карты этой локации) и снять 8 точек'} onClick={() => void startCalibration()}>◎ Калибровать координаты</button>}
         <button type="button" disabled={testBlockedReason !== null || testBusy} title={testBlockedReason ?? 'Проверить расстановку точек в комнате BFME'} onClick={() => void testCoordinates()}>▶ Тест координат</button>
         {positions && <button type="button" className="danger" onClick={resetPositions}>Сбросить</button>}
       </footer>

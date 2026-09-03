@@ -122,6 +122,67 @@ fn add(
     lines.push("    End".into());
     *tag += 1;
 }
+/// Maps a hero object to the `Upgrade_AllFactionHeroUpgrade<N>` that unlocks its
+/// fortress recruit button. The numbers are NOT the order heroes happen to sit
+/// in an army - they are fixed per faction by the mod's CommandButton set, so
+/// they must be looked up here. Using the army index instead revives whichever
+/// hero owns that slot (e.g. Theoden at index 0 revived Eowyn, who is Upgrade1).
+fn hero_upgrade_number(object_id: &str) -> Option<usize> {
+    let number = match object_id {
+        // Men of the West
+        "RohanEowyn" => 1,
+        "RohanEomer" => 2,
+        "GondorBoromir" => 3,
+        "RohanTheoden" => 4,
+        "GondorFaramir" => 5,
+        "GondorAragornMP" => 6,
+        "GondorGandalf" => 7,
+        // Elves
+        "ElvenHaldir" => 1,
+        "ElvenGlorfindel" => 2,
+        "ElvenArwen" => 3,
+        "ElvenLegolas" => 4,
+        "ElvenThranduil" => 5,
+        "ElvenElrond" => 6,
+        // Dwarves
+        "DwarvenCaptainofDale" => 1,
+        "DwarvenGloin" => 2,
+        "DwarvenGimli" => 3,
+        "DwarvenDain" => 4,
+        // Isengard
+        "IsengardWormTongue" => 1,
+        "IsengardLurtz" => 2,
+        "IsengardSharku" => 3,
+        "IsengardSaruman" => 4,
+        // Mordor
+        "MordorGothmog" => 1,
+        "MordorMouthOfSauron" => 2,
+        "KhamulFellBeast" => 3,
+        "MorgomirFellBeast" => 4,
+        "MordorWitchKingOnFellBeast" => 5,
+        // Angmar
+        "AngmarHwaldar" => 1,
+        "AngmarKarsh" => 2,
+        "AngmarMorgramir" => 3,
+        "AngmarRogash" => 4,
+        "AngmarWitchking" => 5,
+        // Goblins / Wild
+        "WildGoblinKing" => 1,
+        "WildAzog" => 2,
+        "WildShelob" => 3,
+        "Drogoth" => 4,
+        // Arnor
+        "ArnorArgeleb" => 1,
+        "ArnorArveleg" => 2,
+        "ArnorArvedui" => 3,
+        "ArnorCaptain" => 4,
+        // Ring heroes use Upgrade_FortressRingHero and are always level 10, so
+        // they never get a hero mod block.
+        _ => return None,
+    };
+    Some(number)
+}
+
 /// `Object <Hero>` block that grants the hero its per-faction unique upgrade
 /// and its campaign veterancy level. Mirrors `build_hero_mod` in the reference
 /// bridge (spawn.py): BFME needs an explicit `LevelToGrant`, so it is emitted
@@ -308,8 +369,12 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
                 Some(angle),
             );
             // Every hero needs an explicit level object, level 1 included.
+            // The upgrade number comes from the fortress button table, never
+            // from the hero's position in this army.
             let level = item.get("level").and_then(Value::as_i64).unwrap_or(1);
-            hero_mods.push(hero_mod_block(object_id, index + 1, level));
+            if let Some(upgrade_number) = hero_upgrade_number(object_id) {
+                hero_mods.push(hero_mod_block(object_id, upgrade_number, level));
+            }
         }
         // Носитель Кольца Всевластья появляется рядом с линией героев (§4.7).
         if let Some(ring_hero) = participant
@@ -336,4 +401,54 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
     Ok(
         json!({"size":big.len(),"iniBytes":ini.len(),"objects":tag,"targetFileName":"__wotr_generated_presets.big"}),
     )
+}
+
+#[cfg(test)]
+mod hero_upgrade_tests {
+    use super::hero_upgrade_number;
+
+    /// The upgrade number is a property of the hero, not of its position in the
+    /// army. Theoden is Upgrade4 even when he marches alone (regression: he was
+    /// spawned as Upgrade1, which revived Eowyn instead).
+    #[test]
+    fn upgrade_number_is_per_hero_not_per_slot() {
+        assert_eq!(hero_upgrade_number("RohanTheoden"), Some(4));
+        assert_eq!(hero_upgrade_number("IsengardSaruman"), Some(4));
+        assert_eq!(hero_upgrade_number("RohanEowyn"), Some(1));
+    }
+
+    /// Numbers must match the fortress CommandButton set exactly.
+    #[test]
+    fn matches_fortress_command_buttons() {
+        for (object_id, expected) in [
+            ("RohanEowyn", 1), ("RohanEomer", 2), ("GondorBoromir", 3),
+            ("RohanTheoden", 4), ("GondorFaramir", 5), ("GondorAragornMP", 6),
+            ("GondorGandalf", 7),
+            ("ElvenHaldir", 1), ("ElvenGlorfindel", 2), ("ElvenArwen", 3),
+            ("ElvenLegolas", 4), ("ElvenThranduil", 5), ("ElvenElrond", 6),
+            ("DwarvenCaptainofDale", 1), ("DwarvenGloin", 2),
+            ("DwarvenGimli", 3), ("DwarvenDain", 4),
+            ("IsengardWormTongue", 1), ("IsengardLurtz", 2),
+            ("IsengardSharku", 3), ("IsengardSaruman", 4),
+            ("MordorGothmog", 1), ("MordorMouthOfSauron", 2),
+            ("KhamulFellBeast", 3), ("MorgomirFellBeast", 4),
+            ("MordorWitchKingOnFellBeast", 5),
+            ("AngmarHwaldar", 1), ("AngmarKarsh", 2), ("AngmarMorgramir", 3),
+            ("AngmarRogash", 4), ("AngmarWitchking", 5),
+            ("WildGoblinKing", 1), ("WildAzog", 2), ("WildShelob", 3),
+            ("Drogoth", 4),
+            ("ArnorArgeleb", 1), ("ArnorArveleg", 2), ("ArnorArvedui", 3),
+            ("ArnorCaptain", 4),
+        ] {
+            assert_eq!(hero_upgrade_number(object_id), Some(expected), "{object_id}");
+        }
+    }
+
+    /// Ring heroes use Upgrade_FortressRingHero and must not get a hero block.
+    #[test]
+    fn ring_heroes_have_no_upgrade_number() {
+        assert_eq!(hero_upgrade_number("ElvenGaladriel_RingHero"), None);
+        assert_eq!(hero_upgrade_number("MordorSauron_RingHero"), None);
+        assert_eq!(hero_upgrade_number("NotAHero"), None);
+    }
 }

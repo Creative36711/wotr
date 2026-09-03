@@ -14,7 +14,7 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.46.0";
+const GAME_VERSION: &str = "0.46.1";
 const SAVE_VERSION: u64 = 60;
 
 // Bundled RTS assets for the default «Vanilla 2.01» mod (Requirement: the mod
@@ -141,7 +141,7 @@ fn plan_rts_deployment(source:&Path,destination:&Path,expected:u64,always_replac
 #[tauri::command]
 fn prepare_and_start_rts_battle(app:AppHandle,mod_id:String,executable_path:String,cache_scope:String,entity_id:String,mut battle_config:Value)->Result<Value,String>{
  if let Ok(real_appdata)=std::env::var("APPDATA"){if let Some(object)=battle_config.as_object_mut(){object.insert("_realAppData".into(),json!(real_appdata));}}
- let language=battle_config.get("language").and_then(Value::as_str).unwrap_or("ru");
+ let language=battle_config.get("language").and_then(Value::as_str).unwrap_or("ru").to_string();
  let exe=PathBuf::from(&executable_path);
  if !exe.is_file(){return Err(if language=="en"{format!("BFME executable was not found: {}",exe.display())}else{format!("Исполняемый файл BFME не найден: {}",exe.display())})}
  let game_dir=exe.parent().ok_or_else(||if language=="en"{"Could not determine the game folder".to_string()}else{"Не удалось определить папку игры".to_string()})?;
@@ -149,17 +149,18 @@ fn prepare_and_start_rts_battle(app:AppHandle,mod_id:String,executable_path:Stri
  let meta:Value=serde_json::from_str(&fs::read_to_string(mod_root_path.join("mod.json")).map_err(|error|error.to_string())?).map_err(|error|error.to_string())?;
  let rts=meta.get("rts").ok_or_else(||if language=="en"{"The mod has no BFME system settings".to_string()}else{"В моде отсутствуют системные настройки BFME".to_string()})?;
  let mut deployment=Vec::new();let mut errors=Vec::new();
- if let Some(files)=rts.get("moduleFiles").and_then(Value::as_array){for file in files{let id=file.get("id").and_then(Value::as_str).unwrap_or("");let target=file.get("targetFileName").and_then(Value::as_str).unwrap_or("");let size=file.get("size").and_then(Value::as_u64).unwrap_or(0);if safe_big_name(target).is_err(){errors.push(if language=="en"{format!("Invalid mod file name: {target}")}else{format!("Некорректное имя файла мода: {target}")});continue}match rts_asset_path(&app,&mod_id,"module",id).and_then(|source|plan_rts_deployment(&source,&game_dir.join(target),size,false,language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}}}
- if let Some(file)=rts.get("mapsFile").filter(|value|!value.is_null()){let target=file.get("targetFileName").and_then(Value::as_str).unwrap_or("");let size=file.get("size").and_then(Value::as_u64).unwrap_or(0);if safe_big_name(target).is_err(){errors.push(if language=="en"{format!("Invalid map archive name: {target}")}else{format!("Некорректное имя архива карт: {target}")})}else{match rts_asset_path(&app,&mod_id,"maps","maps").and_then(|source|plan_rts_deployment(&source,&game_dir.join(target),size,false,language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}}}else{errors.push(if language=="en"{"The mod has no shared BIG map archive".into()}else{"В мод не загружен единый BIG-архив карт".into()})}
+ if let Some(files)=rts.get("moduleFiles").and_then(Value::as_array){for file in files{let id=file.get("id").and_then(Value::as_str).unwrap_or("");let target=file.get("targetFileName").and_then(Value::as_str).unwrap_or("");let size=file.get("size").and_then(Value::as_u64).unwrap_or(0);if safe_big_name(target).is_err(){errors.push(if language=="en"{format!("Invalid mod file name: {target}")}else{format!("Некорректное имя файла мода: {target}")});continue}match rts_asset_path(&app,&mod_id,"module",id).and_then(|source|plan_rts_deployment(&source,&game_dir.join(target),size,false,&language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}}}
+ if let Some(file)=rts.get("mapsFile").filter(|value|!value.is_null()){let target=file.get("targetFileName").and_then(Value::as_str).unwrap_or("");let size=file.get("size").and_then(Value::as_u64).unwrap_or(0);if safe_big_name(target).is_err(){errors.push(if language=="en"{format!("Invalid map archive name: {target}")}else{format!("Некорректное имя архива карт: {target}")})}else{match rts_asset_path(&app,&mod_id,"maps","maps").and_then(|source|plan_rts_deployment(&source,&game_dir.join(target),size,false,&language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}}}else{errors.push(if language=="en"{"The mod has no shared BIG map archive".into()}else{"В мод не загружен единый BIG-архив карт".into()})}
  let cache_target=rts.get("mapCacheTargetFileName").and_then(Value::as_str).unwrap_or("");
- if safe_big_name(cache_target).is_err(){errors.push(if language=="en"{"Invalid active map cache file name".into()}else{"Некорректное имя целевого кэша карт".into()})}else{let expected=battle_config.get("map").and_then(|value|value.get("expectedSize")).and_then(Value::as_u64).unwrap_or(0);match rts_asset_path(&app,&mod_id,&cache_scope,&entity_id).and_then(|source|plan_rts_deployment(&source,&game_dir.join(cache_target),expected,true,language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}}
+ if safe_big_name(cache_target).is_err(){errors.push(if language=="en"{"Invalid active map cache file name".into()}else{"Некорректное имя целевого кэша карт".into()})}else{let expected=battle_config.get("map").and_then(|value|value.get("expectedSize")).and_then(Value::as_u64).unwrap_or(0);match rts_asset_path(&app,&mod_id,&cache_scope,&entity_id).and_then(|source|plan_rts_deployment(&source,&game_dir.join(cache_target),expected,true,&language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}}
  let temp=data_root(&app)?.join("temp");fs::create_dir_all(&temp).map_err(|error|error.to_string())?;
+ let conflict_id=battle_config.get("conflictId").and_then(Value::as_str).unwrap_or("last").to_string();
+ let battle_result_path_value=battle_result_path(&temp,&conflict_id).to_string_lossy().to_string();
  if let Some(object)=battle_config.as_object_mut(){
-  let conflict_id=battle_config.get("conflictId").and_then(Value::as_str).unwrap_or("last").to_string();
-  object.insert("_battleResultPath".into(),json!(battle_result_path(&temp,&conflict_id).to_string_lossy()));
+  object.insert("_battleResultPath".into(),json!(battle_result_path_value));
  }
  let config_path=temp.join("current_battle.json");atomic_write(&config_path,serde_json::to_string_pretty(&battle_config).map_err(|error|error.to_string())?.as_bytes())?;
- let spawn_path=temp.join("__wotr_generated_presets.big");match rts_spawn::generate(&spawn_path,&battle_config).and_then(|report|plan_rts_deployment(&spawn_path,&game_dir.join("__wotr_generated_presets.big"),report.get("size").and_then(Value::as_u64).unwrap_or(0),true,language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}
+ let spawn_path=temp.join("__wotr_generated_presets.big");match rts_spawn::generate(&spawn_path,&battle_config).and_then(|report|plan_rts_deployment(&spawn_path,&game_dir.join("__wotr_generated_presets.big"),report.get("size").and_then(Value::as_u64).unwrap_or(0),true,&language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}
  if !errors.is_empty(){return Ok(json!({"ok":false,"gameDirectory":game_dir.to_string_lossy(),"executablePath":exe.to_string_lossy(),"deployed":[],"errors":errors,"battleConfigPath":config_path.to_string_lossy()}))}
  let deployed=bfme_automation::deploy_and_launch_with_elevation(&exe,&battle_config,&temp,&Value::Array(deployment))?;
  Ok(json!({"ok":true,"gameDirectory":game_dir.to_string_lossy(),"executablePath":exe.to_string_lossy(),"deployed":deployed,"errors":[],"battleConfigPath":config_path.to_string_lossy()}))

@@ -488,8 +488,7 @@ pub fn detect_icons(frame: &RgbFrame) -> Vec<DetectedIcon> {
     let victory = victory_template().scaled(scale);
     let defeat = defeat_template().scaled(scale);
     let nms = ICON_NMS_DISTANCE * scale;
-    let mut icons: Vec<DetectedIcon> = Vec::new();
-    let mut scan = |roi| -> Vec<DetectedIcon> {
+    let scan = |roi| -> Vec<DetectedIcon> {
         let mut found = Vec::new();
         for (kind, template) in [("victory", &victory), ("defeat", &defeat)] {
             for hit in find_template(frame, template, roi, ICON_THRESHOLD, nms) {
@@ -498,7 +497,7 @@ pub fn detect_icons(frame: &RgbFrame) -> Vec<DetectedIcon> {
         }
         found
     };
-    icons = scan(roi_pixels(CHART_ROI, frame.width, frame.height));
+    let mut icons = scan(roi_pixels(CHART_ROI, frame.width, frame.height));
     if icons.is_empty() {
         icons = scan(roi_pixels(ICON_FALLBACK_ROI, frame.width, frame.height));
     }

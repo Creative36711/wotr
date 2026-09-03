@@ -8,7 +8,7 @@ use std::{
     ptr::{null, null_mut},
     sync::{
         atomic::{AtomicBool, Ordering},
-        mpsc, OnceLock,
+        mpsc, Mutex, OnceLock,
     },
     thread,
     time::{Duration, Instant},
@@ -711,31 +711,44 @@ fn calibration_hook_loop(ready: mpsc::Sender<Result<(), String>>) {
 }
 
 #[cfg(target_os = "windows")]
-fn ensure_calibration_hook() -> Result<&'static mpsc::Receiver<u32>, String> {
+fn ensure_calibration_hook() -> Result<std::sync::MutexGuard<'static, mpsc::Receiver<u32>>, String> {
     // The channel is created once and reused across calibration sessions:
-    // a second session simply drains stale events before starting.
-    static HOOK: OnceLock<Result<&'static mpsc::Receiver<u32>, String>> = OnceLock::new();
-    HOOK.get_or_init(|| {
-        let (key_sender, key_receiver) = mpsc::channel::<u32>();
-        let (ready_sender, ready_receiver) = mpsc::channel::<Result<(), String>>();
-        thread::Builder::new()
-            .name("bfme-calibration-keys".into())
-            .spawn(move || calibration_hook_loop(ready_sender))
-            .map_err(|error| format!("Не удалось создать поток горячих клавиш: {error}"))?;
-        let status = ready_receiver
-            .recv_timeout(Duration::from_secs(5))
-            .unwrap_or_else(|_| Err("Горячие клавиши калибровки не ответили за 5 секунд".into()));
-        match status {
-            Ok(()) => {
-                // The LL-hook sends captured keys through this global sender.
-                let _ = CALIBRATION_KEYS.set(key_sender);
-                Ok(Box::leak(Box::new(key_receiver)))
+    // a second session simply drains stale events before starting. The
+    // receiver lives in a static Mutex because mpsc::Receiver is !Sync.
+    static HOOK: OnceLock<Result<(), String>> = OnceLock::new();
+    static RECEIVER: OnceLock<Mutex<mpsc::Receiver<u32>>> = OnceLock::new();
+    let status = HOOK
+        .get_or_init(|| {
+            let (key_sender, key_receiver) = mpsc::channel::<u32>();
+            let (ready_sender, ready_receiver) = mpsc::channel::<Result<(), String>>();
+            if let Err(error) = thread::Builder::new()
+                .name("bfme-calibration-keys".into())
+                .spawn(move || calibration_hook_loop(ready_sender))
+            {
+                return Err(format!("Не удалось создать поток горячих клавиш: {error}"));
             }
-            Err(error) => Err(error),
-        }
-    })
-    .clone()
-    .map_err(|_| "Канал горячих клавиш калибровки недоступен".to_string())
+            let ready = ready_receiver
+                .recv_timeout(Duration::from_secs(5))
+                .unwrap_or_else(|_| Err("Горячие клавиши калибровки не ответили за 5 секунд".to_string()));
+            match ready {
+                Ok(()) => {
+                    // The LL-hook sends captured keys through this global sender.
+                    let _ = CALIBRATION_KEYS.set(key_sender);
+                    let _ = RECEIVER.set(Mutex::new(key_receiver));
+                    Ok(())
+                }
+                Err(error) => Err(error),
+            }
+        })
+        .clone();
+    match status {
+        Ok(()) => RECEIVER
+            .get()
+            .ok_or_else(|| "Канал горячих клавиш калибровки недоступен".to_string())?
+            .lock()
+            .map_err(|_| "Канал горячих клавиш калибровки заблокирован".to_string()),
+        Err(error) => Err(error),
+    }
 }
 
 #[cfg(target_os = "windows")]
@@ -2435,15 +2448,19 @@ pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Valu
         CALIBRATION_ACTIVE.store(false, Ordering::SeqCst);
         emit_calibration(&app, payload);
     };
+    if CALIBRATION_ACTIVE.swap(true, Ordering::SeqCst) {
+        finish(json!({"type":"error","message":"Калибровка уже выполняется".to_string()}));
+        return;
+    }
     let receiver = match ensure_calibration_hook() {
         Ok(receiver) => receiver,
         Err(error) => {
+            CALIBRATION_ACTIVE.store(false, Ordering::SeqCst);
             finish(json!({"type":"error","message":error}));
             return;
         }
     };
-    CALIBRATION_ACTIVE.store(true, Ordering::SeqCst);
-    if !attach && !game_process_is_running() && CALIBRATION_ACTIVE.load(Ordering::Relaxed) {
+    if !attach && !game_process_is_running() {
         log.write("[cal] запускаю игру в оконном режиме для калибровки");
         if let Err(error) = launch_game(executable, true, Some(resolution), &log) {
             finish(json!({"type":"error","message":error}));
@@ -2462,7 +2479,7 @@ pub fn run_calibration_session(app: AppHandle, executable: &Path, options: &Valu
         if window.is_none() {
             thread::sleep(Duration::from_millis(250));
             if Instant::now() > window_deadline {
-                finish(json!({"type":"error","message":"Окно игры не появилось за 120 секунд".into()}));
+                finish(json!({"type":"error","message":"Окно игры не появилось за 120 секунд".to_string()}));
                 return;
             }
         }

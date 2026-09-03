@@ -13,13 +13,15 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.46.0
+Application: 0.46.1
 world.json: 43
 roster.json: 16
 savegame.json: 60
 ```
 
 0.46.0 integrates the real RTS battle flow end to end: 51 imported BFME MapCaches with calibrated minimap coordinates, randomized start positions (the fortress owner always takes the main defense point of a stronghold), a coordinate-calibration tool and a coordinate-test tool in the editor, automatic score-screen winner detection, and automatic BFME shutdown after the winner is determined. The default «Vanilla 2.01» mod now ships its `_patch201ini.big` and `__wotr_maps.big` archives plus every default MapCache embedded in the executable and restores them into `portable_data` on the first launch, so BIG files no longer need to be installed manually.
+
+0.46.1 fixes the first 0.46.0 build: the generated `templates.rs` now joins its hex chunks with `concat!` (Rust has no implicit adjacent string-literal concatenation), the calibration hotkey channel is kept in a static `Mutex` (`mpsc::Receiver` is `!Sync`), and borrow-checker conflicts in the battle-launch command are resolved.
 
 Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
 

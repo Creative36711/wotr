@@ -403,7 +403,7 @@ impl AutomationLog {
     fn write(&self, message: impl AsRef<str>) {
         let mut now = WindowsSystemTime::default();
         unsafe { GetLocalTime(&mut now) };
-        println!(
+        let line = format!(
             "[{:02}:{:02}:{:02} +{:6.1}s] {}",
             now.hour,
             now.minute,
@@ -411,6 +411,180 @@ impl AutomationLog {
             self.started.elapsed().as_secs_f64(),
             message.as_ref()
         );
+        println!("{line}");
+        // Копия в portable_data/diagnostics/<сессия>/automation.log: из консоли
+        // игру обычно не запускают, а без файла разбор полётов невозможен.
+        append_diagnostics_line(&line);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Диагностика боя: папка сессии, файл журнала и скриншоты
+// ---------------------------------------------------------------------------
+
+/// Папка диагностики текущего боя. Её задаёт `battle_config.diagnostics.folder`
+/// (абсолютный путь считает lib.rs), а читает каждая стадия автоматизации —
+/// вплоть до elevated-копии процесса.
+#[cfg(target_os = "windows")]
+static DIAGNOSTICS_FOLDER: OnceLock<std::sync::Mutex<Option<PathBuf>>> = OnceLock::new();
+
+#[cfg(target_os = "windows")]
+fn diagnostics_slot() -> &'static std::sync::Mutex<Option<PathBuf>> {
+    DIAGNOSTICS_FOLDER.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+#[cfg(target_os = "windows")]
+fn set_diagnostics_folder(folder: Option<PathBuf>) {
+    if let Ok(mut guard) = diagnostics_slot().lock() {
+        *guard = folder;
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn diagnostics_folder() -> Option<PathBuf> {
+    diagnostics_slot().lock().ok().and_then(|guard| guard.clone())
+}
+
+#[cfg(target_os = "windows")]
+fn diagnostics_folder_from(config: &Value) -> Option<PathBuf> {
+    config
+        .get("diagnostics")
+        .and_then(|value| value.get("folder"))
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+}
+
+#[cfg(target_os = "windows")]
+fn append_diagnostics_line(line: &str) {
+    use std::io::Write;
+    let Some(folder) = diagnostics_folder() else { return };
+    if std::fs::create_dir_all(&folder).is_err() {
+        return;
+    }
+    let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(folder.join("automation.log"))
+    else {
+        return;
+    };
+    let _ = writeln!(file, "{line}");
+}
+
+// --- PNG без внешних крейтов -------------------------------------------------
+
+#[cfg(target_os = "windows")]
+fn crc32(data: &[u8]) -> u32 {
+    let mut table = [0u32; 256];
+    for index in 0..256usize {
+        let mut value = index as u32;
+        for _ in 0..8 {
+            value = if value & 1 != 0 { 0xEDB8_8320 ^ (value >> 1) } else { value >> 1 };
+        }
+        table[index] = value;
+    }
+    let mut crc = 0xFFFF_FFFFu32;
+    for byte in data {
+        crc = table[((crc ^ u32::from(*byte)) & 0xFF) as usize] ^ (crc >> 8);
+    }
+    crc ^ 0xFFFF_FFFF
+}
+
+#[cfg(target_os = "windows")]
+fn adler32(data: &[u8]) -> u32 {
+    let mut a = 1u32;
+    let mut b = 0u32;
+    for byte in data {
+        a = (a + u32::from(*byte)) % 65521;
+        b = (b + a) % 65521;
+    }
+    (b << 16) | a
+}
+
+#[cfg(target_os = "windows")]
+fn push_png_chunk(out: &mut Vec<u8>, kind: &[u8], data: &[u8]) {
+    out.extend_from_slice(&(data.len() as u32).to_be_bytes());
+    let start = out.len();
+    out.extend_from_slice(kind);
+    out.extend_from_slice(data);
+    let crc = crc32(&out[start..]);
+    out.extend_from_slice(&crc.to_be_bytes());
+}
+
+/// PNG 8 бит RGB. Сжатие отключено («stored»-блоки deflate), поэтому внешних
+/// крейтов не нужно; кадр 1920×1080 занимает около 6 МБ, а старые сессии
+/// диагностики чистятся автоматически.
+#[cfg(target_os = "windows")]
+fn encode_png(width: usize, height: usize, rgb: &[u8]) -> Option<Vec<u8>> {
+    if width == 0 || height == 0 || rgb.len() < width * height * 3 {
+        return None;
+    }
+    let row = width * 3;
+    let mut raw: Vec<u8> = Vec::with_capacity(height * (row + 1));
+    for y in 0..height {
+        raw.push(0);
+        raw.extend_from_slice(&rgb[y * row..(y + 1) * row]);
+    }
+    let mut zlib: Vec<u8> = vec![0x78, 0x01];
+    let blocks = raw.chunks(65535).count();
+    for (index, block) in raw.chunks(65535).enumerate() {
+        zlib.push(u8::from(index + 1 == blocks));
+        let length = block.len() as u16;
+        zlib.extend_from_slice(&length.to_le_bytes());
+        zlib.extend_from_slice(&(!length).to_le_bytes());
+        zlib.extend_from_slice(block);
+    }
+    zlib.extend_from_slice(&adler32(&raw).to_be_bytes());
+
+    let mut out: Vec<u8> = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
+    let mut header: Vec<u8> = Vec::with_capacity(13);
+    header.extend_from_slice(&(width as u32).to_be_bytes());
+    header.extend_from_slice(&(height as u32).to_be_bytes());
+    header.extend_from_slice(&[8, 2, 0, 0, 0]);
+    push_png_chunk(&mut out, b"IHDR", &header);
+    push_png_chunk(&mut out, b"IDAT", &zlib);
+    push_png_chunk(&mut out, b"IEND", &[]);
+    Some(out)
+}
+
+#[cfg(target_os = "windows")]
+fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame) -> Option<PathBuf> {
+    let bytes = encode_png(frame.width, frame.height, &frame.data)?;
+    if std::fs::create_dir_all(folder).is_err() {
+        return None;
+    }
+    let path = folder.join(name);
+    std::fs::write(&path, bytes).ok()?;
+    Some(path)
+}
+
+/// Снимок текущего окна игры в папку диагностики.
+#[cfg(target_os = "windows")]
+fn save_screenshot(folder: Option<&Path>, name: &str, log: &AutomationLog) {
+    let Some(folder) = folder else {
+        log.write(format!("[diag] {name}: папка диагностики не задана — скриншот пропущен"));
+        return;
+    };
+    let Some((window, _)) = find_game_window() else {
+        log.write(format!("[diag] {name}: окно игры не найдено"));
+        return;
+    };
+    let Ok(view) = viewport(window) else {
+        log.write(format!("[diag] {name}: не удалось получить размеры окна"));
+        return;
+    };
+    match capture_viewport(view) {
+        Ok(frame) => match save_frame_png(folder, name, &frame) {
+            Some(path) => log.write(format!(
+                "[diag] скриншот {}×{} сохранён: {}",
+                frame.width,
+                frame.height,
+                path.display()
+            )),
+            None => log.write(format!("[diag] {name}: не удалось закодировать PNG")),
+        },
+        Err(error) => log.write(format!("[diag] {name}: захват экрана не удался: {error}")),
     }
 }
 
@@ -1611,11 +1785,31 @@ fn spawn_game_process(executable: &Path, windowed: bool, temp_directory: &Path, 
     run_elevated_helper(&job_path, &result_path).map(|_| ())
 }
 
+/// Разрешение автоматических боёв. Автоматизация, шаблоны и допуски в пикселях
+/// откалиброваны на 1920×1080, поэтому на большем экране игра запускается
+/// именно в нём: монитор растянет кадр, а все константы останутся верными.
+/// На меньшем экране разрешение не трогаем — там допуски масштабируются.
+#[cfg(target_os = "windows")]
+const BATTLE_RESOLUTION: &str = "1920 1080";
+
+#[cfg(target_os = "windows")]
+fn battle_resolution() -> Option<&'static str> {
+    let width = unsafe { GetSystemMetrics(0) } as f64;
+    let height = unsafe { GetSystemMetrics(1) } as f64;
+    (width >= match_detector::REFERENCE_WIDTH && height >= match_detector::REFERENCE_HEIGHT)
+        .then_some(BATTLE_RESOLUTION)
+}
+
 #[cfg(target_os = "windows")]
 fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, temp_directory: &Path, log: &AutomationLog) -> Result<ResolutionRestore, String> {
     let mut restore = ResolutionRestore::none();
-    if windowed {
-        let target = resolution.unwrap_or(CALIBRATION_RESOLUTION);
+    // Оконный режим калибровки работает в своём разрешении, боевой — в эталонном.
+    let target = if windowed {
+        Some(resolution.unwrap_or(CALIBRATION_RESOLUTION))
+    } else {
+        battle_resolution()
+    };
+    if let Some(target) = target {
         for folder in profile_folders(executable, std::env::var("APPDATA").ok().as_deref()) {
             match read_ini_option(&folder, "Resolution") {
                 Some(current) => {
@@ -1633,7 +1827,7 @@ fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, temp
             }
         }
         log.write(format!(
-            "[launch] оконный режим {target} (прежнее разрешение вернём после загрузки игры)"
+            "[launch] разрешение {target} (прежнее вернём после загрузки игры)"
         ));
     }
     spawn_game_process(executable, windowed, temp_directory, log)?;
@@ -1679,6 +1873,13 @@ pub enum FlowOutcome {
 
 #[cfg(target_os = "windows")]
 fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory: &Path, log: &AutomationLog) -> Result<FlowOutcome, String> {
+    // Папка диагностики боя: туда пишутся automation.log и скриншоты.
+    let diagnostics = diagnostics_folder_from(config);
+    set_diagnostics_folder(diagnostics.clone());
+    match &diagnostics {
+        Some(folder) => log.write(format!("[diag] папка диагностики: {}", folder.display())),
+        None => log.write("[diag] папка диагностики не задана — журнал и скриншоты не пишутся".into()),
+    }
     let language = config
         .get("language")
         .and_then(Value::as_str)
@@ -1715,6 +1916,9 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         activate_window(window);
         wait_for_menu_ready(window, log, language)?;
         let view = viewport(window)?;
+        // Размер клиентской области в журнале: по нему видно, в каком
+        // разрешении игра реально отрисовывает кадр.
+        log.write(format!("[window] клиентская область {}×{}", view.2, view.3));
         // Прогрев ввода: на холодном старте окно появляется раньше, чем игра
         // начинает принимать инжектируемый SendInput — первый клик ушёл бы
         // «в пустоту». Активируем окно и даём ему осесть.
@@ -1840,6 +2044,9 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
             return Ok(FlowOutcome::CoordinatesTested);
         }
 
+        // Скриншот комнаты перед стартом: карта, слоты, цвета, гандикапы и
+        // позиции. Без него «странный» бой не воспроизвести.
+        save_screenshot(diagnostics.as_deref(), "room-before-start.png", log);
         log.write("[room] clicking Start Game");
         click_fraction(view, 0.8836, 0.9542)?;
         thread::sleep(START_COUNTDOWN);
@@ -1918,7 +2125,10 @@ fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
         if let Some(frame) = capture_game_frame() {
             if !frame.is_black() && is_score_screen(&frame, &fortress, &marker) {
                 log.write("[match] экран статистики найден — анализирую победителя");
-                let mut result = analyse_score_screen(&players, log);
+                // Снимок в момент появления статистики: вторая точка, по которой
+                // разбирается исход боя (первая — комната перед стартом).
+                save_screenshot(diagnostics_folder_from(config).as_deref(), "score-screen.png", log);
+                let mut result = analyse_score_screen(&players, log, diagnostics_folder_from(config).as_deref());
                 if let Some(object) = result.as_object_mut() {
                     object.insert("elapsedSec".into(), json!(started.elapsed().as_secs()));
                 }
@@ -1930,7 +2140,11 @@ fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
 }
 
 #[cfg(target_os = "windows")]
-fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
+fn analyse_score_screen(
+    players: &[PlayerInfo],
+    log: &AutomationLog,
+    diagnostics: Option<&Path>,
+) -> Value {
     let _input_lock = InputLockGuard::acquire();
     let fortress = match_detector::fortress_template();
     let marker = match_detector::score_marker_template();
@@ -1961,14 +2175,24 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
     let Some(frame) = frame else {
         return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no valid chart frame"});
     };
+    // Кадр, который детектор действительно разобрал: если итог определён
+    // неверно, сравнивать нужно именно с этим изображением.
+    if let Some(folder) = diagnostics {
+        match save_frame_png(folder, "score-chart.png", &frame) {
+            Some(path) => log.write(format!("[diag] кадр статистики сохранён: {}", path.display())),
+            None => log.write("[diag] кадр статистики сохранить не удалось".into()),
+        }
+    }
     let icons = detect_icons(&frame);
     if icons.is_empty() {
         return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"victory/defeat icons not found"});
     }
     log.write(format!("[match] найдено иконок: {}", icons.len()));
 
-    let max_x_gap = 80.0f64;
-    let max_y_gap = 60.0f64;
+    // Допуски в эталонных пикселях 1920×1080 — масштабируем под реальный кадр.
+    let scale = match_detector::scale_for(frame.width, frame.height);
+    let max_x_gap = 80.0f64 * scale;
+    let max_y_gap = 60.0f64 * scale;
     let mut slots: Vec<u64> = players.iter().map(|player| player.slot).collect();
     slots.sort_unstable();
     slots.dedup();

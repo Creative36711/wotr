@@ -5,7 +5,8 @@ import { commanderDefinition } from '../game/army'
 import { previewConflict } from '../game/conflicts'
 import { resolveGrid } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
-import { prepareAndStartRtsBattle, readRtsBattleResult } from '../dataService'
+import { prepareAndStartRtsBattle, readRtsBattleResult, writeDiagnosticsFile } from '../dataService'
+import { currentSessionKey, logEvent } from '../game/sessionLog'
 import { RTS_DIFFICULTIES } from '../rts'
 import { translateText } from '../i18n'
 import { collectOwnerModifiers } from '../game/battleModifiers'
@@ -209,6 +210,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       const result=await readRtsBattleResult(conflict.id).catch(()=>null)
       if(token!==rtsWatchToken.current)return
       if(result?.finishedAt){
+        logEvent('rts',`результат BFME-сражения «${selectedMapAsset?.mapName??conflict.rtsMapId}»`,result)
         if(result.winningTeam==='good'||result.winningTeam==='evil'){
           const outcomeDetail=result.status==='COMPLETED'&&result.winningSlot?`победил слот ${result.winningSlot}`:result.status==='SURRENDER'?'противник сдался':''
           resolveConflictRts(conflict.id,result.winningTeam,outcomeDetail)
@@ -239,7 +241,13 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       })))
       const participants=orderedRtsFactionIds.map((id,slotIndex)=>({slot:slotIndex+1,factionId:id,listIndex:activeMod.rts.factionOrder.indexOf(id),color:factions.find((faction)=>faction.id===id)?.rtsColor,side:factions.find((faction)=>faction.id===id)?.alignment??'good',gateAngleDeg:45,handicapPercent:handicaps.get(id)?.percent??0,handicapReasons:handicaps.get(id)?.reasons??[],...rtsComposition(id)}))
       const {startPositions,fortressOwnerSlot}=buildStartPositions(participants)
-      const battleConfig={version:1,language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
+      const sessionKey=currentSessionKey()
+      const battleConfig={version:1,diagnostics:{session:sessionKey||null},language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
+      // Полная конфигурация боя — в папку диагностики: по ней сражение
+      // воспроизводится один в один, а скриншоты комнаты и статистики пишутся
+      // туда же автоматически.
+      if(sessionKey)await writeDiagnosticsFile(sessionKey,`battle-${conflict.id}.json`,`${JSON.stringify(battleConfig,null,1)}\n`,false).catch((error)=>console.warn('Не удалось сохранить конфигурацию боя',error))
+      logEvent('rts',`запуск BFME: карта «${selectedMapAsset?.mapName??conflict.rtsMapId}», слоты ${conflict.rtsAttackerSlots}×${conflict.rtsDefenderSlots}, владелец оплота — слот ${fortressOwnerSlot??'не задан'}`,participants.map((participant)=>`${participant.slot}:${participant.factionId}:${participant.color}:${participant.side}:${participant.handicapPercent}%`))
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)
       if(!report.ok){setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
       const token=rtsWatchToken.current

@@ -593,20 +593,26 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
 
   const affordableOrder=(army:typeof armies[number],targetHexId:string)=>{const calculated=findPath(logicalGrid.byId,army.hexId,targetHexId,army.factionId);const interception=calculated.findIndex((id,index)=>index>0&&enemyHexIds.has(id));const full=interception>0?calculated.slice(0,interception+1):calculated;if(full.length<2)return null;let selected=full.slice(0,2);for(let length=2;length<=full.length;length++){const candidate=full.slice(0,length);if(pathMovementCost(candidate,logicalGrid.byId,army.factionId)>army.movementRemaining)break;selected=candidate}const cost=pathMovementCost(selected,logicalGrid.byId,army.factionId);return cost<=army.movementRemaining?{path:selected,destinationId:selected.at(-1)!,cost}:null}
 
-  /** Issues a movement order and returns the map to cinematic view so the arrow stays visible. */
+  /** Issues a movement order, clears the selection and returns the map to cinematic view so the arrow stays visible. */
   const placeArmyOrder=(army:typeof armies[number],order:{path:string[];destinationId:string;cost:number},destinationLocationId:string|null)=>{
     const destination=logicalGrid.byId.get(order.destinationId)
     if(!destination)return false
     moveArmy(army.id,order.destinationId,order.path,order.cost,destination.terrain,destinationLocationId)
     const placed=useMapStore.getState().campaign.pendingOrders.some((item)=>item.armyId===army.id&&item.destinationHexId===order.destinationId)
-    if(placed&&mode==='game'){setViewMode('cinematic');selectHex(null)}
+    // Приказ отдан — выделение снимается. Иначе следующий клик по своему городу
+    // снова менял бы пункт назначения вместо того, чтобы открыть город.
+    if(placed&&mode==='game'){setViewMode('cinematic');selectHex(null);selectArmy(null)}
     return placed
   }
 
   const handlePinPointerDown = (event: ReactPointerEvent<HTMLButtonElement>, location: MapLocation) => {
     event.stopPropagation()
     if (hexEdit) return // Маркеры не сбрасывают массовое выделение гексов.
-    if (mode === 'game' && selectedArmy && canPlayerMoveArmy(campaign, factions, selectedArmy.factionId) && !selectedArmy.engaged) {
+    // Свои объекты всегда выделяются: приказ на свой гекс отдаётся только с Alt
+    // (или кликом по самому гексу в тактическом режиме), иначе выделенная армия
+    // перехватывала бы каждый клик по собственному городу.
+    const ownLocation=location.side===campaign.playerFactionId
+    if (mode === 'game' && selectedArmy && canPlayerMoveArmy(campaign, factions, selectedArmy.factionId) && !selectedArmy.engaged && (event.altKey || !ownLocation)) {
       const order=affordableOrder(selectedArmy,location.hex)
       const destination=order?logicalGrid.byId.get(order.destinationId):null
       if(order&&destination){placeArmyOrder(selectedArmy,order,order.destinationId===location.hex?location.id:null);return}

@@ -7,6 +7,9 @@ dist/
 src-tauri/target/
 portable/
 
+# jsdom harness bundle (verify/run.mjs rebuilds it on every run)
+verify/.build/
+
 # Logs
 *.log
 npm-debug.log*

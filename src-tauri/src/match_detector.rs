@@ -408,9 +408,12 @@ pub fn line_endpoint(
         return None;
     }
 
-    let y_band = 55.0f64;
-    let end_gap = 80.0f64;
-    let max_y_dist = 60.0f64;
+    // Допуски заданы в пикселях эталонного разрешения 1920×1080 — на другом
+    // размере кадра их нужно масштабировать, иначе «линия» графика не
+    // находится вовсе.
+    let y_band = 55.0f64 * scale;
+    let end_gap = 80.0f64 * scale;
+    let max_y_dist = 60.0f64 * scale;
     let mut best: Option<(f64, f64, f64)> = None;
     for icon in icons {
         let icon_x = icon.x - x0 as f64;
@@ -492,7 +495,9 @@ pub fn detect_icons(frame: &RgbFrame) -> Vec<DetectedIcon> {
         if dedup.iter().all(|kept| {
             let dx = kept.x - icon.x;
             let dy = kept.y - icon.y;
-            dx * dx + dy * dy > ICON_NMS_DISTANCE * ICON_NMS_DISTANCE
+            // Тот же масштаб, что и в NMS выше: в эталонных пикселях расстояние
+            // между парой «монета/пламя» на другом разрешении другое.
+            dx * dx + dy * dy > (nms * nms) as f64
         }) {
             dedup.push(icon);
         }

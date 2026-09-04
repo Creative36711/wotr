@@ -13,13 +13,25 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.48.4
+Application: 0.49.0
 world.json: 44
 roster.json: 17
 savegame.json: 61
 ```
 
-0.48.4 makes a movement plan cancellable. An order could always be *replaced* by picking another hex, but there was no visible way to take it back: cancelling existed only as a right-click on the arrow, on the army marker or on a turn-panel row, and in practice nobody found it, so a player who changed his mind had to march somewhere he did not want to go. The army inspector now opens with a «Приказ движения» card that names the destination, the movement-point cost and the number of hexes, with an explicit «Отменить приказ» button; the order arrow carries a red «×» badge at its tip that cancels the plan with an ordinary left click; and `Delete`/`Backspace` cancels the order of the selected army. Right-click keeps working in all three places. Cancelling is free - movement points are spent only when the phase executes the orders, so the army simply stays where it stands.
+0.49.0 adds a play journal for reproducing sessions, screenshots of the two RTS moments that decide a battle, and a predictable mouse model for movement orders - now both cancellable and free of accidental re-orders.
+
+**Play journal.** Every campaign now runs inside a diagnostics session: `portable_data/diagnostics/<session>/campaign.log` records each store action with its arguments and the resulting round and phase - selections, orders, recruitment, buildings, Ring investments, phase transitions, AI turns, auto-battle results - and `campaign-start.json` stores the snapshot the campaign was started from, so the session can be replayed from the beginning. Each RTS battle additionally writes `battle-<conflict>.json` with the complete battle configuration (map, slots, colors, sides, handicaps, starting positions, compositions) and the result the monitor reported. The Rust side writes its own `automation.log` next to it - previously the automation only printed to a console nobody runs - so a battle can be traced click by click. The «Журнал» button in the top bar opens the session folder (or downloads the journal in browser mode). Old data does not accumulate: starting a session keeps the three newest folders and deletes anything older than 14 days, and only two or three screenshots are taken per battle.
+
+**RTS screenshots.** Two moments matter for a dispute about a battle outcome, and both are now captured into the session folder: `room-before-start.png` immediately before the «Start Game» click - the map, the slots, the colors, the handicaps and the positions as they really were - and `score-screen.png` when the statistics screen appears, plus `score-chart.png`, the exact frame the detector analysed. If the winner was determined wrongly, that frame is what has to be compared against.
+
+**Cancellable movement orders.** An order could always be *replaced* by picking another hex, but there was no visible way to take it back: cancelling existed only as a right-click on the arrow, on the army marker or on a turn-panel row, and in practice nobody found it, so a player who changed his mind had to march somewhere he did not want to go. The army inspector now opens with a «Приказ движения» card that names the destination, the movement-point cost and the number of hexes, with an explicit «Отменить приказ» button; the order arrow carries a red «×» badge at its tip that cancels the plan with an ordinary left click; and `Delete`/`Backspace` cancels the order of the selected army. Right-click keeps working in all three places. Cancelling is free - movement points are spent only when the phase executes the orders, so the army simply stays where it stands.
+
+**Selection and orders.** The left mouse button no longer means two different things depending on where it lands. Clicking your own army, city or hex always *selects* it; an order onto your own hex requires `Alt`+left click, which the inspector now states explicitly in the planning and movement hints. Clicking an empty hex in tactical view still issues an order, so garrisoning your own city stays a one-click action. After an order is placed the selection is cleared, so the next click cannot accidentally re-order the same army, and `Esc` clears the selection when no dialog is open.
+
+**Resolution above 1920x1080.** All automation geometry is fractional, but the templates, NCC thresholds and icon tolerances are calibrated in pixels of the reference resolution, so a 2K desktop broke *detection*, not clicks. Automated battles now force the game to 1920x1080 whenever the desktop is at least that large, and the user's own `Options.ini` value is restored right after the room is created - the same mechanism already used for windowed launches. On smaller desktops the resolution is left alone and the three absolute-pixel tolerances in the score-chart analysis, the graph-line band and the icon deduplication distance are scaled to the real frame size instead.
+
+**Save compatibility check.** `src-tauri/src/lib.rs` kept its own copies of the version constants and had fallen behind at 0.46.9, so the mod list reported *every* save as incompatible with the current build. The application version is now read from `CARGO_PKG_VERSION`, `SAVE_VERSION` is aligned with `SAVEGAME_DATA_VERSION`, and `scripts/check-version.mjs` fails the build if the two drift apart again.
 
 0.48.3 unblocks sieges that were wrongly reported as RTS-incompatible. A siege additionally required the location to carry an `rtsFortress.defenderStartPosition`, but that point is only an optional refinement - it pins the defender onto the fortress spawn instead of a random defence point, and the launcher already falls back to the generic defence pool when it is absent. Requiring it silently rejected perfectly playable maps: of the 21 strongholds that ship with a BFME map, only 7 satisfied the check, so **14 of them - including Cair Andros, Osgiliath, Morannon, Carn Dum and Fornost - could never be fought in the RTS** and fell back to auto-resolve. The check now only demands a map and a legal number of factions per side. The rejection message was also generic ("check the number of factions and slots"), which is why the cause was impossible to guess; it now names the actual problem, e.g. that the attacking side has too many factions for BFME's four-slot limit, or that no map is assigned to the location.
 
@@ -65,6 +77,15 @@ npm run dev
 
 `npm run dev` runs the global strategy and editor in a browser. A browser cannot launch a local BFME executable.
 
+There is no test runner in the dependencies. The `verify/` harness bundles the real sources with esbuild and drives them inside jsdom (the store, the play journal, the map click rules), which covers the parts that are otherwise only checkable by playing:
+
+```powershell
+npm install --no-save jsdom
+node verify/run.mjs
+```
+
+It is not part of `npm run build` and `verify/` stays outside the `tsconfig` include.
+
 For real RTS integration:
 
 ```powershell
@@ -82,6 +103,14 @@ The application is portable-only. User data is stored beside the executable:
 ```text
 <exe directory>\portable_data\
 ```
+
+Play diagnostics live beside the rest of the user data:
+
+```text
+<exe directory>\portable_data\diagnostics\<session>\
+```
+
+A session folder is created when a campaign starts (`campaign-…`) or is continued (`continue-…`) and holds `campaign.log` (the action journal), `campaign-start.json` (the starting snapshot), one `battle-<conflict>.json` per RTS battle, the automation log `automation.log` and the battle screenshots (`room-before-start.png`, `score-screen.png`, `score-chart.png`). Starting a new session keeps the three newest folders and deletes everything older than 14 days, so the folder cannot grow without bound. The «Журнал» button in the top bar opens the current session folder; in browser mode there is no folder, and the same button downloads the in-memory journal as a `.log` file.
 
 The application does not use AppData as a fallback for its own data. ROTWK itself still uses its normal AppData profile for `NetworkPref.ini` and `Options.ini`.
 
@@ -461,6 +490,8 @@ After a battle starts, a background monitor polls the game window (0.5 s interva
 3. traces the highlighted player line to the victory coin or defeat flame;
 4. writes the outcome JSON (`COMPLETED`/`SURRENDER`/`UNKNOWN`) to `portable_data/temp/rts_battle_result_<conflict>.json`;
 5. closes every `game.dat` process.
+
+The same monitor also saves evidence into the session's diagnostics folder: a screenshot when the score screen appears and the exact chart frame that was analysed. Before that, right before the «Start Game» click, the room is captured as well, so a disputed battle can be compared against the slots, colors, handicaps and positions it really had. The screenshots are written as PNG by the application itself (no image crate - the deflate stream is stored uncompressed), and every automation step is appended to `automation.log` in that folder.
 
 The UI polls that file and applies the winner to the campaign conflict automatically.
 

@@ -27,9 +27,23 @@ function cargoLockVersion(text, crate) {
   return undefined
 }
 
-const canonical = read('src/version.ts').match(/GAME_VERSION\s*=\s*'([^']+)'/)?.[1]
+const versionSource = read('src/version.ts')
+const canonical = versionSource.match(/GAME_VERSION\s*=\s*'([^']+)'/)?.[1]
 if (!canonical) {
   console.error('check-version: cannot read GAME_VERSION from src/version.ts')
+  process.exit(1)
+}
+
+// The Rust side keeps its own copy of the save format version. It only feeds
+// `list_mods`, so a drift there silently hides every save as "incompatible"
+// while the game itself keeps reading them — hence the guard.
+const canonicalSave = Number(versionSource.match(/SAVEGAME_DATA_VERSION\s*=\s*(\d+)/)?.[1])
+const rustSave = Number(read('src-tauri/src/lib.rs').match(/const SAVE_VERSION:\s*u64\s*=\s*(\d+)/)?.[1])
+if (!Number.isFinite(canonicalSave) || canonicalSave !== rustSave) {
+  console.error(
+    `check-version: SAVEGAME_DATA_VERSION is ${canonicalSave || '<missing>'} (src/version.ts), ` +
+      `but SAVE_VERSION in src-tauri/src/lib.rs is ${rustSave || '<missing>'}`,
+  )
   process.exit(1)
 }
 

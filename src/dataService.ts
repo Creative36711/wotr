@@ -884,3 +884,29 @@ export async function saveWorld(world: WorldData, modId: string) {
   await writeModJson(modId, 'mod', { ...metadata, updatedAt: new Date().toISOString(), dataVersions: { world: WORLD_DATA_VERSION, roster: ROSTER_DATA_VERSION } })
 }
 export const saveGame = (save: SaveGameData, modId: string) => writeModJson(modId, 'savegame', save)
+
+// ---------------------------------------------------------------------------
+// Диагностика партии: журнал действий и скриншоты RTS-боя
+// ---------------------------------------------------------------------------
+
+/**
+ * Создаёт папку диагностики `portable_data/diagnostics/<session>` и чистит
+ * старые сессии (мост оставляет три последние и удаляет всё старше двух недель).
+ * Возвращает путь к папке или пустую строку в браузерном режиме.
+ */
+export async function beginDiagnosticsSession(session: string): Promise<string> {
+  if (!isTauriRuntime()) return ''
+  return invoke<string>('begin_diagnostics_session', { session })
+}
+
+/** Пишет или дописывает текстовый файл внутри папки диагностики сессии. */
+export async function writeDiagnosticsFile(session: string, name: string, contents: string, append = false): Promise<void> {
+  if (!isTauriRuntime()) return
+  await invoke('write_diagnostics_file', { session, name, contents, append })
+}
+
+/** Открывает папку диагностики в проводнике (только desktop). */
+export async function openDiagnosticsFolder(session: string): Promise<string> {
+  if (!isTauriRuntime()) return ''
+  return invoke<string>('open_diagnostics_folder', { session })
+}

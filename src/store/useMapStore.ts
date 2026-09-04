@@ -14,6 +14,7 @@ import { chooseRingCarrier, createDefaultRingForging, createDefaultRingState, in
 import { DEFAULT_PALANTIR_SETTINGS } from '../game/battleModifiers'
 import { availableUpgrades, DEFAULT_HERO_MAX_LEVEL, DEFAULT_UNIT_MAX_LEVEL, grantBattleExperience, heroMaxLevel, unitMaxLevel } from '../game/progression'
 import { applySaveGame, createNewSaveGame, extractSaveGame } from '../game/saveGame'
+import { describe, logEvent, registerTurnContext } from '../game/sessionLog'
 import { hexDistance, locationHexId, neighborIds, parseHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
 import {
   emptyRegion,
@@ -2200,3 +2201,55 @@ export const useMapStore = create<MapState>((set) => ({
     return { ...snap, history: [...state.history, cloneSnapshot(currentSnapshot(state))].slice(-HISTORY_LIMIT), future: state.future.slice(1), revision: state.revision + 1 }
   }),
 }))
+
+// ---------------------------------------------------------------------------
+// Журнал партии
+// ---------------------------------------------------------------------------
+// Каждый экшен стора пишется в диагностику вместе с аргументами и полученным
+// раундом/фазой: по такой записи партию можно повторить шаг за шагом, а спорный
+// RTS-бой разобрать по приложенным скриншотам.
+
+registerTurnContext(() => {
+  const campaign = useMapStore.getState().campaign
+  return { round: campaign.round, phase: campaign.phase }
+})
+
+/** Грубая оценка размера, чтобы в журнал не попал сериализованный мир на 20 МБ. */
+function estimatePayloadSize(value: unknown, depth = 0): number {
+  if (value === null || typeof value !== 'object') return 1
+  if (Array.isArray(value)) return value.length
+  if (depth >= 2) return 64
+  let total = 0
+  for (const key of Object.keys(value)) {
+    total += estimatePayloadSize((value as Record<string, unknown>)[key], depth + 1)
+    if (total > 256) return total
+  }
+  return total
+}
+
+function describeArgument(value: unknown) {
+  if (value === null || value === undefined || typeof value !== 'object') return describe(value)
+  if (estimatePayloadSize(value) > 256) {
+    const keys = Array.isArray(value) ? `${value.length} элементов` : Object.keys(value).slice(0, 8).join(',')
+    return `⟨${keys}⟩`
+  }
+  return describe(value)
+}
+
+const LOGGABLE_ACTION = /^[a-z]/
+{
+  const state = useMapStore.getState() as unknown as Record<string, unknown>
+  const patch: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(state)) {
+    if (typeof value !== 'function' || !LOGGABLE_ACTION.test(key)) continue
+    const action = value as (...args: unknown[]) => unknown
+    patch[key] = (...args: unknown[]) => {
+      const result = action(...args)
+      try {
+        logEvent('действие', key, args.length ? args.slice(0, 4).map(describeArgument) : undefined)
+      } catch { /* Журнал не должен ломать игру. */ }
+      return result
+    }
+  }
+  useMapStore.setState(patch)
+}

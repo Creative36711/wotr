@@ -14,8 +14,11 @@ const DEFAULT_APP: &str = include_str!("../../public/app.json");
 const DEFAULT_MAP: &[u8] = include_bytes!("../../public/templates/map.jpg");
 const WORLD_TEMPLATE: &str = include_str!("../../public/templates/world_template.json");
 const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_template.json");
-const GAME_VERSION: &str = "0.46.8";
-const SAVE_VERSION: u64 = 60;
+// Версия берётся из Cargo.toml (её синхронизирует scripts/check-version.mjs),
+// а SAVE_VERSION обязан совпадать с SAVEGAME_DATA_VERSION из src/version.ts —
+// за этим тоже следит check-version.
+const GAME_VERSION: &str = env!("CARGO_PKG_VERSION");
+const SAVE_VERSION: u64 = 61;
 
 // Bundled RTS assets for the default «Vanilla 2.01» mod (Requirement: the mod
 // ships out of the box — no manual downloads). The two BIG archives plus every
@@ -159,6 +162,7 @@ fn plan_mod_rts_deployment(app:&AppHandle,mod_id:&str,game_dir:&Path,cache_scope
 #[tauri::command]
 fn prepare_and_start_rts_battle(app:AppHandle,mod_id:String,executable_path:String,cache_scope:String,entity_id:String,mut battle_config:Value)->Result<Value,String>{
  if let Ok(real_appdata)=std::env::var("APPDATA"){if let Some(object)=battle_config.as_object_mut(){object.insert("_realAppData".into(),json!(real_appdata));}}
+ inject_diagnostics_folder(&app,&mut battle_config);
  let language=battle_config.get("language").and_then(Value::as_str).unwrap_or("ru").to_string();
  let exe=PathBuf::from(&executable_path);
  if !exe.is_file(){return Err(if language=="en"{format!("BFME executable was not found: {}",exe.display())}else{format!("Исполняемый файл BFME не найден: {}",exe.display())})}
@@ -217,7 +221,7 @@ fn battle_result_path(temp:&Path,conflict_id:&str)->PathBuf{
 #[tauri::command] fn rts_game_running()->bool{bfme_automation::game_is_running()}
 
 #[tauri::command] fn launch_rts_game(executable_path:String)->Result<(),String>{let exe=PathBuf::from(executable_path);let dir=exe.parent().ok_or("Не удалось определить папку игры")?;Command::new(&exe).current_dir(dir).spawn().map_err(|e|format!("Не удалось запустить BFME: {e}"))?;Ok(())}
-#[tauri::command] fn configure_and_start_rts_battle(app:AppHandle,executable_path:String,battle_config:Value)->Result<(),String>{let temp=data_root(&app)?.join("temp");bfme_automation::launch_with_elevation(&PathBuf::from(executable_path),&battle_config,&temp)}
+#[tauri::command] fn configure_and_start_rts_battle(app:AppHandle,executable_path:String,mut battle_config:Value)->Result<(),String>{let temp=data_root(&app)?.join("temp");inject_diagnostics_folder(&app,&mut battle_config);bfme_automation::launch_with_elevation(&PathBuf::from(executable_path),&battle_config,&temp)}
 
 #[tauri::command]
 fn list_mods(app:AppHandle)->Result<Vec<Value>,String>{
@@ -299,6 +303,101 @@ fn chrono_like_now()->String{use std::time::{SystemTime,UNIX_EPOCH};let secs=Sys
 #[tauri::command] fn open_application_folder()->Result<String,String>{let path=executable_dir()?;#[cfg(target_os="windows")]Command::new("explorer").arg(&path).spawn().map_err(|e|e.to_string())?;Ok(path.to_string_lossy().to_string())}
 #[tauri::command] fn exit_application(app:AppHandle){app.exit(0)}
 
+// ---------------------------------------------------------------------------
+// Диагностика партии: журнал действий и скриншоты RTS-боя
+// ---------------------------------------------------------------------------
+// Всё пишется в `portable_data/diagnostics/<сессия>/`: `campaign.log` (журнал
+// действий игрока и игры), `campaign-start.json` (снимок старта — из него партию
+// можно повторить), `battle-<конфликт>.json` (конфигурация RTS-боя),
+// `automation.log` (лог автоматизации BFME) и скриншоты комнаты перед стартом и
+// экрана статистики. Старые сессии удаляются автоматически, поэтому папка не
+// разрастается: остаются три последние, всё старше двух недель стирается.
+
+/// Сколько последних сессий диагностики хранить (текущая и две предыдущие).
+const DIAGNOSTICS_KEEP_SESSIONS: usize = 3;
+/// Сессии старше этого возраста удаляются при старте новой кампании.
+const DIAGNOSTICS_MAX_AGE_SECS: u64 = 14 * 24 * 60 * 60;
+
+fn diagnostics_root(app:&AppHandle)->Result<PathBuf,String>{
+    let root=data_root(app)?.join("diagnostics");
+    fs::create_dir_all(&root).map_err(|error|format!("Не удалось создать папку диагностики {}: {error}",root.display()))?;
+    Ok(root)
+}
+
+/// Имя сессии приходит из интерфейса и становится именем папки, поэтому
+/// допускаются только безопасные символы.
+fn sanitize_session(session:&str)->Result<String,String>{
+    let clean:String=session.chars().filter(|character|character.is_ascii_alphanumeric()||*character=='-'||*character=='_').take(64).collect();
+    if clean.is_empty(){return Err("Пустое имя сессии диагностики".into())}
+    Ok(clean)
+}
+
+fn sanitize_diagnostics_name(name:&str)->Result<String,String>{
+    let clean:String=name.chars().filter(|character|character.is_ascii_alphanumeric()||matches!(character,'-'|'_'|'.'|'('|')')).take(96).collect();
+    if clean.is_empty()||clean.starts_with('.'){return Err("Некорректное имя файла диагностики".into())}
+    Ok(clean)
+}
+
+/// Чистка старых сессий диагностики: три последние остаются, остальное удаляется.
+fn prune_diagnostics(root:&Path){
+    let Ok(entries)=fs::read_dir(root) else {return};
+    let now=unix_timestamp();
+    let mut sessions:Vec<(u64,PathBuf)>=Vec::new();
+    for entry in entries.flatten(){
+        let path=entry.path();
+        if !path.is_dir(){continue}
+        let modified=fs::metadata(&path).ok()
+            .and_then(|metadata|metadata.modified().ok())
+            .and_then(|time|time.duration_since(UNIX_EPOCH).ok())
+            .map(|duration|duration.as_secs())
+            .unwrap_or(0);
+        sessions.push((modified,path));
+    }
+    sessions.sort_by(|left,right|right.0.cmp(&left.0));
+    for (index,(modified,path)) in sessions.iter().enumerate(){
+        if index>=DIAGNOSTICS_KEEP_SESSIONS||now.saturating_sub(*modified)>DIAGNOSTICS_MAX_AGE_SECS{
+            let _=fs::remove_dir_all(path);
+        }
+    }
+}
+
+/// Интерфейс знает только имя сессии; абсолютный путь к папке диагностики
+/// добавляется в battle_config здесь, чтобы его получила и elevated-копия.
+fn inject_diagnostics_folder(app:&AppHandle,battle_config:&mut Value){
+    let session=battle_config.get("diagnostics").and_then(|value|value.get("session")).and_then(Value::as_str).unwrap_or("").to_string();
+    let folder=diagnostics_root(app).ok().and_then(|root|sanitize_session(&session).ok().map(|name|root.join(name)));
+    let Some(object)=battle_config.as_object_mut() else {return};
+    let Some(diagnostics)=object.entry("diagnostics").or_insert_with(||json!({})).as_object_mut() else {return};
+    match folder{
+        Some(folder)=>{diagnostics.insert("folder".into(),json!(folder.to_string_lossy()));}
+        None=>{diagnostics.insert("folder".into(),Value::Null);}
+    }
+}
+
+#[tauri::command] fn begin_diagnostics_session(app:AppHandle,session:String)->Result<String,String>{
+    let root=diagnostics_root(&app)?;
+    let folder=root.join(sanitize_session(&session)?);
+    fs::create_dir_all(&folder).map_err(|error|error.to_string())?;
+    prune_diagnostics(&root);
+    Ok(folder.to_string_lossy().to_string())
+}
+
+#[tauri::command] fn write_diagnostics_file(app:AppHandle,session:String,name:String,contents:String,append:Option<bool>)->Result<(),String>{
+    let folder=diagnostics_root(&app)?.join(sanitize_session(&session)?);
+    fs::create_dir_all(&folder).map_err(|error|error.to_string())?;
+    let mut options=OpenOptions::new();
+    options.create(true).write(true);
+    if append.unwrap_or(false){options.append(true);}else{options.truncate(true);}
+    let mut file=options.open(folder.join(sanitize_diagnostics_name(&name)?)).map_err(|error|error.to_string())?;
+    file.write_all(contents.as_bytes()).map_err(|error|error.to_string())
+}
+
+#[tauri::command] fn open_diagnostics_folder(app:AppHandle,session:String)->Result<String,String>{
+    let folder=diagnostics_root(&app)?.join(sanitize_session(&session)?);
+    #[cfg(target_os="windows")]{Command::new("explorer").arg(&folder).spawn().map_err(|error|error.to_string())?;}
+    Ok(folder.to_string_lossy().to_string())
+}
+
 pub fn run_rts_helper_if_requested()->bool{bfme_automation::run_helper_if_requested()}
 
-#[cfg_attr(mobile,tauri::mobile_entry_point)] pub fn run(){tauri::Builder::default().plugin(tauri_plugin_dialog::init()).setup(|app|{let _=initialize_mods(app.handle());Ok(())}).invoke_handler(tauri::generate_handler![read_app_settings,write_app_settings,read_mod_file,write_mod_file,write_rts_asset,import_rts_asset,pick_and_import_rts_asset,discover_rts_executable,validate_rts_executable,pick_rts_executable,delete_rts_asset,list_rts_map_caches,prepare_rts_battle,prepare_and_start_rts_battle,launch_rts_game,configure_and_start_rts_battle,start_rts_calibration,stop_rts_calibration,read_rts_calibration_status,read_rts_battle_result,rts_game_running,read_mod_map,write_mod_map,reset_mod_map,list_mods,create_mod,delete_mod,open_mods_folder,portable_data_directory,open_application_folder,exit_application]).run(tauri::generate_context!()).expect("error while running War of the Ring")}
+#[cfg_attr(mobile,tauri::mobile_entry_point)] pub fn run(){tauri::Builder::default().plugin(tauri_plugin_dialog::init()).setup(|app|{let _=initialize_mods(app.handle());Ok(())}).invoke_handler(tauri::generate_handler![read_app_settings,write_app_settings,read_mod_file,write_mod_file,write_rts_asset,import_rts_asset,pick_and_import_rts_asset,discover_rts_executable,validate_rts_executable,pick_rts_executable,delete_rts_asset,list_rts_map_caches,prepare_rts_battle,prepare_and_start_rts_battle,launch_rts_game,configure_and_start_rts_battle,start_rts_calibration,stop_rts_calibration,read_rts_calibration_status,read_rts_battle_result,rts_game_running,read_mod_map,write_mod_map,reset_mod_map,list_mods,create_mod,delete_mod,open_mods_folder,portable_data_directory,begin_diagnostics_session,write_diagnostics_file,open_diagnostics_folder,open_application_folder,exit_application]).run(tauri::generate_context!()).expect("error while running War of the Ring")}

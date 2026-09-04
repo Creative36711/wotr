@@ -836,7 +836,13 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
               <g className="pending-order-lines">
                 {pendingOrderPaths.map(({order,path,army})=>{
                   const color=getFaction(factions,army!.factionId).color
-                  return <path key={order.armyId} d={path} markerEnd={`url(#${orderMarkerId(color)})`} style={{'--order-color':color}as CSSProperties} onContextMenu={(event)=>{event.preventDefault();event.stopPropagation();cancelArmyOrder(order.armyId)}}><title>{`${translateText(army!.name)} → ${order.cost} ОД · ПКМ — отменить приказ`}</title></path>
+                  // Явный крестик в конце стрелки: приказ можно отменить одним
+                  // кликом, не запоминая про правую кнопку мыши.
+                  const endCell=logicalGrid.byId.get(order.destinationHexId)
+                  return <g key={order.armyId} className="pending-order">
+                    <path d={path} markerEnd={`url(#${orderMarkerId(color)})`} style={{'--order-color':color}as CSSProperties} onContextMenu={(event)=>{event.preventDefault();event.stopPropagation();cancelArmyOrder(order.armyId)}}><title>{`${translateText(army!.name)} → ${order.cost} ОД · ПКМ — отменить приказ`}</title></path>
+                    {endCell&&<g className="order-cancel-badge" style={{'--order-color':color}as CSSProperties} transform={`translate(${endCell.x+40} ${endCell.y-40})`} onPointerDown={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();cancelArmyOrder(order.armyId)}}><title>{`Отменить приказ: ${translateText(army!.name)}`}</title><circle className="badge-hit" r="28"/><circle className="badge-ring" r="21"/><path className="badge-cross" d="M -7.5 -7.5 L 7.5 7.5 M 7.5 -7.5 L -7.5 7.5"/></g>}
+                  </g>
                 })}
               </g>
             )}

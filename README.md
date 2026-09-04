@@ -13,11 +13,13 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.48.3
+Application: 0.48.4
 world.json: 44
 roster.json: 17
 savegame.json: 61
 ```
+
+0.48.4 makes a movement plan cancellable. An order could always be *replaced* by picking another hex, but there was no visible way to take it back: cancelling existed only as a right-click on the arrow, on the army marker or on a turn-panel row, and in practice nobody found it, so a player who changed his mind had to march somewhere he did not want to go. The army inspector now opens with a «Приказ движения» card that names the destination, the movement-point cost and the number of hexes, with an explicit «Отменить приказ» button; the order arrow carries a red «×» badge at its tip that cancels the plan with an ordinary left click; and `Delete`/`Backspace` cancels the order of the selected army. Right-click keeps working in all three places. Cancelling is free - movement points are spent only when the phase executes the orders, so the army simply stays where it stands.
 
 0.48.3 unblocks sieges that were wrongly reported as RTS-incompatible. A siege additionally required the location to carry an `rtsFortress.defenderStartPosition`, but that point is only an optional refinement - it pins the defender onto the fortress spawn instead of a random defence point, and the launcher already falls back to the generic defence pool when it is absent. Requiring it silently rejected perfectly playable maps: of the 21 strongholds that ship with a BFME map, only 7 satisfied the check, so **14 of them - including Cair Andros, Osgiliath, Morannon, Carn Dum and Fornost - could never be fought in the RTS** and fell back to auto-resolve. The check now only demands a map and a legal number of factions per side. The rejection message was also generic ("check the number of factions and slots"), which is why the cause was impossible to guess; it now names the actual problem, e.g. that the attacking side has too many factions for BFME's four-slot limit, or that no map is assigned to the location.
 

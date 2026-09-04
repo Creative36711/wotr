@@ -3839,7 +3839,7 @@ dependencies = [
 
 [[package]]
 name = "war-of-the-ring"
-version = "0.48.3"
+version = "0.48.4"
 dependencies = [
  "base64 0.22.1",
  "serde",

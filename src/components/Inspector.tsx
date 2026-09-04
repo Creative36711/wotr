@@ -332,6 +332,7 @@ function ArmyInspector({ army }: { army: Army }) {
   const [unitToAdd, setUnitToAdd] = useState('')
   const [heroToAdd, setHeroToAdd] = useState('')
   const [showJson, setShowJson] = useState(false)
+  const { language } = useI18n()
   const mode = useMapStore((state) => state.mode)
   const factions = useMapStore((state) => state.factions)
   const grid = useMapStore((state) => state.grid)
@@ -347,6 +348,7 @@ function ArmyInspector({ army }: { army: Army }) {
   const transferArmyToReserve = useMapStore((state) => state.transferArmyToReserve)
   const disbandArmy = useMapStore((state) => state.disbandArmy)
   const retreatEngagedArmy = useMapStore((state) => state.retreatEngagedArmy)
+  const cancelArmyOrder = useMapStore((state) => state.cancelArmyOrder)
   const faction = getFaction(factions, army.factionId)
   const readonly = mode === 'game'
   const active = campaign.playerFactionId === army.factionId && isFactionActive(campaign, factions, army.factionId)
@@ -384,6 +386,9 @@ function ArmyInspector({ army }: { army: Army }) {
   const payload = JSON.stringify(buildBfmeArmyPayload(army, unitTypes, heroes, captains), null, 2)
   const carriesRing = isRingCarrier(campaign, army.id)
   const transferRing = useMapStore.getState().transferRing
+  // Приказ движения этой армии: его можно заменить или отменить целиком.
+  const pendingOrder = campaign.pendingOrders.find((order) => order.armyId === army.id) ?? null
+  const orderDestination = pendingOrder ? locations.find((location) => location.id === pendingOrder.locationId) ?? null : null
 
   const changeCommander = (value: string) => {
     if (!value) { updateArmy(army.id, { commander: null }); return }
@@ -417,6 +422,16 @@ function ArmyInspector({ army }: { army: Army }) {
           <div><span>Сила</span><b>{Math.round(power)}</b></div>
         </section>
         {army.status === 'retreating' && <section className="demoralized-warning"><b>Деморализована</b><span>0 ОД в этом раунде · −20% силы при нападении. Статус снимется в начале следующего хода фракции.</span></section>}
+
+        {pendingOrder && <section className="movement-order-card">
+          <span className="order-arrow">➤</span>
+          <div>
+            <small>Приказ движения · {pendingOrder.cost} ОД · {Math.max(1, pendingOrder.path.length - 1)} гекс.</small>
+            <b>→ {orderDestination ? getDisplayName(orderDestination, language) : `гекс ${pendingOrder.destinationHexId}`}</b>
+            <p>Приказ можно заменить другим гексом. Если армия должна остаться на месте — отмените приказ (кнопка, клавиша Delete или ПКМ по стрелке/армии).</p>
+          </div>
+          <button type="button" className="cancel-order-button" onClick={() => cancelArmyOrder(army.id)}>Отменить приказ</button>
+        </section>}
 
         <section className={`army-leader-card ${commander ? '' : 'missing'}`}>
           <span className="leader-portrait" style={{ '--portrait-color': faction.color, ...(commanderPortrait ? { backgroundImage: `url(${commanderPortrait})` } : {}) } as CSSProperties}></span>

@@ -10,3 +10,22 @@
 .hovered-hex.placement-valid{fill:rgba(70,174,102,.28);stroke:#72d88f}
 .hovered-hex.placement-invalid{fill:rgba(190,54,48,.34);stroke:#ef766c}
 .pin.invalid-placement{filter:drop-shadow(0 0 10px #d54238);opacity:.7}
+
+/* Explicit «×» at the tip of a player's order arrow: one left click cancels the
+   whole plan, so cancelling no longer depends on discovering the right button. */
+.pending-order .order-cancel-badge { pointer-events: auto; cursor: pointer; opacity: .84; transition: opacity .14s; }
+.pending-order .order-cancel-badge:hover { opacity: 1; }
+.pending-order .order-cancel-badge .badge-hit { fill: transparent; stroke: none; pointer-events: all; }
+.pending-order .order-cancel-badge .badge-ring { fill: rgba(12,16,19,.94); stroke: #c1564b; stroke-width: 3; pointer-events: none; }
+.pending-order .order-cancel-badge:hover .badge-ring { fill: #7c2b23; stroke: #f0887c; }
+.pending-order .order-cancel-badge .badge-cross { fill: none; stroke: #e8bab4; stroke-width: 4; stroke-linecap: round; filter: none; pointer-events: none; }
+.pending-order .order-cancel-badge:hover .badge-cross { stroke: #fff; stroke-width: 4; }
+
+/* Inspector card: the same order with an obvious cancel button. */
+.movement-order-card { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 9px; align-items: center; margin: 10px 0 0; padding: 9px 10px; border: 1px solid #5d5136; border-left: 3px solid #d7bb70; border-radius: 5px; background: #1d1a12; }
+.movement-order-card .order-arrow { grid-row: 1 / 3; color: #d7bb70; font-size: 16px; }
+.movement-order-card small { display: block; color: #9b8a63; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.movement-order-card b { display: block; margin-top: 2px; color: #e6d6a8; font-family: Cinzel, serif; font-size: 13px; }
+.movement-order-card p { margin: 5px 0 0; color: #8d8468; font-size: 10px; line-height: 1.45; }
+.movement-order-card .cancel-order-button { grid-column: 2; grid-row: 2; justify-self: start; margin-top: 8px; padding: 5px 11px; border: 1px solid #7c4038; border-radius: 4px; background: #2b1a17; color: #e6b9b3; font-size: 11px; cursor: pointer; }
+.movement-order-card .cancel-order-button:hover { border-color: #c1564b; background: #3d211c; color: #ffd9d3; }

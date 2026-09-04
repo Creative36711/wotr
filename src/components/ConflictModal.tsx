@@ -98,6 +98,17 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
   const cacheEntityId=conflict.rtsLocationId
   const selectedMapAsset=cacheEntityId?locations.find((item)=>item.id===cacheEntityId)?.rtsMapCache:null
   const desktopRuntime='__TAURI_INTERNALS__' in window
+  // Spell out WHICH side breaks the slot rule instead of a generic message -
+  // BFME supports at most 4 factions per side and needs at least one on each.
+  const rtsIncompatibilityReason=(()=>{
+    const attackerSlots=conflict.rtsAttackerSlots
+    const defenderSlots=conflict.rtsDefenderSlots
+    if(attackerSlots<1)return 'RTS-бой невозможен: у атакующей стороны нет ни одной фракции.'
+    if(defenderSlots<1)return 'RTS-бой невозможен: у обороняющейся стороны нет ни одной фракции.'
+    if(attackerSlots>4)return `RTS-бой невозможен: у атакующих ${attackerSlots} фракций, максимум для BFME - 4.`
+    if(defenderSlots>4)return `RTS-бой невозможен: у обороняющихся ${defenderSlots} фракций, максимум для BFME - 4.`
+    return 'RTS-бой невозможен: для этого места боя не задана карта BFME.'
+  })()
   const rtsBlockReason=!desktopRuntime?'Запуск BFME доступен только в Tauri-приложении.'
     :!activeMod?'Активный мод не загружен.'
       :!activeMod.rts.enabled?'RTS-интеграция отключена в системных настройках мода.'
@@ -105,7 +116,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
           :!activeMod.rts.mapsFile?'В системных настройках мода отсутствует общий BIG-архив карт.'
             :!cacheEntityId||!selectedMapAsset||!conflict.rtsMapId?'Для места этого боя не загружен MapCache BIG.'
               :!factionOrderReady?'Одна из участвующих фракций отсутствует в порядке фракций BFME.'
-                :!conflict.rtsCompatible?'Состав сторон не совместим с RTS: проверьте число фракций и слотов.'
+                :!conflict.rtsCompatible?rtsIncompatibilityReason
                   :null
   const rtsReady=rtsBlockReason===null
   const rtsArmyPool=[...new Map([...attackers,...defenders,...attackerReinforcements,...defenderReinforcements].map((army)=>[army.id,army])).values()]

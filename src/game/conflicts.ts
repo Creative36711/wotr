@@ -337,8 +337,13 @@ export function updateConflictRtsCompatibility(conflict: CampaignConflict, armie
   }
   conflict.rtsAttackerSlots = attackerFactions.size
   conflict.rtsDefenderSlots = defenderFactions.size
-  const fortressReady = conflict.battleType !== 'siege' || Boolean(conflict.rtsDefenderStartPosition)
-  conflict.rtsCompatible = Boolean(conflict.rtsMapId && fortressReady && attackerFactions.size > 0 && defenderFactions.size > 0 && attackerFactions.size <= 4 && defenderFactions.size <= 4)
+  // A siege used to additionally require `rtsDefenderStartPosition`, but that
+  // point is only an optional refinement: it pins the defender onto the
+  // fortress spawn instead of a random defence point. `buildStartPositions`
+  // already falls back to the generic defence pool when it is missing, so
+  // demanding it here silently blocked real battles on perfectly playable maps
+  // (e.g. the siege of Cair Andros, which has a map but no fortress point).
+  conflict.rtsCompatible = Boolean(conflict.rtsMapId && attackerFactions.size > 0 && defenderFactions.size > 0 && attackerFactions.size <= 4 && defenderFactions.size <= 4)
 }
 
 function arrivalRank(armies: Army[], side: StrategicSide, round: number) {

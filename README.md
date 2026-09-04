@@ -13,11 +13,13 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.48.2
+Application: 0.48.3
 world.json: 44
 roster.json: 17
 savegame.json: 61
 ```
+
+0.48.3 unblocks sieges that were wrongly reported as RTS-incompatible. A siege additionally required the location to carry an `rtsFortress.defenderStartPosition`, but that point is only an optional refinement - it pins the defender onto the fortress spawn instead of a random defence point, and the launcher already falls back to the generic defence pool when it is absent. Requiring it silently rejected perfectly playable maps: of the 21 strongholds that ship with a BFME map, only 7 satisfied the check, so **14 of them - including Cair Andros, Osgiliath, Morannon, Carn Dum and Fornost - could never be fought in the RTS** and fell back to auto-resolve. The check now only demands a map and a legal number of factions per side. The rejection message was also generic ("check the number of factions and slots"), which is why the cause was impossible to guess; it now names the actual problem, e.g. that the attacking side has too many factions for BFME's four-slot limit, or that no map is assigned to the location.
 
 0.48.2 fixes hero revival in generated battles. Each fortress hero button is unlocked by a fixed `Upgrade_AllFactionHeroUpgrade<N>` defined by the mod's CommandButton set - Eowyn is 1, Eomer 2, Boromir 3, Theoden 4, and so on per faction. The generator was instead numbering heroes by their position in the marching army, so a lone Theoden was emitted as Upgrade1 and the fortress revived **Eowyn** in his place; the same slip turned a solo Saruman into Grima Wormtongue. The number is now looked up per hero object from a table transcribed from the button definitions, covering all 39 buttons across the eight factions, and it is verified against the roster so every hero resolves and no two heroes of one faction share a number. Ring heroes (Galadriel and Sauron) correctly get no block at all, since they are gated by `Upgrade_FortressRingHero` and are always level 10. Rust unit tests lock the mapping in place.
 

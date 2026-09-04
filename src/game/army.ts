@@ -2,12 +2,12 @@ import { locationHexId } from '../hex/hexGrid'
 import type { Army, ArmyCommander, ArmySlot, CaptainInstance, CaptainType, FactionDefinition, Hero, MapLocation, UnitType } from '../types'
 import { captainHireEconomicTypes } from './economicTypes'
 
-export function createUnitSlot(armyId: string, unit: UnitType, index: number): ArmySlot {
-  return { slotId: `${armyId}-unit-${Date.now().toString(36)}-${index}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId }
+export function createUnitSlot(armyId: string, unit: UnitType, index: number, level = 1): ArmySlot {
+  return { slotId: `${armyId}-unit-${Date.now().toString(36)}-${index}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId, level: Math.max(1, level), weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false }
 }
 
-export function createHeroSlot(armyId: string, hero: Hero, index: number): ArmySlot {
-  return { slotId: `${armyId}-hero-${Date.now().toString(36)}-${index}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId }
+export function createHeroSlot(armyId: string, hero: Hero, index: number, level = 1): ArmySlot {
+  return { slotId: `${armyId}-hero-${Date.now().toString(36)}-${index}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId, level: Math.max(1, level), weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false }
 }
 
 export function createHeroCommander(hero: Hero): ArmyCommander {

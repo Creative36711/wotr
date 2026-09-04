@@ -8,6 +8,10 @@ import { useMapStore } from '../store/useMapStore'
 import { prepareAndStartRtsBattle, readRtsBattleResult } from '../dataService'
 import { RTS_DIFFICULTIES } from '../rts'
 import { translateText } from '../i18n'
+import { collectOwnerModifiers } from '../game/battleModifiers'
+import { calculateRelativeHandicaps } from '../game/handicap'
+import { ringHeroObjectId } from '../game/ring'
+import { availableUpgrades } from '../game/progression'
 import type { AppSettings, ModDefinition } from '../types'
 
 function shuffle<T>(items: T[]): T[] {
@@ -51,7 +55,12 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
   const attackerReinforcements = conflict.attackerReinforcementArmyIds.map((id) => armies.find((army) => army.id === id)).filter(Boolean) as typeof armies
   const defenderReinforcements = conflict.defenderReinforcementArmyIds.map((id) => armies.find((army) => army.id === id)).filter(Boolean) as typeof armies
   const playerReinforcementOptions = conflict.optionalPlayerReinforcements.map((option) => ({ option, army: armies.find((army) => army.id === option.armyId) })).filter((item) => item.army) as Array<{ option: typeof conflict.optionalPlayerReinforcements[number]; army: typeof armies[number] }>
-  const preview = previewConflict(conflict, armies, locations, locationStates, units, heroes, captains, cell.terrain)
+  const buildingTypes = useMapStore.getState().buildingTypes
+  const economicTypes = useMapStore.getState().economicTypes
+  const ringForging = useMapStore.getState().ringForging
+  const palantirSettings = useMapStore.getState().palantirSettings
+  const modifierContext = { campaign, regions, buildingTypes, economicTypes, ringForging, palantirSettings }
+  const preview = previewConflict(conflict, armies, locations, locationStates, units, heroes, captains, cell.terrain, modifierContext)
   const attackerEnemy = conflict.attackerSide !== campaign.playerSide
   const defenderEnemy = conflict.defenderSide !== campaign.playerSide
   const approximatePower = (power: number) => `${Math.max(0, Math.floor(power * .8 / 100) * 100)}–${Math.ceil(power * 1.2 / 100) * 100}`
@@ -89,6 +98,17 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
   const cacheEntityId=conflict.rtsLocationId
   const selectedMapAsset=cacheEntityId?locations.find((item)=>item.id===cacheEntityId)?.rtsMapCache:null
   const desktopRuntime='__TAURI_INTERNALS__' in window
+  // Spell out WHICH side breaks the slot rule instead of a generic message -
+  // BFME supports at most 4 factions per side and needs at least one on each.
+  const rtsIncompatibilityReason=(()=>{
+    const attackerSlots=conflict.rtsAttackerSlots
+    const defenderSlots=conflict.rtsDefenderSlots
+    if(attackerSlots<1)return 'RTS-бой невозможен: у атакующей стороны нет ни одной фракции.'
+    if(defenderSlots<1)return 'RTS-бой невозможен: у обороняющейся стороны нет ни одной фракции.'
+    if(attackerSlots>4)return `RTS-бой невозможен: у атакующих ${attackerSlots} фракций, максимум для BFME - 4.`
+    if(defenderSlots>4)return `RTS-бой невозможен: у обороняющихся ${defenderSlots} фракций, максимум для BFME - 4.`
+    return 'RTS-бой невозможен: для этого места боя не задана карта BFME.'
+  })()
   const rtsBlockReason=!desktopRuntime?'Запуск BFME доступен только в Tauri-приложении.'
     :!activeMod?'Активный мод не загружен.'
       :!activeMod.rts.enabled?'RTS-интеграция отключена в системных настройках мода.'
@@ -96,11 +116,49 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
           :!activeMod.rts.mapsFile?'В системных настройках мода отсутствует общий BIG-архив карт.'
             :!cacheEntityId||!selectedMapAsset||!conflict.rtsMapId?'Для места этого боя не загружен MapCache BIG.'
               :!factionOrderReady?'Одна из участвующих фракций отсутствует в порядке фракций BFME.'
-                :!conflict.rtsCompatible?'Состав сторон не совместим с RTS: проверьте число фракций и слотов.'
+                :!conflict.rtsCompatible?rtsIncompatibilityReason
                   :null
   const rtsReady=rtsBlockReason===null
   const rtsArmyPool=[...new Map([...attackers,...defenders,...attackerReinforcements,...defenderReinforcements].map((army)=>[army.id,army])).values()]
-  const rtsComposition=(factionId:string)=>{const factionArmies=rtsArmyPool.filter((army)=>army.factionId===factionId);const unitObjects=factionArmies.flatMap((army)=>army.unitSlots.map((slot)=>slot.objectId));const heroObjects=factionArmies.flatMap((army)=>[...(army.commander?.kind==='hero'&&army.commander.objectId?[army.commander.objectId]:[]),...army.heroSlots.map((slot)=>slot.objectId)]);if(location?.side===factionId&&conflict.garrisonLocationId){for(const slot of reserve){if(slot.kind==='hero')heroObjects.push(slot.objectId);else unitObjects.push(slot.objectId)}}return{units:unitObjects.map((objectId)=>({objectId,level:1,upgrades:[]})),heroes:[...new Set(heroObjects)].map((objectId)=>({objectId,level:1}))}}
+  const rtsComposition=(factionId:string)=>{
+    const factionArmies=rtsArmyPool.filter((army)=>army.factionId===factionId)
+    const slotUpgrades=(slot:typeof factionArmies[number]['unitSlots'][number])=>{
+      const allowed=availableUpgrades(units.find((unit)=>unit.id===slot.entityId))
+      return allowed.filter((upgrade)=>slot[upgrade])
+    }
+    const unitEntries=factionArmies.flatMap((army)=>army.unitSlots.map((slot)=>({objectId:slot.objectId,level:slot.level??1,upgrades:slotUpgrades(slot)})))
+    const heroEntries=factionArmies.flatMap((army)=>[
+      ...(army.commander?.kind==='hero'&&army.commander.objectId?[{objectId:army.commander.objectId,entityId:army.commander.entityId}]:[]),
+      ...army.heroSlots.map((slot)=>({objectId:slot.objectId,entityId:slot.entityId})),
+    ])
+    if(location?.side===factionId&&conflict.garrisonLocationId){
+      for(const slot of reserve){
+        if(slot.kind==='hero')heroEntries.push({objectId:slot.objectId,entityId:slot.entityId})
+        else unitEntries.push({objectId:slot.objectId,level:slot.level??1,upgrades:slotUpgrades(slot)})
+      }
+    }
+    // Носитель Кольца выходит в бой в облике кольценосного героя фракции (§4.7, §7).
+    const ringState=campaign.ringState
+    const carrierHere=ringState.forged&&ringState.ownerFactionId===factionId&&factionArmies.some((army)=>army.id===ringState.carrierArmyId)
+    const ringHero=carrierHere?ringHeroObjectId(factions.find((faction)=>faction.id===factionId)):null
+    // Контекстные бонусы владельца локации: ресурсы, КО, палантир, сигнальный огонь (§2).
+    const ownerBonuses=location?.side===factionId
+      ?collectOwnerModifiers({location,region:regions.find((item)=>item.id===conflict.regionId)??null,factionId,campaign,buildingTypes,economicTypes,ringForging,palantirSettings})
+      :{}
+    return {
+      units:unitEntries,
+      heroes:[...new Map(heroEntries.map((entry)=>[entry.objectId,entry])).values()].map((entry)=>({objectId:entry.objectId,level:campaign.heroLevels[entry.entityId]??1})),
+      ringHeroObjectId:ringHero,
+      bonuses:{
+        startingResources:ownerBonuses.startingResources??0,
+        commandPointBonus:ownerBonuses.commandPointBonus??0,
+        palantirStartingPoints:ownerBonuses.palantirStartingPoints??0,
+        palantirIncomePerInterval:ownerBonuses.palantirIncomePerInterval??0,
+        signalFire:Boolean(ownerBonuses.signalFire),
+      },
+    }
+  }
+
   const battleLocation=cacheEntityId?locations.find((item)=>item.id===cacheEntityId)??null:null
   const rtsPositions=battleLocation?.rtsPositions??null
   const isFortressBattle=conflict.battleType==='siege'
@@ -171,9 +229,17 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     setRtsMessage('Подготовка файлов и автоматический запуск BFME. Подтвердите запрос Windows UAC, если он появится. После этого физический ввод временно блокируется до начала загрузки боя; аварийный выход — Ctrl+Alt+Del.')
     try{
       const difficulty=RTS_DIFFICULTIES.find((item)=>item.id===campaign.aiDifficulty.rts)!
-      const participants=orderedRtsFactionIds.map((id,slotIndex)=>({slot:slotIndex+1,factionId:id,listIndex:activeMod.rts.factionOrder.indexOf(id),color:factions.find((faction)=>faction.id===id)?.rtsColor,side:factions.find((faction)=>faction.id===id)?.alignment??'good',gateAngleDeg:45,...rtsComposition(id)}))
+      // Фора считается относительно: общий для всех штраф не даёт никому
+      // преимущества и обнуляется, penalty получает только реально слабейший.
+      const handicaps=calculateRelativeHandicaps(orderedRtsFactionIds.map((id)=>({
+        factionId:id,
+        armies:rtsArmyPool.filter((army)=>army.factionId===id),
+        campaign,
+        ringForging,
+      })))
+      const participants=orderedRtsFactionIds.map((id,slotIndex)=>({slot:slotIndex+1,factionId:id,listIndex:activeMod.rts.factionOrder.indexOf(id),color:factions.find((faction)=>faction.id===id)?.rtsColor,side:factions.find((faction)=>faction.id===id)?.alignment??'good',gateAngleDeg:45,handicapPercent:handicaps.get(id)?.percent??0,handicapReasons:handicaps.get(id)?.reasons??[],...rtsComposition(id)}))
       const {startPositions,fortressOwnerSlot}=buildStartPositions(participants)
-      const battleConfig={version:1,language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
+      const battleConfig={version:1,language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)
       if(!report.ok){setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
       const token=rtsWatchToken.current

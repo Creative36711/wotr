@@ -488,6 +488,9 @@ const UI_EN: Record<string, string> = {
   'Одна из участвующих фракций отсутствует в порядке фракций BFME.': 'One of the participating factions is missing from the BFME faction order.',
   'Для крепости не указана полная стартовая точка защитника.': 'The fortress defender start position is incomplete.',
   'Состав сторон не совместим с RTS: проверьте число фракций и слотов.': 'The sides are not RTS-compatible: check the number of factions and slots.',
+  'RTS-бой невозможен: у атакующей стороны нет ни одной фракции.': 'RTS battle unavailable: the attacking side has no faction.',
+  'RTS-бой невозможен: у обороняющейся стороны нет ни одной фракции.': 'RTS battle unavailable: the defending side has no faction.',
+  'RTS-бой невозможен: для этого места боя не задана карта BFME.': 'RTS battle unavailable: no BFME map is assigned to this battle location.',
   'Проверить BIG-файлы и запустить BFME': 'Validate BIG files and launch BFME',
   'Подготовка файлов и автоматический запуск BFME. Подтвердите запрос Windows UAC, если он появится. После этого физический ввод временно блокируется до начала загрузки боя; аварийный выход — Ctrl+Alt+Del.': 'Preparing files and launching BFME automatically. Confirm the Windows UAC prompt if it appears. Physical input will then be temporarily blocked until the battle starts loading; emergency exit: Ctrl+Alt+Del.',
   'подготовка…': 'preparing…',
@@ -525,6 +528,31 @@ const UI_EN: Record<string, string> = {
   'Версия BFME': 'BFME Version',
   'Основа': 'Base',
   'Пустой шаблон': 'Empty Template',
+  'Описание (подсказка при наведении)': 'Description (hover tooltip)',
+  'Базовые стартовые очки палантира и интервал их прироста (2 минуты) зашиты в саму BFME и не редактируются. Здесь задаётся только потолок для бонусов, которые стратегический слой может добавить сверху.': 'The base palantir points and the 2-minute income tick are hard-coded inside BFME and cannot be edited. Only the cap for the bonuses added by the strategic layer is configurable here.',
+  'Потолок ветеранства из ROTWK 2.01: 0 - без уровней (осада, энты), 5 - обычные отряды, 10 - героические': 'Veterancy cap from ROTWK 2.01: 0 = no levels (siege, ents), 5 = regular units, 10 = heroic units',
+  'Работает': 'Operational',
+  'Снести': 'Demolish',
+  'Постройки': 'Buildings',
+  'Постройки и Кольцо': 'Buildings and the Ring',
+  'Построек нет': 'No buildings',
+  'Строительство ведётся в инспекторе локации': 'Construction is started from the location inspector',
+  'Строится': 'Under construction',
+  'Ковка Кольца': 'Ring forging',
+  'Кольцо выковано': 'The Ring is forged',
+  'Носитель': 'Bearer',
+  'Кольцо': 'The Ring',
+  'Кольцо Всевластья': 'The One Ring',
+  'Оружие': 'Weapons',
+  'Броня': 'Armor',
+  'Знамя': 'Banner',
+  'Максимальный уровень': 'Maximum level',
+  'Доступные апгрейды': 'Available upgrades',
+  'Слоты построек': 'Building slots',
+  'Бонусы полного контроля': 'Full-control bonuses',
+  'Палантир': 'Palantír',
+  'Уровни по умолчанию': 'Default levels',
+
   'Копия:': 'Copy:',
   'Описание': 'Description',
   'Создать и открыть редактор': 'Create and Open Editor',
@@ -1097,8 +1125,15 @@ function DocumentLocalizer({ language }: { language: AppLanguage }) {
   useEffect(() => {
     currentLanguage = language
     document.documentElement.lang = language
-    // Window title is always English regardless of the UI language.
-    document.title = 'War of the Ring — Map Editor'
+    // Window title follows the selected UI language (both the HTML title and,
+    // on desktop, the native Tauri window caption next to the icon).
+    const title = translateText('Война за Кольцо — редактор карты', language)
+    document.title = title
+    if ('__TAURI_INTERNALS__' in window) {
+      void import('@tauri-apps/api/window')
+        .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
+        .catch(() => { /* Title stays as configured when the API is unavailable. */ })
+    }
 
     const refresh=()=>translateDomNode(document.body,language)
     refresh()

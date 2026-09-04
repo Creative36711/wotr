@@ -1,4 +1,5 @@
 import { DEFAULT_FACTIONS } from '../constants'
+import { createDefaultRingState } from './ring'
 import type { Army, CampaignState, CaptainType, FactionDefinition, Hero, HexGridData, MapLocation, Region, UnitType } from '../types'
 
 /**
@@ -76,6 +77,10 @@ export function createDefaultCampaign(
     turnMovements: [],
     conflicts: [],
     currentConflictId: null,
+    buildings: [],
+    heroLevels: Object.fromEntries(heroes.map((hero) => [hero.id, 1])),
+    ringState: createDefaultRingState(),
+    turnEvents: [],
     log: [],
   }
 }

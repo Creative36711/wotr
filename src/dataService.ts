@@ -19,7 +19,12 @@ import { updateConflictRtsCompatibility } from './game/conflicts'
 import { heroIsDeployed, heroSummonLocation } from './game/heroes'
 import { defaultLocationTypesForUnit, defaultRequiredTagsForUnit, defaultTagsForLocation } from './game/recruitment'
 import { createDefaultEconomicTypes, getEconomicType, normalizeEconomicTypes, setActiveEconomicTypes } from './game/economicTypes'
-import type { AppSettings, Army, ArmyCommander, ArmySlot, CampaignState, CaptainType, EconomicTypeDefinition, FactionDefinition, Hero, MapLocation, ModDefinition, ModSummary, Region, RosterData, RtsMapAsset, RtsStoredFile, SaveGameData, UnitType, WorldData } from './types'
+import { createDefaultBuildingTypes, normalizeBuildings, normalizeBuildingTypes } from './game/buildings'
+import { createDefaultRingForging, createDefaultRingState, normalizeRingForging, normalizeRingState } from './game/ring'
+import { DEFAULT_PALANTIR_SETTINGS, normalizeBattleModifiers } from './game/battleModifiers'
+import { rotwkUnitLevelCap } from './game/unitLevelCaps'
+import { ABSOLUTE_MAX_LEVEL, DEFAULT_HERO_MAX_LEVEL, DEFAULT_UNIT_MAX_LEVEL, normalizeSlotProgression } from './game/progression'
+import type { AppSettings, Army, ArmyCommander, ArmySlot, ArmyUpgradeId, BuildingTypeDefinition, PalantirSettings, RingForgingSettings, CampaignState, CaptainType, EconomicTypeDefinition, FactionDefinition, Hero, MapLocation, ModDefinition, ModSummary, Region, RosterData, RtsMapAsset, RtsStoredFile, SaveGameData, UnitType, WorldData } from './types'
 import { GAME_VERSION, ROSTER_DATA_VERSION, SAVEGAME_DATA_VERSION, WORLD_DATA_VERSION } from './version'
 import { DEFAULT_NETWORK_RULES, DEFAULT_RTS_EXECUTABLE, RTS_COLORS, normalizeRtsSettings } from './rts'
 
@@ -66,7 +71,7 @@ function normalizeFactions(source: unknown): FactionDefinition[] {
   return values.map((raw:any,index) => {
     const localized=canonicalLocalized(raw.label,raw.en,raw.labelTranslations)
     const rtsColor = RTS_COLORS.some((color) => color.id === raw.rtsColor) ? raw.rtsColor : RTS_COLORS[index % RTS_COLORS.length].id
-    return { id:raw.id!,label:localized.canonical,labelTranslations:localized.translations,color:raw.color??RTS_COLORS.find((color)=>color.id===rtsColor)?.hex??'#8b918d',emblem:raw.emblem??'',playable:raw.playable??true,alignment:raw.alignment??'neutral',rtsColor,baseArmyLimit:Math.max(0,raw.baseArmyLimit??(raw.playable===false?0:2)),startingTreasury:{gold:Math.max(0,raw.startingTreasury?.gold??(raw.playable===false?0:500)),materials:Math.max(0,raw.startingTreasury?.materials??(raw.playable===false?0:200))}}
+    return { id:raw.id!,label:localized.canonical,labelTranslations:localized.translations,color:raw.color??RTS_COLORS.find((color)=>color.id===rtsColor)?.hex??'#8b918d',emblem:raw.emblem??'',playable:raw.playable??true,alignment:raw.alignment??'neutral',rtsColor,baseArmyLimit:Math.max(0,raw.baseArmyLimit??(raw.playable===false?0:2)),startingTreasury:{gold:Math.max(0,raw.startingTreasury?.gold??(raw.playable===false?0:500)),materials:Math.max(0,raw.startingTreasury?.materials??(raw.playable===false?0:200))},ringHeroId:typeof raw.ringHeroId==='string'&&raw.ringHeroId.trim()?raw.ringHeroId.trim():undefined}
   }) as FactionDefinition[]
 }
 
@@ -97,6 +102,19 @@ function normalizeUnits(source: unknown): UnitType[] {
       requiredLocationTags: Array.isArray(old.requiredLocationTags) ? old.requiredLocationTags : defaults?.requiredLocationTags ?? defaultRequiredTagsForUnit(old.id),
       recruitDuringOccupation: old.recruitDuringOccupation ?? defaults?.recruitDuringOccupation ?? (old.battlePower ?? defaults?.battlePower ?? calculatedPower) <= 80,
       transformationSourceUnitId: typeof old.transformationSourceUnitId === 'string' ? old.transformationSourceUnitId : defaults?.transformationSourceUnitId ?? null,
+      // Level cap: an explicit roster value wins, otherwise the authoritative
+      // ROTWK 2.01 table decides (5 regular / 10 heroic / 0 for siege & ents).
+      maxLevel: Number.isFinite(old.maxLevel)
+        ? Math.max(0, Math.min(ABSOLUTE_MAX_LEVEL, Math.round(Number(old.maxLevel))))
+        : rotwkUnitLevelCap(old.objectId ?? defaults?.objectId),
+      availableUpgrades: Array.isArray(old.availableUpgrades)
+        ? (['weaponUpgrade', 'armorUpgrade', 'bannerUpgrade'] as ArmyUpgradeId[]).filter((upgrade) => old.availableUpgrades.includes(upgrade))
+        : undefined,
+      upgradeAuras: old.upgradeAuras && typeof old.upgradeAuras === 'object' ? {
+        weaponUpgrade: typeof old.upgradeAuras.weaponUpgrade === 'string' ? old.upgradeAuras.weaponUpgrade : undefined,
+        armorUpgrade: typeof old.upgradeAuras.armorUpgrade === 'string' ? old.upgradeAuras.armorUpgrade : undefined,
+        bannerUpgrade: typeof old.upgradeAuras.bannerUpgrade === 'string' ? old.upgradeAuras.bannerUpgrade : undefined,
+      } : undefined,
     } as UnitType
   })
   return normalized.map((unit) => {
@@ -134,6 +152,8 @@ function normalizeHeroes(source: unknown, rebalanceBuiltIns = false): Hero[] {
       requiredTurn: Math.max(1, Number(old.requiredTurn ?? defaults?.requiredTurn ?? 1)),
       requiredLocationId: old.requiredLocationId ?? defaults?.requiredLocationId ?? null,
       summonCostGold: Math.max(0, Number(old.summonCostGold ?? defaults?.summonCostGold ?? 0)),
+      // BFME heroes always level up to 10 - this is fixed by the game engine.
+      maxLevel: DEFAULT_HERO_MAX_LEVEL,
     } as Hero
   })
 }
@@ -170,7 +190,7 @@ function normalizeArmies(source: unknown, units: UnitType[], heroes: Hero[], cap
   const normalizeSlot = (slot: any, armyId: string, index: number, kind: 'unit' | 'hero'): ArmySlot | null => {
     const entity = kind === 'hero' ? heroes.find((item) => item.id === slot.entityId) : units.find((item) => item.id === slot.entityId)
     if (!entity) return null
-    return { slotId: slot.slotId ?? `${armyId}-${kind}-${index + 1}`, kind, entityId: entity.id, objectId: entity.objectId }
+    return { slotId: slot.slotId ?? `${armyId}-${kind}-${index + 1}`, kind, entityId: entity.id, objectId: entity.objectId, ...normalizeSlotProgression(slot) }
   }
   return source.map((raw) => {
     const old = raw as any
@@ -239,7 +259,7 @@ function normalizeArmies(source: unknown, units: UnitType[], heroes: Hero[], cap
   })
 }
 
-function normalizeCampaign(source: any, factions: FactionDefinition[], locations: MapLocation[], heroes: Hero[]): CampaignState {
+function normalizeCampaign(source: any, factions: FactionDefinition[], locations: MapLocation[], heroes: Hero[], buildingTypes: BuildingTypeDefinition[] = []): CampaignState {
   const defaults = createDefaultCampaign(factions, locations, heroes)
   const campaign = source ?? defaults
   const treasuries = Object.fromEntries(factions.map((faction) => {
@@ -256,7 +276,7 @@ function normalizeCampaign(source: any, factions: FactionDefinition[], locations
     return [location.id, existing ? {
       locationId: location.id,
       recruitmentQueue: Array.isArray(existing.recruitmentQueue) ? existing.recruitmentQueue : [],
-      reserve: Array.isArray(existing.reserve) ? existing.reserve : [],
+      reserve: Array.isArray(existing.reserve) ? existing.reserve.map((slot: any) => ({ ...slot, ...normalizeSlotProgression(slot) })) : [],
       occupationTurnsLeft: Math.max(0, Number(existing.occupationTurnsLeft ?? 0)),
     } : defaults.locationStates[location.id]]
   }))
@@ -363,6 +383,16 @@ function normalizeCampaign(source: any, factions: FactionDefinition[], locations
     turnMovements:Array.isArray(campaign.turnMovements)?campaign.turnMovements.filter((entry:any)=>entry&&typeof entry.armyName==='string').map((entry:any)=>({id:String(entry.id??`move-${Math.random().toString(36).slice(2,8)}`),round:Math.max(1,Number(entry.round??1)),factionId:String(entry.factionId??'civilian'),armyName:entry.armyName,commanderName:typeof entry.commanderName==='string'?entry.commanderName:null,action:['moved','stayed','retreated','besieged'].includes(entry.action)?entry.action:'moved',targetLabel:typeof entry.targetLabel==='string'?entry.targetLabel:null,distance:Math.max(0,Number(entry.distance??0))})):[],
     conflicts,
     currentConflictId: campaign.currentConflictId ?? conflicts.find((conflict: any) => conflict.status === 'pending')?.id ?? null,
+    buildings: normalizeBuildings(campaign.buildings, buildingTypes, locations),
+    heroLevels: Object.fromEntries(heroes.map((hero) => [hero.id, Math.max(1, Math.min(ABSOLUTE_MAX_LEVEL, Math.round(Number(campaign.heroLevels?.[hero.id] ?? 1)) || 1))])),
+    ringState: normalizeRingState(campaign.ringState),
+    turnEvents: Array.isArray(campaign.turnEvents) ? campaign.turnEvents.filter((entry: any) => entry && typeof entry.text === 'string').map((entry: any) => ({
+      id: String(entry.id ?? `event-${Math.random().toString(36).slice(2, 8)}`),
+      round: Math.max(1, Number(entry.round ?? 1)),
+      factionId: typeof entry.factionId === 'string' ? entry.factionId : null,
+      kind: ['building_completed', 'upgrade_granted', 'ring_progress', 'ring_forged', 'ring_carrier'].includes(entry.kind) ? entry.kind : 'ring_progress',
+      text: entry.text,
+    })) : [],
     log: Array.isArray(campaign.log) ? campaign.log.map((entry: any) => ({ ...entry, phase: validPhases.includes(entry.phase) ? entry.phase : phase })) : defaults.log,
   }
 }
@@ -389,7 +419,7 @@ function restoreMissingActiveHeroes(armies: Army[], campaign: CampaignState, her
     const destination = recovery ?? heroSummonLocation(hero, locations)
     if (!destination) continue
     const locationState = campaign.locationStates[destination.id] ?? { locationId: destination.id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
-    locationState.reserve.push({ slotId: `restored-hero-${hero.id}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId })
+    locationState.reserve.push({ slotId: `restored-hero-${hero.id}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId, level: campaign.heroLevels?.[hero.id] ?? 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false })
     campaign.locationStates[destination.id] = locationState
   }
 }
@@ -457,6 +487,16 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
   const captains = normalizeCaptains(rosterValue !== undefined ? roster?.captains ?? [] : source.captains)
   const economicTypes = normalizeEconomicTypes(source.economicTypes)
   setActiveEconomicTypes(economicTypes)
+  const buildingTypes = source.buildingTypes === undefined
+    ? ((source.version ?? 0) < WORLD_DATA_VERSION ? createDefaultBuildingTypes() : [])
+    : normalizeBuildingTypes(source.buildingTypes)
+  const palantirSettings: PalantirSettings = {
+    maxStartingPointsFromModifiers: Math.max(0, Math.round(Number(source.palantirSettings?.maxStartingPointsFromModifiers ?? DEFAULT_PALANTIR_SETTINGS.maxStartingPointsFromModifiers))),
+    maxIncomePerIntervalFromModifiers: Math.max(0, Math.round(Number(source.palantirSettings?.maxIncomePerIntervalFromModifiers ?? DEFAULT_PALANTIR_SETTINGS.maxIncomePerIntervalFromModifiers))),
+  }
+  const ringForging: RingForgingSettings = source.ringForging === undefined
+    ? ((source.version ?? 0) < WORLD_DATA_VERSION ? createDefaultRingForging() : { ...createDefaultRingForging(), enabled: false })
+    : normalizeRingForging(source.ringForging)
   const looksLikeVanilla = source.locations.length === 79
     && source.locations.some((location: any) => location.id === 'helms-deep')
     && source.locations.some((location: any) => location.id === 'minas-tirith')
@@ -478,6 +518,10 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
         ownerFactionId: region.ownerFactionId ?? null,
         description: localizedDescription.canonical,
         descriptionTranslations: localizedDescription.translations,
+        fullControlBonus: region.fullControlBonus ? {
+          battleModifiers: normalizeBattleModifiers(region.fullControlBonus.battleModifiers),
+          autoBattleBonus: Math.max(0, Math.min(1, Number(region.fullControlBonus.autoBattleBonus ?? 0))),
+        } : null,
       } as Region
     }).filter((region) => region.id)
   } else if (looksLikeVanilla || needsRegionHierarchy) {
@@ -574,7 +618,7 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     const cap = armyMovementCap(army, heroes, captains, unitTypes)
     army.movementRemaining = (source.version ?? 0) < 13 ? cap : Math.min(army.movementRemaining, cap)
   }
-  const campaign = normalizeCampaign(source.campaign, factions, normalizedLocations, heroes)
+  const campaign = normalizeCampaign(source.campaign, factions, normalizedLocations, heroes, buildingTypes)
   enforceCaptainHierarchy(armies, campaign)
   for (const army of armies) army.name = generateArmyName(army, armies, factions, normalizedLocations, heroes, grid.config)
   if ((source.version ?? 0) < 16) {
@@ -595,6 +639,9 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     captains,
     armies,
     regions,
+    buildingTypes,
+    palantirSettings,
+    ringForging,
     campaign: { ...campaign, turnOrder: [...campaign.turnOrder], log: [...campaign.log] },
     battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
   }
@@ -605,7 +652,7 @@ export function normalizeSaveGame(value: unknown, world: WorldData): SaveGameDat
   const source = value as any
   if (source.version !== SAVEGAME_DATA_VERSION || source.gameVersion !== GAME_VERSION) throw new Error(`Сохранение создано в другой версии игры: ${source.gameVersion ?? `данные ${source.version ?? 'неизвестны'}`}`)
   if (!Array.isArray(source.armies) || !source.campaign) throw new Error('Сохранение повреждено')
-  const campaign = normalizeCampaign(source.campaign, world.factions, world.locations, world.heroes)
+  const campaign = normalizeCampaign(source.campaign, world.factions, world.locations, world.heroes, world.buildingTypes)
   const armies = normalizeArmies(source.armies, world.unitTypes, world.heroes, world.captains, false)
   const battles = Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : []
   const heroAlive = { ...(source.heroAlive ?? Object.fromEntries(world.heroes.map((hero) => [hero.id, hero.alive]))) }

@@ -35,7 +35,125 @@ export interface EconomicTypeDefinition {
   isCapital: boolean
   allowedForDomain: boolean
   allowedForStronghold: boolean
+  /** How many strategic buildings fit into a location of this type. */
+  buildingSlots?: number
+  /** Context battle bonuses granted to the owner of a location of this type. */
+  battleModifiers?: BattleModifierSet
 }
+/**
+ * Context-layer battle bonuses granted to the OWNER of a location / region /
+ * building / the Ring. Everything is optional; missing values default to 0.
+ */
+export interface OwnerBattleModifiers {
+  /** Extra starting resources for the owner inside the RTS battle. */
+  startingResources?: number
+  /** Extra BFME command-point (population) limit inside the RTS battle. */
+  commandPointBonus?: number
+  /** Palantir points available at the very start of the RTS battle. */
+  palantirStartingPoints?: number
+  /** Palantir points gained per palantir interval. */
+  palantirIncomePerInterval?: number
+  /** Spawn a signal fire for the owner. */
+  signalFire?: boolean
+  /** Auto-battle defense multiplier addition (0..1). */
+  defenseBonus?: number
+  /** Auto-battle first-round attack multiplier addition (0..1). */
+  ambushBonus?: number
+  /** Auto-battle debuff applied to BOTH sides (terrain flavour, 0..1). */
+  terrainDebuff?: number
+  /** Free-form tag consumed by the RTS bridge (e.g. extra troll spawns). */
+  spawnBonus?: string
+}
+
+export interface BattleModifierSet {
+  owner: OwnerBattleModifiers
+}
+
+export interface RegionFullControlBonus {
+  battleModifiers: BattleModifierSet
+  /** Flat auto-battle power bonus for the controlling faction inside the region. */
+  autoBattleBonus: number
+}
+
+export type ArmyUpgradeId = 'weaponUpgrade' | 'armorUpgrade' | 'bannerUpgrade'
+export const ARMY_UPGRADE_IDS: ArmyUpgradeId[] = ['weaponUpgrade', 'armorUpgrade', 'bannerUpgrade']
+
+/** BFME aura object names used by the RTS bridge for permanent unit upgrades. */
+export interface UnitUpgradeAuras {
+  weaponUpgrade?: string
+  armorUpgrade?: string
+  bannerUpgrade?: string
+}
+
+/** Strategic building type, authored in world.json. */
+export interface BuildingTypeDefinition {
+  id: string
+  name: string
+  nameTranslations: LocalizedTranslations
+  description: string
+  descriptionTranslations: LocalizedTranslations
+  icon: string
+  cost: number
+  buildTime: number
+  allowedStructuralTypes: StructuralType[]
+  allowedEconomicTypes: SettlementType[]
+  /** 0 = unlimited. */
+  maxPerLocation: number
+  /** 0 = unlimited. */
+  maxPerFaction: number
+  destroyedOnCapture: boolean
+  effects: {
+    armyUpgrades: ArmyUpgradeId[]
+    battleModifiers: BattleModifierSet
+    /** Recruits at this location start this many levels higher. */
+    recruitLevelBonus: number
+    /** Free Ring-forging progress per turn. */
+    ringForgeBonus: number
+  }
+}
+
+/** A placed strategic building instance; lives in savegame.json. */
+export interface BuildingInstance {
+  id: string
+  buildingTypeId: string
+  locationId: string
+  ownerFactionId: FactionId
+  /** > 0 while under construction; 0 = active. */
+  turnsRemaining: number
+  turnBuilt: number
+}
+
+/**
+ * Palantír limits. Only the caps are configurable: the base starting points and
+ * the 2-minute income tick are hard-coded inside BFME itself, so the strategic
+ * layer can only decide how many *extra* points a side brings into the battle.
+ */
+export interface PalantirSettings {
+  maxStartingPointsFromModifiers: number
+  maxIncomePerIntervalFromModifiers: number
+}
+
+export interface RingForgingSettings {
+  enabled: boolean
+  requiredProgress: number
+  maxInvestmentPerTurn: number
+  /** Gold cost of +1, +2, +3 progress. */
+  investmentCosts: number[]
+  effects: {
+    battleModifiers: BattleModifierSet
+    autoBattleBonus: number
+    handicapToAllEnemies: number
+  }
+}
+
+export interface RingState {
+  forged: boolean
+  ownerFactionId: FactionId | null
+  carrierArmyId: string | null
+  forgedOnTurn: number | null
+  factionProgress: Record<FactionId, number>
+}
+
 export type ArmySlotKind = 'unit' | 'hero'
 export type StrategicSide = 'good' | 'evil'
 export type CampaignPhase = 'planning_good' | 'planning_evil' | 'movement_first' | 'movement_second' | 'conflicts' | 'aftermath'
@@ -143,6 +261,8 @@ export interface FactionDefinition {
   /** Base cap before bonuses from controlled major locations. */
   baseArmyLimit: number
   startingTreasury: ResourceAmount
+  /** BFME object spawned as this faction's Ring hero when its army carries the Ring. */
+  ringHeroId?: string
 }
 
 /** Catalog entry mapped to an Object ID from BFME code. */
@@ -172,6 +292,12 @@ export interface UnitType {
   recruitDuringOccupation: boolean
   /** Non-null units are created by converting a reserve source unit and are not recruited directly. */
   transformationSourceUnitId: string | null
+  /** Veterancy cap. Missing = world default. 0 = the unit has no levels at all (siege engines, ents). */
+  maxLevel?: number
+  /** Which permanent upgrades this unit can ever receive. Missing = all three. */
+  availableUpgrades?: ArmyUpgradeId[]
+  /** BFME aura object names used when spawning the unit with its upgrades. */
+  upgradeAuras?: UnitUpgradeAuras
 }
 
 /** Named BFME hero catalog entry. Heroes use normal army slots. */
@@ -199,6 +325,8 @@ export interface Hero {
   requiredTurn: number
   requiredLocationId: string | null
   summonCostGold: number
+  /** Veterancy cap for this hero. Missing = world default. */
+  maxLevel?: number
 }
 
 export interface CaptainType {
@@ -242,6 +370,12 @@ export interface ArmySlot {
   kind: ArmySlotKind
   entityId: string
   objectId: string
+  /** Permanent veterancy level (1..maxLevel). Travels with the slot. */
+  level: number
+  /** Permanent upgrade ratchets. Once granted, never lost. */
+  weaponUpgrade: boolean
+  armorUpgrade: boolean
+  bannerUpgrade: boolean
 }
 
 export interface Army {
@@ -287,6 +421,8 @@ export interface Region {
   ownerFactionId?: FactionId | null
   description: string
   descriptionTranslations: LocalizedTranslations
+  /** Applied while every domain and stronghold of the region has one owner. */
+  fullControlBonus?: RegionFullControlBonus | null
 }
 
 export interface CampaignLogEntry {
@@ -477,7 +613,25 @@ export interface CampaignState {
   turnMovements: TurnMovementRecord[]
   conflicts: CampaignConflict[]
   currentConflictId: string | null
+  /** Placed strategic buildings (under construction and active). */
+  buildings: BuildingInstance[]
+  /** Permanent hero veterancy levels, keyed by hero id. */
+  heroLevels: Record<string, number>
+  /** Ring-forging race state. */
+  ringState: RingState
+  /** Per-faction turn report of the current round. */
+  turnEvents: TurnEventRecord[]
   log: CampaignLogEntry[]
+}
+
+export type TurnEventKind = 'building_completed' | 'upgrade_granted' | 'ring_progress' | 'ring_forged' | 'ring_carrier'
+
+export interface TurnEventRecord {
+  id: string
+  round: number
+  factionId: FactionId | null
+  kind: TurnEventKind
+  text: string
 }
 
 export interface BattleSlotResult {
@@ -594,14 +748,14 @@ export interface HexGridData {
 }
 
 export interface RosterData {
-  version: 16
+  version: 17
   unitTypes: UnitType[]
   heroes: Hero[]
   captains: CaptainType[]
 }
 
 export interface WorldData {
-  version: 43
+  version: 44
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]
@@ -611,12 +765,15 @@ export interface WorldData {
   captains: CaptainType[]
   armies: Army[]
   regions: Region[]
+  buildingTypes: BuildingTypeDefinition[]
+  palantirSettings: PalantirSettings
+  ringForging: RingForgingSettings
   campaign: CampaignState
   battles: AutoBattleReport[]
 }
 
 export interface SaveGameData {
-  version: 60
+  version: 61
   gameVersion: string
   modId: string
   name: string

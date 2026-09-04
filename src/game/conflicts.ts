@@ -1,6 +1,9 @@
 import { areFactionsHostile, getFaction } from '../constants'
 import { commanderDefinition } from './army'
 import { getEconomicType } from './economicTypes'
+import { collectOwnerModifiers, palantirAutoBattleWeight, regionAutoBattleBonus } from './battleModifiers'
+import { heroPowerMultiplier, slotPowerMultiplier } from './progression'
+import { ringAutoBattleMultiplier } from './ring'
 import { factionSide, oppositeSide } from './campaign'
 import { findPath, hexDistance, locationHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
 import type {
@@ -20,7 +23,25 @@ import type {
   Region,
   StrategicSide,
   UnitType,
+  BuildingTypeDefinition,
+  EconomicTypeDefinition,
+  PalantirSettings,
+  RingForgingSettings,
 } from '../types'
+
+/**
+ * Optional context layer: locations, regions, buildings and the Ring. When it
+ * is missing (older callers) the battle math falls back to the previous rules.
+ */
+export interface ConflictModifierContext {
+  campaign: CampaignState
+  regions: Region[]
+  buildingTypes: BuildingTypeDefinition[]
+  economicTypes?: EconomicTypeDefinition[]
+  ringForging: RingForgingSettings
+  palantirSettings: PalantirSettings
+}
+
 
 interface BattleMember {
   key: string
@@ -73,7 +94,7 @@ function randomFrom(seed: number) {
   return value - Math.floor(value)
 }
 
-function armyMembers(army: Army, units: UnitType[], heroes: Hero[], captains: CaptainType[]): BattleMember[] {
+function armyMembers(army: Army, units: UnitType[], heroes: Hero[], captains: CaptainType[], heroLevels: Record<string, number> = {}): BattleMember[] {
   const result: BattleMember[] = []
   const commander = commanderDefinition(army, heroes, captains)
   if (army.commander && commander) result.push({
@@ -81,38 +102,38 @@ function armyMembers(army: Army, units: UnitType[], heroes: Hero[], captains: Ca
     objectId: army.commander.objectId ?? `strategic:${commander.id}`,
     kind: army.commander.kind,
     entityId: commander.id,
-    power: commander.battlePower,
+    power: commander.battlePower * (army.commander.kind === 'hero' ? heroPowerMultiplier(heroLevels, commander.id) : 1),
     source: 'army',
     sourceId: army.id,
   })
   for (const slot of army.heroSlots) {
     const hero = heroes.find((candidate) => candidate.id === slot.entityId && candidate.alive)
-    if (hero) result.push({ key: slot.slotId, objectId: hero.objectId, kind: 'hero', entityId: hero.id, power: hero.battlePower, source: 'army', sourceId: army.id })
+    if (hero) result.push({ key: slot.slotId, objectId: hero.objectId, kind: 'hero', entityId: hero.id, power: hero.battlePower * heroPowerMultiplier(heroLevels, hero.id), source: 'army', sourceId: army.id })
   }
   for (const slot of army.unitSlots) {
     const unit = units.find((candidate) => candidate.id === slot.entityId)
-    if (unit) result.push({ key: slot.slotId, objectId: unit.objectId, kind: 'unit', entityId: unit.id, power: unit.battlePower, source: 'army', sourceId: army.id })
+    if (unit) result.push({ key: slot.slotId, objectId: unit.objectId, kind: 'unit', entityId: unit.id, power: unit.battlePower * slotPowerMultiplier(slot), source: 'army', sourceId: army.id })
   }
   return result
 }
 
-function garrisonMembers(locationId: string, reserve: ArmySlot[], units: UnitType[], heroes: Hero[]): BattleMember[] {
+function garrisonMembers(locationId: string, reserve: ArmySlot[], units: UnitType[], heroes: Hero[], heroLevels: Record<string, number> = {}): BattleMember[] {
   const result: BattleMember[] = []
   for (const slot of reserve) {
     if (slot.kind === 'hero') {
       const hero = heroes.find((candidate) => candidate.id === slot.entityId && candidate.alive)
-      if (hero) result.push({ key: slot.slotId, objectId: hero.objectId, kind: 'hero', entityId: hero.id, power: hero.battlePower, source: 'garrison', sourceId: locationId })
+      if (hero) result.push({ key: slot.slotId, objectId: hero.objectId, kind: 'hero', entityId: hero.id, power: hero.battlePower * heroPowerMultiplier(heroLevels, hero.id), source: 'garrison', sourceId: locationId })
     } else {
       const unit = units.find((candidate) => candidate.id === slot.entityId)
-      if (unit) result.push({ key: slot.slotId, objectId: unit.objectId, kind: 'unit', entityId: unit.id, power: unit.battlePower, source: 'garrison', sourceId: locationId })
+      if (unit) result.push({ key: slot.slotId, objectId: unit.objectId, kind: 'unit', entityId: unit.id, power: unit.battlePower * slotPowerMultiplier(slot), source: 'garrison', sourceId: locationId })
     }
   }
   return result
 }
 
-function armyPoolPower(armies: Army[], units: UnitType[], heroes: Hero[], captains: CaptainType[], round: number) {
+function armyPoolPower(armies: Army[], units: UnitType[], heroes: Hero[], captains: CaptainType[], round: number, heroLevels: Record<string, number> = {}) {
   return armies.reduce((total, army) => {
-    const members = armyMembers(army, units, heroes, captains)
+    const members = armyMembers(army, units, heroes, captains, heroLevels)
     const commander = commanderDefinition(army, heroes, captains)
     const demoralized = army.status === 'retreating' && army.exhaustedUntilRound !== null && army.exhaustedUntilRound >= round
     const moraleMultiplier = demoralized ? .8 : 1
@@ -138,6 +159,7 @@ export function previewConflict(
   heroes: Hero[],
   captains: CaptainType[],
   terrain: LogicalHex['terrain'],
+  context?: ConflictModifierContext | null,
 ): ConflictPreview {
   const attackerCombatIds = [...conflict.attackerArmyIds, ...conflict.attackerReinforcementArmyIds]
   const defenderCombatIds = [...conflict.defenderArmyIds, ...conflict.defenderReinforcementArmyIds]
@@ -145,9 +167,10 @@ export function previewConflict(
   const defenderArmies = defenderCombatIds.map((id) => armies.find((army) => army.id === id)).filter(Boolean) as Army[]
   const location = conflict.locationId ? locations.find((candidate) => candidate.id === conflict.locationId) ?? null : null
   const reserve = conflict.garrisonLocationId ? locationStates[conflict.garrisonLocationId]?.reserve ?? [] : []
-  const garrison = conflict.garrisonLocationId ? garrisonMembers(conflict.garrisonLocationId, reserve, units, heroes) : []
-  let attackerBasePower = armyPoolPower(attackerArmies, units, heroes, captains, conflict.round)
-  let defenderBasePower = armyPoolPower(defenderArmies, units, heroes, captains, conflict.round) + garrisonPower(garrison, heroes)
+  const heroLevels = context?.campaign.heroLevels ?? {}
+  const garrison = conflict.garrisonLocationId ? garrisonMembers(conflict.garrisonLocationId, reserve, units, heroes, heroLevels) : []
+  let attackerBasePower = armyPoolPower(attackerArmies, units, heroes, captains, conflict.round, heroLevels)
+  let defenderBasePower = armyPoolPower(defenderArmies, units, heroes, captains, conflict.round, heroLevels) + garrisonPower(garrison, heroes)
   if (terrain === 'mountains') attackerBasePower *= .88
   if (terrain === 'swamp') attackerBasePower *= .84
   if (terrain === 'forest') defenderBasePower *= 1.08
@@ -155,10 +178,40 @@ export function previewConflict(
   if (terrain === 'mountains') defenderBasePower *= 1.2
   if (terrain === 'swamp') defenderBasePower *= 1.06
   const siegePower = attackerArmies.reduce((total, army) => total + army.unitSlots.reduce((sum, slot) => sum + (units.find((unit) => unit.id === slot.entityId)?.siegePower ?? 0), 0), 0)
+  const attackerFactionId = attackerArmies[0]?.factionId ?? null
+  const defenderFactionId = defenderArmies[0]?.factionId ?? location?.side ?? null
+  // The context layer belongs to the OWNER of the location, whichever side that is.
+  const ownerFactionId = location?.side ?? defenderFactionId
+  const ownerIsDefender = !location || ownerFactionId === defenderFactionId
+  let ownerModifiers = {} as ReturnType<typeof collectOwnerModifiers>
+  let attackerContextMultiplier = 1
+  let defenderContextMultiplier = 1
+  if (context) {
+    const region = conflict.regionId ? context.regions.find((candidate) => candidate.id === conflict.regionId) ?? null : null
+    ownerModifiers = collectOwnerModifiers({
+      location, region, factionId: ownerFactionId, campaign: context.campaign,
+      buildingTypes: context.buildingTypes, economicTypes: context.economicTypes,
+      ringForging: context.ringForging, palantirSettings: context.palantirSettings,
+    })
+    const ownerBonus = 1
+      + (ownerModifiers.defenseBonus ?? 0)
+      + (ownerModifiers.ambushBonus ?? 0) * 0.5
+      + palantirAutoBattleWeight(ownerModifiers, context.palantirSettings)
+      + regionAutoBattleBonus(region, ownerFactionId)
+    if (ownerIsDefender) defenderContextMultiplier *= ownerBonus
+    else attackerContextMultiplier *= ownerBonus
+    const debuff = 1 - (ownerModifiers.terrainDebuff ?? 0)
+    attackerContextMultiplier *= debuff
+    defenderContextMultiplier *= debuff
+    attackerContextMultiplier *= ringAutoBattleMultiplier(context.campaign, context.ringForging, attackerFactionId ? [attackerFactionId] : [])
+    defenderContextMultiplier *= ringAutoBattleMultiplier(context.campaign, context.ringForging, defenderFactionId ? [defenderFactionId] : [])
+  }
+  attackerBasePower *= attackerContextMultiplier
+  defenderBasePower *= defenderContextMultiplier
   const baseDefenseBonus = settlementDefenseBonus(location)
   const defenseBonus = conflict.battleType === 'siege' ? Math.max(0, baseDefenseBonus - Math.min(.25, siegePower / 400)) : baseDefenseBonus
-  const attackerMembers = attackerArmies.flatMap((army) => armyMembers(army, units, heroes, captains))
-  const defenderMembers = [...defenderArmies.flatMap((army) => armyMembers(army, units, heroes, captains)), ...garrison]
+  const attackerMembers = attackerArmies.flatMap((army) => armyMembers(army, units, heroes, captains, heroLevels))
+  const defenderMembers = [...defenderArmies.flatMap((army) => armyMembers(army, units, heroes, captains, heroLevels)), ...garrison]
   return {
     attackerPower: Math.max(1, Math.round(attackerBasePower)),
     defenderPower: Math.max(1, Math.round(defenderBasePower * (1 + defenseBonus))),
@@ -192,6 +245,7 @@ export function calculateConflictBattle(
   factions: FactionDefinition[],
   /** RTS battle: the winner is already known from BFME; losses/hero fates stay simulated. */
   forcedWinner?: StrategicSide | null,
+  context?: ConflictModifierContext | null,
 ): ConflictBattleOutcome {
   const attackerCombatIds = [...conflict.attackerArmyIds, ...conflict.attackerReinforcementArmyIds]
   const defenderCombatIds = [...conflict.defenderArmyIds, ...conflict.defenderReinforcementArmyIds]
@@ -199,11 +253,12 @@ export function calculateConflictBattle(
   const defenderArmies = defenderCombatIds.map((id) => armies.find((army) => army.id === id)).filter(Boolean) as Army[]
   const location = conflict.locationId ? locations.find((candidate) => candidate.id === conflict.locationId) ?? null : null
   const reserve = conflict.garrisonLocationId ? locationStates[conflict.garrisonLocationId]?.reserve ?? [] : []
-  const attackerMembers = attackerArmies.flatMap((army) => armyMembers(army, units, heroes, captains))
-  const defenderArmyMembers = defenderArmies.flatMap((army) => armyMembers(army, units, heroes, captains))
-  const garrison = conflict.garrisonLocationId ? garrisonMembers(conflict.garrisonLocationId, reserve, units, heroes) : []
+  const heroLevels = context?.campaign.heroLevels ?? {}
+  const attackerMembers = attackerArmies.flatMap((army) => armyMembers(army, units, heroes, captains, heroLevels))
+  const defenderArmyMembers = defenderArmies.flatMap((army) => armyMembers(army, units, heroes, captains, heroLevels))
+  const garrison = conflict.garrisonLocationId ? garrisonMembers(conflict.garrisonLocationId, reserve, units, heroes, heroLevels) : []
   const defenderMembers = [...defenderArmyMembers, ...garrison]
-  const preview = previewConflict(conflict, armies, locations, locationStates, units, heroes, captains, terrain)
+  const preview = previewConflict(conflict, armies, locations, locationStates, units, heroes, captains, terrain, context)
   const seed = hashSeed(`${conflict.round}:${conflict.id}:${attackerMembers.length}:${defenderMembers.length}`)
   const attackerPower = preview.attackerPower * (.94 + randomFrom(seed) * .12)
   const defenderPower = preview.defenderPower * (.94 + randomFrom(seed + 1) * .12)
@@ -282,8 +337,13 @@ export function updateConflictRtsCompatibility(conflict: CampaignConflict, armie
   }
   conflict.rtsAttackerSlots = attackerFactions.size
   conflict.rtsDefenderSlots = defenderFactions.size
-  const fortressReady = conflict.battleType !== 'siege' || Boolean(conflict.rtsDefenderStartPosition)
-  conflict.rtsCompatible = Boolean(conflict.rtsMapId && fortressReady && attackerFactions.size > 0 && defenderFactions.size > 0 && attackerFactions.size <= 4 && defenderFactions.size <= 4)
+  // A siege used to additionally require `rtsDefenderStartPosition`, but that
+  // point is only an optional refinement: it pins the defender onto the
+  // fortress spawn instead of a random defence point. `buildStartPositions`
+  // already falls back to the generic defence pool when it is missing, so
+  // demanding it here silently blocked real battles on perfectly playable maps
+  // (e.g. the siege of Cair Andros, which has a map but no fortress point).
+  conflict.rtsCompatible = Boolean(conflict.rtsMapId && attackerFactions.size > 0 && defenderFactions.size > 0 && attackerFactions.size <= 4 && defenderFactions.size <= 4)
 }
 
 function arrivalRank(armies: Army[], side: StrategicSide, round: number) {

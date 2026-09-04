@@ -1,0 +1,24 @@
+/* Strategic buildings and Ring-forging UI (turn panel, inspector, editor). */
+.campaign-buildings-panel,.campaign-ring-panel{margin:10px 12px;border:1px solid rgba(185,158,96,.32);background:rgba(15,23,25,.9);border-radius:4px;overflow:hidden}
+.campaign-buildings-panel>header,.campaign-ring-panel>header{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(185,158,96,.2)}
+.campaign-buildings-panel>header>span,.campaign-ring-panel>header>span{color:#bca363;font-size:15px}
+.campaign-buildings-panel b,.campaign-ring-panel b{font-size:11px;color:#dac899;text-transform:uppercase;letter-spacing:.04em}
+.campaign-buildings-panel small,.campaign-ring-panel small{font-size:9px;color:#7e8a8b}
+.campaign-buildings-panel article{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:7px 10px;cursor:pointer}
+.campaign-buildings-panel article+article{border-top:1px solid rgba(255,255,255,.05)}
+.campaign-buildings-panel article i{font-size:9px;color:#9a9187;font-style:normal}
+.campaign-buildings-panel article button,.location-building-row button{background:none;border:1px solid rgba(190,90,70,.4);color:#d08070;border-radius:3px;cursor:pointer;line-height:1;padding:2px 6px}
+.campaign-buildings-panel .empty-hint{margin:0;padding:8px 10px;font-size:10px;color:#7e8a8b}
+.ring-invest-row{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px}
+.ring-invest-row button{flex:1 1 auto;padding:5px 6px;font-size:10px;color:#e2d5b0;background:rgba(45,40,25,.7);border:1px solid rgba(185,158,96,.4);border-radius:3px;cursor:pointer}
+.ring-invest-row button:disabled{opacity:.4;cursor:not-allowed}
+.ring-carrier{margin:0;padding:6px 10px;font-size:10px;color:#b8c0bc}
+.location-building-row{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid rgba(255,255,255,.05)}
+.location-building-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-top:8px}
+.location-building-options button{display:grid;gap:2px;padding:6px;text-align:left;background:rgba(30,38,40,.8);border:1px solid rgba(185,158,96,.28);border-radius:3px;color:#d9d2c2;cursor:pointer}
+.location-building-options button:disabled{opacity:.4;cursor:not-allowed}
+.location-building-options button small{font-size:9px;color:#8b958f}
+.ring-carrier-section button{margin-top:6px;padding:5px 8px;font-size:11px;background:rgba(45,40,25,.7);border:1px solid rgba(185,158,96,.4);border-radius:3px;color:#e2d5b0;cursor:pointer}
+.economy-battle-modifiers summary,.region-full-control summary{cursor:pointer;font-size:11px;color:#bca363;margin:6px 0}
+.database-subhead{margin:14px 0 6px;font:600 12px Cinzel,Georgia,serif;color:#dac899}
+.unit-max-level{display:grid;gap:2px}

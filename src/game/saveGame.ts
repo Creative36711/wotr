@@ -1,6 +1,8 @@
 import type { Army, Hero, SaveGameData, WorldData } from '../types'
 import { armyMovementCap } from './army'
 import { GAME_VERSION, SAVEGAME_DATA_VERSION } from '../version'
+import { normalizeSlotProgression, unitMaxLevel, heroMaxLevel } from './progression'
+import { normalizeRingState } from './ring'
 
 const cloneArmies = (armies: Army[]) => armies.map((army) => ({
   ...army,
@@ -23,6 +25,10 @@ const cloneCampaign = (campaign: WorldData['campaign']) => ({
   fogOfWar: { ...campaign.fogOfWar, lastSeenArmies: campaign.fogOfWar.lastSeenArmies.map((intel) => ({ ...intel })), lastSeenLocations: campaign.fogOfWar.lastSeenLocations.map((intel) => ({ ...intel })) },
   conflicts: campaign.conflicts.map((conflict) => ({ ...conflict, attackerArmyIds: [...conflict.attackerArmyIds], defenderArmyIds: [...conflict.defenderArmyIds], attackerReinforcementArmyIds: [...conflict.attackerReinforcementArmyIds], defenderReinforcementArmyIds: [...conflict.defenderReinforcementArmyIds], attackerDistantReinforcementArmyIds: [...conflict.attackerDistantReinforcementArmyIds], defenderDistantReinforcementArmyIds: [...conflict.defenderDistantReinforcementArmyIds], optionalPlayerReinforcements: conflict.optionalPlayerReinforcements.map((option) => ({ ...option })) })),
   log: campaign.log.map((entry) => ({ ...entry })),
+  buildings: (campaign.buildings ?? []).map((building) => ({ ...building })),
+  heroLevels: { ...(campaign.heroLevels ?? {}) },
+  ringState: normalizeRingState(campaign.ringState),
+  turnEvents: (campaign.turnEvents ?? []).map((event) => ({ ...event })),
 })
 const cloneBattles = (battles: WorldData['battles']) => battles.map((battle) => ({ ...battle, attackerArmyIds: [...(battle.attackerArmyIds ?? [battle.attackerArmyId])], defenderArmyIds: [...(battle.defenderArmyIds ?? [battle.defenderArmyId])], attackerReinforcementArmyIds: [...(battle.attackerReinforcementArmyIds ?? [])], defenderReinforcementArmyIds: [...(battle.defenderReinforcementArmyIds ?? [])], attackerLosses: battle.attackerLosses.map((loss) => ({ ...loss })), defenderLosses: battle.defenderLosses.map((loss) => ({ ...loss })), garrisonLosses: (battle.garrisonLosses ?? []).map((loss) => ({ ...loss })) }))
 
@@ -58,11 +64,11 @@ export function applySaveGame(world: WorldData, save: SaveGameData): WorldData {
     })() : null,
     heroSlots: army.heroSlots.flatMap((slot) => {
       const entity = world.heroes.find((item) => item.id === slot.entityId)
-      return entity ? [{ ...slot, objectId: entity.objectId }] : []
+      return entity ? [{ ...slot, objectId: entity.objectId, ...normalizeSlotProgression(slot, heroMaxLevel(entity)) }] : []
     }),
     unitSlots: army.unitSlots.flatMap((slot) => {
       const entity = world.unitTypes.find((item) => item.id === slot.entityId)
-      return entity ? [{ ...slot, objectId: entity.objectId }] : []
+      return entity ? [{ ...slot, objectId: entity.objectId, ...normalizeSlotProgression(slot, unitMaxLevel(entity)) }] : []
     }),
   }))
   return {

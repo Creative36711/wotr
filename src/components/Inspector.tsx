@@ -7,6 +7,9 @@ import { armyIntelLabel, calculateVisibleHexes, garrisonIntelCategory, garrisonI
 import { recruitableUnitsAtLocation } from '../game/recruitment'
 import { locationHexId, resolveGrid } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
+import { slotPowerMultiplier } from '../game/progression'
+import { isRingCarrier } from '../game/ring'
+import { buildingSlotsAt, buildingsAtLocation, canBuild } from '../game/buildings'
 import { imageFileToDataUrl } from '../utils/image'
 import { uploadRtsAsset } from '../dataService'
 import LocalizedNameFields from './LocalizedNameFields'
@@ -14,7 +17,7 @@ import type { ImportedRtsAsset } from '../dataService'
 import type { RtsMapAsset } from '../types'
 import { sortByText } from '../utils/sort'
 import { domainEconomicTypeIds, economicDefaultsPatch, economicTypeLabel, getEconomicType, strongholdEconomicTypeIds } from '../game/economicTypes'
-import { getDisplayName, translateText, useI18n } from '../i18n'
+import { getDisplayName, localizedValue, translateText, useI18n } from '../i18n'
 import type { Army, AppSettings, FactionId, HexCellOverride, LastSeenLocationIntel, StructuralType, LogicalHex, MapLocation, ModDefinition, SettlementType } from '../types'
 import RtsCoordinatesTool from './RtsCoordinatesTool'
 
@@ -379,6 +382,8 @@ function ArmyInspector({ army }: { army: Army }) {
   const transferTargetArmy = transferTargets.find((item) => item.id === transferTargetArmyId) ?? null
   const transferArmyUnit = useMapStore((state) => state.transferArmyUnit)
   const payload = JSON.stringify(buildBfmeArmyPayload(army, unitTypes, heroes, captains), null, 2)
+  const carriesRing = isRingCarrier(campaign, army.id)
+  const transferRing = useMapStore.getState().transferRing
 
   const changeCommander = (value: string) => {
     if (!value) { updateArmy(army.id, { commander: null }); return }
@@ -424,6 +429,15 @@ function ArmyInspector({ army }: { army: Army }) {
           <p className="field-help">Капитан — временный командир. Если в такую армию входит герой, он автоматически принимает командование, а капитан возвращается в свободный пул.</p>
         </section>
 
+        {mode === 'game' && campaign.ringState.forged && campaign.ringState.ownerFactionId === army.factionId && <section className="inspector-section ring-carrier-section">
+          <h3>◉ Кольцо Всевластья</h3>
+          {carriesRing
+            ? <p className="field-help">Эта армия несёт Кольцо. При её уничтожении Кольцо достанется победителю.</p>
+            : <p className="field-help">Кольцо несёт «{armies.find((item) => item.id === campaign.ringState.carrierArmyId)?.name ?? '—'}».</p>}
+          {!carriesRing && armies.find((item) => item.id === campaign.ringState.carrierArmyId)?.hexId === army.hexId && active
+            && <button type="button" onClick={() => transferRing(army.id)}>Передать Кольцо этой армии</button>}
+        </section>}
+
         <section className="inspector-section">
           <h3>Основное</h3>
           <label className="field"><span>Фракция</span><select value={army.factionId} disabled={readonly} onChange={(event) => updateArmy(army.id, { factionId: event.target.value })}>{orderedFactions.filter((item) => item.playable).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
@@ -434,14 +448,14 @@ function ArmyInspector({ army }: { army: Army }) {
 
         <section className="inspector-section army-slots-section">
           <h3>{army.commander?.kind === 'captain' ? 'Герой автоматически заменит капитана' : `Герои поддержки · ${army.heroSlots.length}/${army.heroSlotLimit}`}</h3>
-          <div className="army-slot-list">{army.heroSlots.map((slot, index) => { const hero = heroes.find((item) => item.id === slot.entityId); return <div className="army-slot-row hero" key={slot.slotId}><span className="slot-index">{index + 1}</span><span className="slot-portrait hero" style={hero?.portrait ? { backgroundImage: `url(${hero.portrait})` } : undefined}></span><div className="slot-identity"><b>{hero?.name ?? 'Неизвестный герой'}</b>{!readonly && <code>{slot.objectId}</code>}<small>Герой поддержки</small></div><span className="slot-power">Сила <b>{hero?.battlePower ?? 0}</b></span>{!readonly && <button type="button" onClick={() => updateArmy(army.id, { heroSlots: army.heroSlots.filter((_, i) => i !== index) })}>×</button>}{canManageReserve && stationedLocation && <button type="button" className="transfer-slot-button" title={reserveCp + (hero?.commandPoints ?? 0) > stationedLocation.commandPointLimit ? `Не хватает ОК локации (резерв ${reserveCp}/${stationedLocation.commandPointLimit} ОК)` : 'Переместить в резерв объекта'} disabled={reserveCp + (hero?.commandPoints ?? 0) > stationedLocation.commandPointLimit} onClick={() => transferArmyToReserve(stationedLocation.id, army.id, slot.slotId)}>←</button>}</div>})}</div>
+          <div className="army-slot-list">{army.heroSlots.map((slot, index) => { const hero = heroes.find((item) => item.id === slot.entityId); return <div className="army-slot-row hero" key={slot.slotId}><span className="slot-index">{index + 1}</span><span className="slot-portrait hero" style={hero?.portrait ? { backgroundImage: `url(${hero.portrait})` } : undefined}></span><div className="slot-identity"><b>{hero?.name ?? 'Неизвестный герой'}</b>{!readonly && <code>{slot.objectId}</code>}<small>Герой поддержки · ур. {campaign.heroLevels[slot.entityId] ?? 1}</small></div><span className="slot-power">Сила <b>{hero?.battlePower ?? 0}</b></span>{!readonly && <button type="button" onClick={() => updateArmy(army.id, { heroSlots: army.heroSlots.filter((_, i) => i !== index) })}>×</button>}{canManageReserve && stationedLocation && <button type="button" className="transfer-slot-button" title={reserveCp + (hero?.commandPoints ?? 0) > stationedLocation.commandPointLimit ? `Не хватает ОК локации (резерв ${reserveCp}/${stationedLocation.commandPointLimit} ОК)` : 'Переместить в резерв объекта'} disabled={reserveCp + (hero?.commandPoints ?? 0) > stationedLocation.commandPointLimit} onClick={() => transferArmyToReserve(stationedLocation.id, army.id, slot.slotId)}>←</button>}</div>})}</div>
           {!readonly && army.heroSlots.length < army.heroSlotLimit && <div className="add-army-slot"><select value={heroToAdd} onChange={(event) => setHeroToAdd(event.target.value)}><option value="">{army.commander?.kind === 'captain' ? 'Назначить героя командиром…' : 'Добавить героя поддержки…'}</option>{availableHeroes.filter((hero) => hero.id !== army.commander?.entityId).map((hero) => <option key={hero.id} value={hero.id} disabled={!canAddHero(hero)}>{hero.name} · {hero.commandPoints ?? 0} ОК</option>)}</select><button type="button" disabled={!heroToAdd || !canAddHero(heroes.find((item) => item.id === heroToAdd) ?? heroes[0])} onClick={() => { const hero = heroes.find((item) => item.id === heroToAdd); if (hero) updateArmy(army.id, { heroSlots: [...army.heroSlots, createHeroSlot(army.id, hero, army.heroSlots.length + 1)] }); setHeroToAdd('') }}>Добавить</button></div>}
         </section>
 
         <section className="inspector-section army-slots-section">
           <h3>Отряды · {army.unitSlots.length} · ОК {commandPoints}/{commandPointLimit}</h3>
           {canManageReserve && transferTargets.length > 0 && <label className="field reserve-target-select"><span>Передать отряд в армию</span><select value={transferTargetArmyId} onChange={(event) => setTransferTargetArmyId(event.target.value)}><option value="">Выберите армию…</option>{transferTargets.map((item) => <option key={item.id} value={item.id}>{item.name} · ОК {armyCommandPoints(item, unitTypes, heroes)}/{armyCommandPointLimit(item, heroes, captains)}</option>)}</select></label>}
-          <div className="army-slot-list">{army.unitSlots.map((slot, index) => { const unit = unitTypes.find((item) => item.id === slot.entityId); return <div className="army-slot-row unit" key={slot.slotId}><span className="slot-index">{index + 1}</span><span className="slot-portrait unit" style={unit?.portrait ? { backgroundImage: `url(${unit.portrait})` } : undefined}></span><div className="slot-identity"><b>{unit?.name ?? 'Неизвестный отряд'}</b>{!readonly && <code>{slot.objectId}</code>}<small>Боевой отряд</small></div><span className="slot-power">Сила <b>{unit?.battlePower ?? 0}</b></span>{!readonly && <button type="button" onClick={() => updateArmy(army.id, { unitSlots: army.unitSlots.filter((_, i) => i !== index) })}>×</button>}{canManageReserve && stationedLocation && (() => { const cp = unit?.commandPoints ?? 0; const reserveFits = reserveCp + cp <= stationedLocation.commandPointLimit; const targetCp = transferTargetArmy ? armyCommandPoints(transferTargetArmy, unitTypes, heroes) : 0; const targetLimit = transferTargetArmy ? armyCommandPointLimit(transferTargetArmy, heroes, captains) : 0; const targetFits = Boolean(transferTargetArmy) && targetCp + cp <= targetLimit; return <span className="slot-transfer-actions">{transferTargetArmy && <button type="button" className="transfer-slot-button" title={targetFits ? `Передать в «${transferTargetArmy.name}» (${targetCp}/${targetLimit} ОК)` : `В «${transferTargetArmy.name}» не хватает ОК (${targetCp}/${targetLimit} ОК)`} disabled={!targetFits} onClick={() => transferArmyUnit(army.id, transferTargetArmy.id, slot.slotId)}>→</button>}<button type="button" className="transfer-slot-button" title={reserveFits ? 'Переместить в резерв объекта' : `Не хватает ОК локации (резерв ${reserveCp}/${stationedLocation.commandPointLimit} ОК)`} disabled={!reserveFits} onClick={() => transferArmyToReserve(stationedLocation.id, army.id, slot.slotId)}>←</button></span> })()}</div>})}</div>
+          <div className="army-slot-list">{army.unitSlots.map((slot, index) => { const unit = unitTypes.find((item) => item.id === slot.entityId); return <div className="army-slot-row unit" key={slot.slotId}><span className="slot-index">{index + 1}</span><span className="slot-portrait unit" style={unit?.portrait ? { backgroundImage: `url(${unit.portrait})` } : undefined}></span><div className="slot-identity"><b>{unit?.name ?? 'Неизвестный отряд'}</b>{!readonly && <code>{slot.objectId}</code>}<small>Боевой отряд · ур. {slot.level ?? 1}{[slot.weaponUpgrade?'⚔':'',slot.armorUpgrade?'🛡':'',slot.bannerUpgrade?'⚑':''].filter(Boolean).join(' ')?` · ${[slot.weaponUpgrade?'⚔':'',slot.armorUpgrade?'🛡':'',slot.bannerUpgrade?'⚑':''].filter(Boolean).join(' ')}`:''}</small></div><span className="slot-power">Сила <b>{Math.round((unit?.battlePower ?? 0) * slotPowerMultiplier(slot))}</b></span>{!readonly && <button type="button" onClick={() => updateArmy(army.id, { unitSlots: army.unitSlots.filter((_, i) => i !== index) })}>×</button>}{canManageReserve && stationedLocation && (() => { const cp = unit?.commandPoints ?? 0; const reserveFits = reserveCp + cp <= stationedLocation.commandPointLimit; const targetCp = transferTargetArmy ? armyCommandPoints(transferTargetArmy, unitTypes, heroes) : 0; const targetLimit = transferTargetArmy ? armyCommandPointLimit(transferTargetArmy, heroes, captains) : 0; const targetFits = Boolean(transferTargetArmy) && targetCp + cp <= targetLimit; return <span className="slot-transfer-actions">{transferTargetArmy && <button type="button" className="transfer-slot-button" title={targetFits ? `Передать в «${transferTargetArmy.name}» (${targetCp}/${targetLimit} ОК)` : `В «${transferTargetArmy.name}» не хватает ОК (${targetCp}/${targetLimit} ОК)`} disabled={!targetFits} onClick={() => transferArmyUnit(army.id, transferTargetArmy.id, slot.slotId)}>→</button>}<button type="button" className="transfer-slot-button" title={reserveFits ? 'Переместить в резерв объекта' : `Не хватает ОК локации (резерв ${reserveCp}/${stationedLocation.commandPointLimit} ОК)`} disabled={!reserveFits} onClick={() => transferArmyToReserve(stationedLocation.id, army.id, slot.slotId)}>←</button></span> })()}</div>})}</div>
           {!readonly && <div className="add-army-slot"><select value={unitToAdd} onChange={(event) => setUnitToAdd(event.target.value)}><option value="">Добавить отряд…</option>{availableUnits.map((unit) => <option key={unit.id} value={unit.id} disabled={!canAddUnit(unit)}>{unit.name} — {unit.objectId} · {unit.commandPoints ?? 0} ОК</option>)}</select><button type="button" disabled={!unitToAdd || !canAddUnit(unitTypes.find((item) => item.id === unitToAdd) ?? unitTypes[0])} onClick={() => { const unit = unitTypes.find((item) => item.id === unitToAdd); if (unit) updateArmy(army.id, { unitSlots: [...army.unitSlots, createUnitSlot(army.id, unit, army.unitSlots.length + 1)] }); setUnitToAdd('') }}>Добавить</button></div>}
         </section>
 
@@ -483,6 +497,9 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
   const queueRecruitment = useMapStore((state) => state.queueRecruitment)
   const transformReserveUnit = useMapStore((state) => state.transformReserveUnit)
   const cancelRecruitment = useMapStore((state) => state.cancelRecruitment)
+  const startBuilding = useMapStore((state) => state.startBuilding)
+  const demolishBuilding = useMapStore((state) => state.demolishBuilding)
+  const buildingTypesList = useMapStore((state) => state.buildingTypes)
   const transferReserveToArmy = useMapStore((state) => state.transferReserveToArmy)
   const formArmy = useMapStore((state) => state.formArmy)
   const duplicateLocation = useMapStore((state) => state.duplicateLocation)
@@ -651,6 +668,34 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
             {!canFormByArmyLimit && <p className="field-help">Достигнут лимит полевых армий фракции.</p>}
           </> : <><div className="visible-garrison-intel"><span>Разведка гарнизона</span><b>{garrisonIntelLabel(visibleGarrisonCategory)}</b><small>{visibleGarrisonCategory === 'none' ? 'Организованного резерва не замечено' : 'Точный состав гарнизона неизвестен'}</small></div><p className="field-help">{!isFactionActive(campaign, factions, location.side) ? 'Сейчас действует другая сторона.' : 'Найм и управление резервом доступны только в фазе планирования.'}</p></>}
         </section>}
+
+        {mode === 'game' && (() => {
+          const buildingTypes = buildingTypesList
+          const totalSlots = buildingSlotsAt(location)
+          const built = buildingsAtLocation(campaign, location.id)
+          const owner = location.side
+          const canPlan = canFactionPlan(campaign, factions, owner) && owner === campaign.playerFactionId
+          return <section className="inspector-section location-buildings-section">
+            <h3>Постройки · {built.length}/{totalSlots}</h3>
+            {built.map((building) => {
+              const definition = buildingTypes.find((type) => type.id === building.buildingTypeId)
+              return <div className="location-building-row" key={building.id}>
+                <span>{definition?.icon ?? '▣'}</span>
+                <div title={definition ? localizedValue(definition.description, definition.descriptionTranslations, language) : ''}><b>{definition ? getDisplayName(definition, language) : building.buildingTypeId}</b><small>{building.turnsRemaining > 0 ? `Строится · осталось ходов: ${building.turnsRemaining}` : 'Работает'}</small></div>
+                {canPlan && <button type="button" title="Снести" onClick={() => demolishBuilding(building.id)}>×</button>}
+              </div>
+            })}
+            {!built.length && <p className="field-help">В этом объекте пока нет построек.</p>}
+            {canPlan && totalSlots > 0 && <div className="location-building-options">{buildingTypes.map((definition) => {
+              const availability = canBuild(definition, location, campaign, owner, treasury?.gold ?? 0)
+              const localizedDescription = localizedValue(definition.description, definition.descriptionTranslations, language)
+              return <button type="button" key={definition.id} disabled={!availability.allowed} title={availability.reason ? `${localizedDescription}\n\n${availability.reason}` : localizedDescription} onClick={() => startBuilding(location.id, definition.id)}>
+                <span>{definition.icon}</span><b>{getDisplayName(definition, language)}</b><small>{definition.cost} зол. · {definition.buildTime} ход.</small>
+              </button>
+            })}</div>}
+            {totalSlots === 0 && <p className="field-help">Тип объекта не допускает строительство.</p>}
+          </section>
+        })()}
 
         <section className="inspector-section">
           <h3>Стратегическая геометрия</h3>

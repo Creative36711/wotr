@@ -9,6 +9,10 @@ import { heroIsDeployed, heroSummonLocation, heroUnlockSatisfied } from '../game
 import { refreshFogIntel } from '../game/fogOfWar'
 import { OCCUPATION_COUNTER_ON_CAPTURE, recruitableUnitsAtLocation } from '../game/recruitment'
 import { createDefaultEconomicTypes, economicDefaultsPatch, getEconomicType, setActiveEconomicTypes } from '../game/economicTypes'
+import { buildingSlotsAt, canBuild, cloneBuildingType, createBuildingInstance, createDefaultBuildingTypes, demolitionRefund, recruitStartLevel } from '../game/buildings'
+import { chooseRingCarrier, createDefaultRingForging, createDefaultRingState, investmentCost, ringForgeBonusFor } from '../game/ring'
+import { DEFAULT_PALANTIR_SETTINGS } from '../game/battleModifiers'
+import { availableUpgrades, DEFAULT_HERO_MAX_LEVEL, DEFAULT_UNIT_MAX_LEVEL, grantBattleExperience, heroMaxLevel, unitMaxLevel } from '../game/progression'
 import { applySaveGame, createNewSaveGame, extractSaveGame } from '../game/saveGame'
 import { hexDistance, locationHexId, neighborIds, parseHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
 import {
@@ -42,6 +46,12 @@ import type {
   UnitType,
   WorldData,
   AppMode,
+  ArmySlot,
+  ArmyUpgradeId,
+  BuildingTypeDefinition,
+  BuildingInstance,
+  PalantirSettings,
+  RingForgingSettings,
 } from '../types'
 
 const HISTORY_LIMIT = 50
@@ -56,6 +66,9 @@ interface WorldSnapshot {
   captains: CaptainType[]
   armies: Army[]
   regions: Region[]
+  buildingTypes: BuildingTypeDefinition[]
+  palantirSettings: PalantirSettings
+  ringForging: RingForgingSettings
   campaign: CampaignState
   battles: AutoBattleReport[]
 }
@@ -139,6 +152,15 @@ interface MapState extends WorldSnapshot {
   formArmy: (locationId: string, commanderChoice: string) => void
   disbandArmy: (locationId: string, armyId: string) => void
   cancelRecruitment: (locationId: string, queueId: string) => void
+  startBuilding: (locationId: string, buildingTypeId: string) => void
+  demolishBuilding: (buildingId: string) => void
+  investRingForging: (amount: number) => void
+  transferRing: (targetArmyId: string) => void
+  updateBuildingType: (id: string, patch: Partial<BuildingTypeDefinition>) => void
+  addBuildingType: () => void
+  removeBuildingType: (id: string) => void
+  updateRingForging: (patch: Partial<RingForgingSettings>) => void
+  updatePalantirSettings: (patch: Partial<PalantirSettings>) => void
   undo: () => void
   redo: () => void
 }
@@ -164,6 +186,10 @@ const cloneCampaign = (campaign: CampaignState): CampaignState => ({
   factionStates: Object.fromEntries(Object.entries(campaign.factionStates).map(([id, faction]) => [id, { ...faction, statistics: { ...faction.statistics } }])),
   freeCaptains: Object.fromEntries(Object.entries(campaign.freeCaptains).map(([id, captains]) => [id, captains.map((captain) => ({ ...captain }))])),
   fogOfWar: { ...campaign.fogOfWar, lastSeenArmies: campaign.fogOfWar.lastSeenArmies.map((intel) => ({ ...intel })), lastSeenLocations: campaign.fogOfWar.lastSeenLocations.map((intel) => ({ ...intel })) },
+  buildings: (campaign.buildings ?? []).map((building) => ({ ...building })),
+  heroLevels: { ...(campaign.heroLevels ?? {}) },
+  ringState: { ...(campaign.ringState ?? createDefaultRingState()), factionProgress: { ...(campaign.ringState?.factionProgress ?? {}) } },
+  turnEvents: (campaign.turnEvents ?? []).map((entry) => ({ ...entry })),
   conflicts: campaign.conflicts.map((conflict) => ({ ...conflict, attackerArmyIds: [...conflict.attackerArmyIds], defenderArmyIds: [...conflict.defenderArmyIds], attackerReinforcementArmyIds: [...conflict.attackerReinforcementArmyIds], defenderReinforcementArmyIds: [...conflict.defenderReinforcementArmyIds], attackerDistantReinforcementArmyIds: [...conflict.attackerDistantReinforcementArmyIds], defenderDistantReinforcementArmyIds: [...conflict.defenderDistantReinforcementArmyIds], optionalPlayerReinforcements: conflict.optionalPlayerReinforcements.map((option) => ({ ...option })) })),
   log: campaign.log.map((entry) => ({ ...entry })),
 })
@@ -177,13 +203,22 @@ const cloneSnapshot = (snapshot: WorldSnapshot): WorldSnapshot => ({
   heroes: snapshot.heroes.map((item) => ({ ...item })),
   captains: snapshot.captains.map((item) => ({ ...item })),
   armies: cloneArmies(snapshot.armies),
-  regions: snapshot.regions.map((item) => ({ ...item, hexes: [...(item.hexes ?? [])] })),
+  regions: snapshot.regions.map((item) => ({ ...item, hexes: [...(item.hexes ?? [])], fullControlBonus: item.fullControlBonus ? { battleModifiers: { owner: { ...item.fullControlBonus.battleModifiers.owner } }, autoBattleBonus: item.fullControlBonus.autoBattleBonus } : item.fullControlBonus })),
+  buildingTypes: (snapshot.buildingTypes ?? []).map(cloneBuildingType),
+  palantirSettings: { ...(snapshot.palantirSettings ?? DEFAULT_PALANTIR_SETTINGS) },
+  ringForging: cloneRingForging(snapshot.ringForging),
   campaign: cloneCampaign(snapshot.campaign),
   battles: cloneBattles(snapshot.battles),
 })
+const cloneRingForging = (settings: RingForgingSettings | undefined): RingForgingSettings => {
+  const source = settings ?? createDefaultRingForging()
+  return { ...source, investmentCosts: [...source.investmentCosts], effects: { ...source.effects, battleModifiers: { owner: { ...source.effects.battleModifiers.owner } } } }
+}
 const currentSnapshot = (state: MapState): WorldSnapshot => ({
   locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes,
-  heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions, campaign: state.campaign, battles: state.battles,
+  heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions,
+  buildingTypes: state.buildingTypes, palantirSettings: state.palantirSettings, ringForging: state.ringForging,
+  campaign: state.campaign, battles: state.battles,
 })
 const snapshotToWorld = (snapshot: WorldSnapshot): WorldData => ({ version: WORLD_DATA_VERSION, ...cloneSnapshot(snapshot) })
 const cloneSaveGame = (save: SaveGameData): SaveGameData => ({
@@ -300,7 +335,7 @@ function preparePlanningSide(state: MapState, campaign: CampaignState, sourceArm
       const locationState = campaign.locationStates[recovery] ?? { locationId: recovery, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
       const alreadyPresent = locationState.reserve.some((slot) => slot.kind === 'hero' && slot.entityId === hero.id)
         || armies.some((army) => army.commander?.entityId === hero.id || army.heroSlots.some((slot) => slot.entityId === hero.id))
-      if (!alreadyPresent) locationState.reserve.push({ slotId: `recovered-${hero.id}-${campaign.round}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId })
+      if (!alreadyPresent) locationState.reserve.push({ slotId: `recovered-${hero.id}-${campaign.round}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId, level: campaign.heroLevels?.[hero.id] ?? 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false })
       campaign.locationStates[recovery] = locationState
     }
     campaign.log.unshift(campaignEvent(campaign, `${hero.name} оправился от ран и снова доступен.`, 'hero', hero.factionId))
@@ -323,6 +358,61 @@ function preparePlanningSide(state: MapState, campaign: CampaignState, sourceArm
     treasury.lastUpkeep = totalUpkeep
     campaign.treasuries[faction.id] = treasury
 
+    // --- Строительство: прогресс, завершение и выдача апгрейдов (§3.4) ---
+    for (const building of campaign.buildings.filter((item) => item.ownerFactionId === faction.id && item.turnsRemaining > 0)) {
+      building.turnsRemaining = Math.max(0, building.turnsRemaining - 1)
+      if (building.turnsRemaining > 0) continue
+      const definition = state.buildingTypes.find((type) => type.id === building.buildingTypeId)
+      const locationName = state.locations.find((location) => location.id === building.locationId)?.name ?? building.locationId
+      const text = `«${definition?.name ?? building.buildingTypeId}» построена в «${locationName}».`
+      campaign.log.unshift(campaignEvent(campaign, text, 'system', faction.id))
+      campaign.turnEvents.push(turnEvent(campaign, 'building_completed', text, faction.id))
+    }
+    for (const building of campaign.buildings.filter((item) => item.ownerFactionId === faction.id && item.turnsRemaining <= 0)) {
+      const definition = state.buildingTypes.find((type) => type.id === building.buildingTypeId)
+      if (!definition?.effects.armyUpgrades.length) continue
+      const location = state.locations.find((candidate) => candidate.id === building.locationId)
+      if (!location) continue
+      const locationHex = locationHexId(location, state.grid.config)
+      const targets = armies.filter((army) => army.factionId === faction.id && army.hexId === locationHex)
+      for (const army of targets) {
+        const granted: string[] = []
+        army.unitSlots = army.unitSlots.map((slot) => {
+          const unit = state.unitTypes.find((candidate) => candidate.id === slot.entityId)
+          const allowed = availableUpgrades(unit)
+          let next = slot
+          for (const upgrade of definition.effects.armyUpgrades) {
+            if (!allowed.includes(upgrade) || next[upgrade]) continue
+            next = { ...next, [upgrade]: true }
+            granted.push(unit?.name ?? slot.entityId)
+          }
+          return next
+        })
+        if (!granted.length) continue
+        const upgradeLabels = definition.effects.armyUpgrades.map((upgrade) => UPGRADE_LABELS[upgrade]).join(', ')
+        const text = `Армия «${army.name}» получила ${upgradeLabels} в «${location.name}» (отрядов: ${granted.length}).`
+        campaign.log.unshift(campaignEvent(campaign, text, 'system', faction.id))
+        campaign.turnEvents.push(turnEvent(campaign, 'upgrade_granted', text, faction.id))
+      }
+      // Резерв локации получает те же апгрейды.
+      const locationState = campaign.locationStates[location.id]
+      if (locationState) locationState.reserve = locationState.reserve.map((slot) => {
+        if (slot.kind !== 'unit') return slot
+        const allowed = availableUpgrades(state.unitTypes.find((candidate) => candidate.id === slot.entityId))
+        let next = slot
+        for (const upgrade of definition.effects.armyUpgrades) if (allowed.includes(upgrade) && !next[upgrade]) next = { ...next, [upgrade]: true }
+        return next
+      })
+    }
+    // --- Ковка Кольца: бесплатный прогресс от Кольцекузен (§4.4) ---
+    if (state.ringForging.enabled && !campaign.ringState.forged) {
+      const bonus = ringForgeBonusFor(campaign, state.buildingTypes, faction.id)
+      if (bonus > 0) {
+        campaign.ringState.factionProgress[faction.id] = (campaign.ringState.factionProgress[faction.id] ?? 0) + bonus
+        completeRingForgingIfReady(state, campaign, armies, state.locations, faction.id)
+      }
+    }
+
     for (const location of ownedLocations) {
       const locationState = campaign.locationStates[location.id] ?? { locationId: location.id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
       if (locationState.occupationTurnsLeft > 0) locationState.occupationTurnsLeft = Math.max(0, locationState.occupationTurnsLeft - 1)
@@ -331,7 +421,8 @@ function preparePlanningSide(state: MapState, campaign: CampaignState, sourceArm
         const turnsLeft = Math.max(0, item.turnsLeft - 1)
         const unit = state.unitTypes.find((candidate) => candidate.id === item.entityId)
         if (turnsLeft === 0 && unit && reserveCommandPoints(locationState.reserve, state.unitTypes, state.heroes) + (unit.commandPoints ?? 0) <= location.commandPointLimit) {
-          locationState.reserve.push({ slotId: `reserve-${location.id}-${Date.now().toString(36)}-${locationState.reserve.length}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId })
+          const startLevel = recruitStartLevel(campaign, state.buildingTypes, location.id, faction.id, unitMaxLevel(unit))
+          locationState.reserve.push({ slotId: `reserve-${location.id}-${Date.now().toString(36)}-${locationState.reserve.length}`, kind: 'unit', entityId: unit.id, objectId: unit.objectId, level: startLevel, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false })
         } else remaining.push({ ...item, turnsLeft })
       }
       locationState.recruitmentQueue = remaining
@@ -407,7 +498,7 @@ function initializeNewCampaignHeroes(state: MapState, campaign: CampaignState, s
     const destination = heroSummonLocation(hero, state.locations)
     if (!destination) continue
     const locationState = campaign.locationStates[destination.id] ?? { locationId: destination.id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
-    locationState.reserve.push({ slotId: `starting-hero-${hero.id}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId })
+    locationState.reserve.push({ slotId: `starting-hero-${hero.id}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId, level: campaign.heroLevels?.[hero.id] ?? 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false })
     campaign.locationStates[destination.id] = locationState
   }
   for (const army of armies) army.name = generateArmyName(army, armies, state.factions, state.locations, heroes, state.grid.config)
@@ -455,16 +546,99 @@ function evacuateLocationReserveHeroes(state: MapState, campaign: CampaignState,
   }
 }
 
-function captureLocation(locations: MapLocation[], regions: Region[], campaign: CampaignState, locationId: string, factionId: string) {
+function captureLocation(locations: MapLocation[], regions: Region[], campaign: CampaignState, locationId: string, factionId: string, buildingTypes: BuildingTypeDefinition[] = []) {
   const location = locations.find((candidate) => candidate.id === locationId)
   if (!location) return
   const previousOwner = location.side
+  // Постройки: разрушаются или переходят новому владельцу (§3.4).
+  if (previousOwner !== factionId) {
+    const survivors: BuildingInstance[] = []
+    let destroyed = 0
+    for (const building of campaign.buildings) {
+      if (building.locationId !== locationId) { survivors.push(building); continue }
+      const definition = buildingTypes.find((type) => type.id === building.buildingTypeId)
+      if (!definition || definition.destroyedOnCapture) { destroyed += 1; continue }
+      survivors.push({ ...building, ownerFactionId: factionId })
+    }
+    campaign.buildings = survivors
+    if (destroyed > 0) campaign.log.unshift(campaignEvent(campaign, `При захвате «${location.name}» разрушено построек: ${destroyed}.`, 'capture', factionId))
+  }
   location.side = factionId
   if (previousOwner !== factionId) factionCampaignState(campaign, factionId).statistics.locationsCaptured += 1
   // Region control is derived from all domains/strongholds inside it — refresh after capture.
   const refreshed = refreshRegionOwners(regions, locations)
   for (let index = 0; index < regions.length; index += 1) regions[index] = refreshed[index]
   campaign.locationStates[location.id] = { locationId: location.id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: previousOwner !== factionId ? OCCUPATION_COUNTER_ON_CAPTURE : 0 }
+}
+
+const UPGRADE_LABELS: Record<ArmyUpgradeId, string> = { weaponUpgrade: 'улучшенное оружие', armorUpgrade: 'улучшенную броню', bannerUpgrade: 'знамя' }
+
+function modifierContext(state: MapState, campaign: CampaignState, regions: Region[]) {
+  return {
+    campaign,
+    regions,
+    buildingTypes: state.buildingTypes ?? [],
+    economicTypes: state.economicTypes,
+    ringForging: state.ringForging ?? createDefaultRingForging(),
+    palantirSettings: state.palantirSettings ?? DEFAULT_PALANTIR_SETTINGS,
+  }
+}
+
+/** Every survivor of a battle gains one veterancy level (§1.1). */
+function grantBattleVeterancy(state: MapState, campaign: CampaignState, armies: Army[], armyIds: string[], destroyedKeys: Set<string>) {
+  for (const armyId of armyIds) {
+    const army = armies.find((candidate) => candidate.id === armyId)
+    if (!army) continue
+    army.unitSlots = army.unitSlots.map((slot) => destroyedKeys.has(slot.slotId)
+      ? slot
+      : grantBattleExperience(slot, unitMaxLevel(state.unitTypes.find((unit) => unit.id === slot.entityId))))
+    const heroIds = [...(army.commander?.kind === 'hero' ? [army.commander.entityId] : []), ...army.heroSlots.map((slot) => slot.entityId)]
+    for (const heroId of heroIds) {
+      if (destroyedKeys.has(`${army.id}-commander`) && army.commander?.entityId === heroId) continue
+      const hero = state.heroes.find((candidate) => candidate.id === heroId)
+      const max = heroMaxLevel(hero)
+      if (max <= 1) continue
+      const current = campaign.heroLevels[heroId] ?? 1
+      if (current < max) campaign.heroLevels[heroId] = current + 1
+    }
+    army.heroSlots = army.heroSlots.map((slot) => ({ ...slot, level: campaign.heroLevels[slot.entityId] ?? slot.level }))
+  }
+}
+
+const turnEvent = (campaign: CampaignState, kind: CampaignState['turnEvents'][number]['kind'], text: string, factionId: string | null) => ({
+  id: `event-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+  round: campaign.round,
+  factionId,
+  kind,
+  text,
+})
+
+/**
+ * The Ring always ends up with an army: the winner takes it when the carrier is
+ * wiped out, otherwise it stays where it is (§4.6).
+ */
+function reassignRingCarrier(state: MapState, campaign: CampaignState, armies: Army[], locations: MapLocation[], factionId: string | null) {
+  const ring = campaign.ringState
+  if (!ring.forged || !factionId) return
+  ring.ownerFactionId = factionId
+  ring.carrierArmyId = chooseRingCarrier(factionId, armies, locations, state.unitTypes, state.heroes, (location) => locationHexId(location, state.grid.config))
+}
+
+/** Finish the forging race: the winner takes the Ring, everyone else loses progress (§4.5). */
+function completeRingForgingIfReady(state: MapState, campaign: CampaignState, armies: Army[], locations: MapLocation[], factionId: string) {
+  const ring = campaign.ringState
+  if (ring.forged || !state.ringForging.enabled) return false
+  if ((ring.factionProgress[factionId] ?? 0) < state.ringForging.requiredProgress) return false
+  ring.forged = true
+  ring.ownerFactionId = factionId
+  ring.forgedOnTurn = campaign.round
+  ring.factionProgress = { [factionId]: state.ringForging.requiredProgress }
+  ring.carrierArmyId = chooseRingCarrier(factionId, armies, locations, state.unitTypes, state.heroes, (location) => locationHexId(location, state.grid.config))
+  const label = state.factions.find((faction) => faction.id === factionId)?.label ?? factionId
+  const text = `Кольцо Всевластья выковано фракцией «${label}»!`
+  campaign.log.unshift(campaignEvent(campaign, text, 'system', factionId))
+  campaign.turnEvents.push(turnEvent(campaign, 'ring_forged', text, null))
+  return true
 }
 
 function conflictInvolvesPlayer(conflict: CampaignConflict, campaign: CampaignState, armies: Army[], locations: MapLocation[]) {
@@ -481,7 +655,7 @@ function resolveConflictBattle(state: MapState, campaign: CampaignState, conflic
   const battles = cloneBattles(sourceBattles)
   const cell = resolveGrid(state.grid, state.locations, state.regions).byId.get(conflict.hexId)
   if (!cell) return { armies, battles, report: null as AutoBattleReport | null }
-  const outcome = calculateConflictBattle(conflict, armies, state.locations, campaign.locationStates, state.unitTypes, state.heroes, state.captains, cell.terrain, state.factions, forcedWinner)
+  const outcome = calculateConflictBattle(conflict, armies, state.locations, campaign.locationStates, state.unitTypes, state.heroes, state.captains, cell.terrain, state.factions, forcedWinner, modifierContext(state, campaign, state.regions))
   const participantIds = new Set([...conflict.attackerArmyIds, ...conflict.defenderArmyIds, ...conflict.attackerReinforcementArmyIds, ...conflict.defenderReinforcementArmyIds])
   for (const army of armies) {
     army.unitSlots = army.unitSlots.filter((slot) => !outcome.destroyedArmyKeys.has(slot.slotId))
@@ -507,6 +681,28 @@ function resolveConflictBattle(state: MapState, campaign: CampaignState, conflic
   }
   for (const factionId of outcome.winnerSide === conflict.attackerSide ? attackerFactions : defenderFactions) factionCampaignState(campaign, factionId).statistics.battlesWon += 1
   for (const factionId of outcome.winnerSide === conflict.attackerSide ? defenderFactions : attackerFactions) factionCampaignState(campaign, factionId).statistics.battlesLost += 1
+  const winnerArmyIds = outcome.winnerSide === conflict.attackerSide
+    ? [...conflict.attackerArmyIds, ...conflict.attackerReinforcementArmyIds]
+    : [...conflict.defenderArmyIds, ...conflict.defenderReinforcementArmyIds]
+  const loserArmyIds = outcome.winnerSide === conflict.attackerSide
+    ? [...conflict.defenderArmyIds, ...conflict.defenderReinforcementArmyIds]
+    : [...conflict.attackerArmyIds, ...conflict.attackerReinforcementArmyIds]
+  grantBattleVeterancy(state, campaign, armies, [...winnerArmyIds, ...loserArmyIds], outcome.destroyedArmyKeys)
+  // The Ring changes hands when its carrier is annihilated in this battle.
+  const ring = campaign.ringState
+  if (ring.forged && ring.carrierArmyId && [...winnerArmyIds, ...loserArmyIds].includes(ring.carrierArmyId)) {
+    const carrier = armies.find((army) => army.id === ring.carrierArmyId)
+    const wipedOut = !carrier || (!carrier.unitSlots.length && !carrier.heroSlots.length && carrier.commander?.kind !== 'hero')
+    if (wipedOut && loserArmyIds.includes(ring.carrierArmyId)) {
+      const winnerFactionId = armies.find((army) => winnerArmyIds.includes(army.id))?.factionId
+        ?? (outcome.winnerSide === conflict.attackerSide ? conflict.captorFactionId : state.locations.find((location) => location.id === conflict.locationId)?.side ?? null)
+      const previousOwner = ring.ownerFactionId
+      reassignRingCarrier(state, campaign, armies, state.locations, winnerFactionId ?? previousOwner)
+      const label = state.factions.find((faction) => faction.id === ring.ownerFactionId)?.label ?? ring.ownerFactionId
+      campaign.log.unshift(campaignEvent(campaign, `Кольцо Всевластья переходит к фракции «${label}»: носитель уничтожен в бою.`, 'system', ring.ownerFactionId))
+      campaign.turnEvents.push(turnEvent(campaign, 'ring_carrier', `Кольцо Всевластья захвачено фракцией «${label}».`, null))
+    }
+  }
   campaign.log.unshift(campaignEvent(campaign, outcome.report.summary, 'battle', outcome.report.winnerSide === conflict.attackerSide ? outcome.report.attackerFactionId : outcome.report.defenderFactionId))
   battles.unshift(outcome.report)
   return { armies, battles, report: outcome.report }
@@ -547,7 +743,7 @@ function enterConflictPhase(state: MapState, campaign: CampaignState, sourceArmi
   for (const capture of scan.autoCaptures) {
     const location = locations.find((candidate) => candidate.id === capture.locationId)
     if (location && location.side !== 'civilian') evacuateLocationReserveHeroes({ ...state, locations, regions } as MapState, campaign, locations, regions, capture.locationId, location.side)
-    captureLocation(locations, regions, campaign, capture.locationId, capture.factionId)
+    captureLocation(locations, regions, campaign, capture.locationId, capture.factionId, state.buildingTypes)
     const army = armies.find((candidate) => candidate.id === capture.armyId)
     if (army) army.engaged = false
     campaign.log.unshift(campaignEvent(campaign, `${location?.name ?? 'Локация'} занята без сопротивления.`, 'capture', capture.factionId))
@@ -771,7 +967,7 @@ function processAftermath(state: MapState, campaign: CampaignState, sourceArmies
           const outcome = applyHeroFate({ ...state, locations, regions } as MapState, campaign, armies, heroes, heroId, conflict, true, conflict.hexId)
           recordHeroBattleOutcome(battles, conflict, hero, outcome)
         }
-        captureLocation(locations, regions, campaign, location.id, conflict.captorFactionId)
+        captureLocation(locations, regions, campaign, location.id, conflict.captorFactionId, state.buildingTypes)
         const report = battles.find((battle) => battle.conflictId === conflict.id) ?? battles.find((battle) => battle.round === campaign.round && battle.locationId === location.id && !battle.capturedLocationId)
         if (report) report.capturedLocationId = location.id
         campaign.log.unshift(campaignEvent(campaign, `${location.name} захвачена фракцией «${state.factions.find((faction) => faction.id === conflict.captorFactionId)?.label ?? conflict.captorFactionId}».`, 'capture', conflict.captorFactionId))
@@ -794,6 +990,7 @@ function processAftermath(state: MapState, campaign: CampaignState, sourceArmies
 
 export const useMapStore = create<MapState>((set) => ({
   locations: [], grid: { config: { ...DEFAULT_GRID_CONFIG }, cells: {} }, factions: [], economicTypes: createDefaultEconomicTypes(), unitTypes: [], heroes: [], captains: [], armies: [], regions: [],
+  buildingTypes: createDefaultBuildingTypes(), palantirSettings: { ...DEFAULT_PALANTIR_SETTINGS }, ringForging: createDefaultRingForging(),
   campaign: createDefaultCampaign([]), battles: [], editorTemplate: null, gameSave: null, selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null,
   mode: 'edit', viewMode: 'cinematic', hexEdit: false, addKind: null, history: [], future: [], revision: 0,
 
@@ -860,7 +1057,7 @@ export const useMapStore = create<MapState>((set) => ({
     let prepared = preparePlanningSide({ ...workingState, armies, heroes } as MapState, campaign, armies, heroes, 'good')
     armies = prepared.armies
     heroes = prepared.heroes
-    if (campaign.aiEnabled && campaign.playerSide !== 'good') armies = runAiPlanning('good', campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.unitTypes, heroes, gameWorld.captains, gameWorld.grid, playerFaction.id)
+    if (campaign.aiEnabled && campaign.playerSide !== 'good') armies = runAiPlanning('good', campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.unitTypes, heroes, gameWorld.captains, gameWorld.grid, playerFaction.id, gameWorld.buildingTypes, gameWorld.ringForging)
     if (campaign.playerSide === 'evil') {
       campaign.phase = 'planning_evil'
       prepared = preparePlanningSide({ ...workingState, armies, heroes, campaign } as MapState, campaign, armies, heroes, 'evil')
@@ -1276,7 +1473,7 @@ export const useMapStore = create<MapState>((set) => ({
     const draft: Army = {
       id, name: '', factionId: faction.id, hexId: locationHexId(creationLocation, state.grid.config), movementRemaining: 0,
       baseUnitSlotLimit: 15, heroSlotLimit: 2, commander,
-      unitSlots: [{ slotId: `${id}-unit-1`, kind: 'unit', entityId: initialUnit.id, objectId: initialUnit.objectId }], heroSlots: [],
+      unitSlots: [{ slotId: `${id}-unit-1`, kind: 'unit', entityId: initialUnit.id, objectId: initialUnit.objectId, level: 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false }], heroSlots: [],
       status: 'ready', canInitiateBattle: true, engaged: false, movedRound: null, movedInPhase: null, exhaustedUntilRound: null,
     }
     const armies = [...cloneArmies(state.armies), draft]
@@ -1443,7 +1640,7 @@ export const useMapStore = create<MapState>((set) => ({
 
     const runSideAiPlanning = (side: StrategicSide) => {
       if (!campaign.aiEnabled) return
-      armies = runAiPlanning(side, campaign, armies, locations, state.factions, state.unitTypes, heroes, state.captains, state.grid, campaign.playerFactionId)
+      armies = runAiPlanning(side, campaign, armies, locations, state.factions, state.unitTypes, heroes, state.captains, state.grid, campaign.playerFactionId, state.buildingTypes, state.ringForging)
       campaign.log.unshift(campaignEvent(campaign, `ИИ завершил планирование остальных фракций стороны «${side === 'good' ? 'Свет' : 'Тьма'}».`, 'system', null))
     }
     const runSideAiMovement = (side: StrategicSide) => {
@@ -1485,7 +1682,7 @@ export const useMapStore = create<MapState>((set) => ({
         const enemies=armies.filter((enemy)=>enemy.hexId===destination&&areFactionsHostile(state.factions,enemy.factionId,army.factionId));const target=locations.find((location)=>location.hex===destination)??(order.locationId?locations.find((location)=>location.id===order.locationId)??null:null);const hostile=Boolean(target&&areFactionsHostile(state.factions,target.side,army.factionId));const committed=enemies.length>0||hostile;if(committed&&!army.canInitiateBattle)continue
         army.hexId=destination;army.movementRemaining=committed?0:Math.max(0,army.movementRemaining-cost);army.status=army.movementRemaining>0?'ready':'marched';army.engaged=committed;army.movedRound=campaign.round;army.movedInPhase='movement_first'
         campaign.turnMovements.push({id:`log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`,round:campaign.round,factionId:army.factionId,armyName:army.name,commanderName:armyCommanderName(army,heroes),action:committed?'besieged':'moved',targetLabel:target?.name??movementTargetLabel(destination,locations,regions,grid),distance:path.length-1,armyId:army.id,originHexId,destinationHexId:destination})
-        if(committed){for(const enemy of enemies)enemy.engaged=true;campaign.log.unshift(campaignEvent(campaign,`${army.name} входит в зону боя и связывает противника.`,'move',army.factionId))}else if(target?.side==='civilian'){captureLocation(locations,regions,campaign,target.id,army.factionId);campaign.log.unshift(campaignEvent(campaign,`${army.name} занимает нейтральную локацию «${target.name}».`,'capture',army.factionId))}else campaign.log.unshift(campaignEvent(campaign,`${army.name} перемещается на ${cost} ОД.`,'move',army.factionId))
+        if(committed){for(const enemy of enemies)enemy.engaged=true;campaign.log.unshift(campaignEvent(campaign,`${army.name} входит в зону боя и связывает противника.`,'move',army.factionId))}else if(target?.side==='civilian'){captureLocation(locations,regions,campaign,target.id,army.factionId,state.buildingTypes);campaign.log.unshift(campaignEvent(campaign,`${army.name} занимает нейтральную локацию «${target.name}».`,'capture',army.factionId))}else campaign.log.unshift(campaignEvent(campaign,`${army.name} перемещается на ${cost} ОД.`,'move',army.factionId))
       }
       campaign.pendingOrders=[]
     }
@@ -1580,6 +1777,108 @@ export const useMapStore = create<MapState>((set) => ({
     refreshFogIntel(campaign, armies, state.locations, state.factions, state.grid, state.regions)
     return gameCommit(state, { armies, campaign })
   }),
+
+  startBuilding: (locationId, buildingTypeId) => set((state) => {
+    const location = state.locations.find((candidate) => candidate.id === locationId)
+    const definition = state.buildingTypes.find((candidate) => candidate.id === buildingTypeId)
+    const factionId = state.campaign.playerFactionId
+    if (!location || !definition || !factionId || !canFactionPlan(state.campaign, state.factions, factionId)) return state
+    const treasury = state.campaign.treasuries[factionId]
+    const availability = canBuild(definition, location, state.campaign, factionId, treasury?.gold ?? 0)
+    if (!availability.allowed) return state
+    const campaign = cloneCampaign(state.campaign)
+    campaign.treasuries[factionId] = { ...campaign.treasuries[factionId], gold: (campaign.treasuries[factionId]?.gold ?? 0) - definition.cost }
+    const building = createBuildingInstance(definition, location, factionId, campaign.round)
+    campaign.buildings.push(building)
+    campaign.log.unshift(campaignEvent(campaign, definition.buildTime > 0
+      ? `Начато строительство «${definition.name}» в «${location.name}» (${definition.buildTime} ход.).`
+      : `«${definition.name}» построена в «${location.name}».`, 'system', factionId))
+    return gameCommit(state, { campaign })
+  }),
+
+  demolishBuilding: (buildingId) => set((state) => {
+    const building = state.campaign.buildings.find((candidate) => candidate.id === buildingId)
+    const factionId = state.campaign.playerFactionId
+    if (!building || !factionId || building.ownerFactionId !== factionId || !canFactionPlan(state.campaign, state.factions, factionId)) return state
+    const definition = state.buildingTypes.find((candidate) => candidate.id === building.buildingTypeId)
+    const campaign = cloneCampaign(state.campaign)
+    campaign.buildings = campaign.buildings.filter((candidate) => candidate.id !== buildingId)
+    const refund = definition ? demolitionRefund(building, definition, campaign.round) : 0
+    if (refund > 0) campaign.treasuries[factionId] = { ...campaign.treasuries[factionId], gold: (campaign.treasuries[factionId]?.gold ?? 0) + refund }
+    const locationName = state.locations.find((candidate) => candidate.id === building.locationId)?.name ?? building.locationId
+    campaign.log.unshift(campaignEvent(campaign, `«${definition?.name ?? building.buildingTypeId}» снесена в «${locationName}»${refund > 0 ? `, возвращено ${refund} золота` : ''}.`, 'system', factionId))
+    return gameCommit(state, { campaign })
+  }),
+
+  investRingForging: (amount) => set((state) => {
+    const factionId = state.campaign.playerFactionId
+    if (!factionId || !state.ringForging.enabled || state.campaign.ringState.forged) return state
+    if (!canFactionPlan(state.campaign, state.factions, factionId)) return state
+    const steps = Math.max(0, Math.min(state.ringForging.maxInvestmentPerTurn, Math.round(amount)))
+    if (steps <= 0) return state
+    const cost = investmentCost(state.ringForging, steps)
+    const treasury = state.campaign.treasuries[factionId]
+    if ((treasury?.gold ?? 0) < cost) return state
+    const campaign = cloneCampaign(state.campaign)
+    campaign.treasuries[factionId] = { ...campaign.treasuries[factionId], gold: (campaign.treasuries[factionId]?.gold ?? 0) - cost }
+    campaign.ringState.factionProgress[factionId] = (campaign.ringState.factionProgress[factionId] ?? 0) + steps
+    const armies = cloneArmies(state.armies)
+    const locations = cloneLocations(state.locations)
+    const forged = completeRingForgingIfReady({ ...state, armies, locations } as MapState, campaign, armies, locations, factionId)
+    if (!forged) {
+      const text = `Ковка Кольца: прогресс ${campaign.ringState.factionProgress[factionId]} / ${state.ringForging.requiredProgress}.`
+      campaign.log.unshift(campaignEvent(campaign, text, 'system', factionId))
+      campaign.turnEvents.push(turnEvent(campaign, 'ring_progress', text, factionId))
+    }
+    return gameCommit(state, { campaign, armies })
+  }),
+
+  transferRing: (targetArmyId) => set((state) => {
+    const ring = state.campaign.ringState
+    const factionId = state.campaign.playerFactionId
+    if (!ring.forged || !factionId || ring.ownerFactionId !== factionId) return state
+    const carrier = state.armies.find((army) => army.id === ring.carrierArmyId)
+    const target = state.armies.find((army) => army.id === targetArmyId && army.factionId === factionId)
+    if (!target || (carrier && carrier.hexId !== target.hexId)) return state
+    const campaign = cloneCampaign(state.campaign)
+    campaign.ringState.carrierArmyId = target.id
+    campaign.log.unshift(campaignEvent(campaign, `Кольцо Всевластья передано армии «${target.name}».`, 'system', factionId))
+    return gameCommit(state, { campaign })
+  }),
+
+  updateBuildingType: (id, patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const buildingTypes = state.buildingTypes.map((item) => item.id === id ? { ...cloneBuildingType(item), ...patch, id: item.id } : item)
+    return pushHistory(state, { ...currentSnapshot(state), buildingTypes })
+  }),
+
+  addBuildingType: () => set((state) => {
+    if (state.mode !== 'edit') return state
+    const id = makeId('building', state.buildingTypes.map((item) => item.id))
+    const created: BuildingTypeDefinition = {
+      id, name: 'New Building', nameTranslations: { ru: 'Новая постройка' }, description: '', descriptionTranslations: {}, icon: '▣',
+      cost: 150, buildTime: 2, allowedStructuralTypes: ['domain', 'stronghold'], allowedEconomicTypes: [], maxPerLocation: 1, maxPerFaction: 0, destroyedOnCapture: true,
+      effects: { armyUpgrades: [], battleModifiers: { owner: {} }, recruitLevelBonus: 0, ringForgeBonus: 0 },
+    }
+    return pushHistory(state, { ...currentSnapshot(state), buildingTypes: [...state.buildingTypes, created] })
+  }),
+
+  removeBuildingType: (id) => set((state) => {
+    if (state.mode !== 'edit') return state
+    return pushHistory(state, { ...currentSnapshot(state), buildingTypes: state.buildingTypes.filter((item) => item.id !== id) })
+  }),
+
+  updateRingForging: (patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    const ringForging = { ...cloneRingForging(state.ringForging), ...patch }
+    return pushHistory(state, { ...currentSnapshot(state), ringForging })
+  }),
+
+  updatePalantirSettings: (patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    return pushHistory(state, { ...currentSnapshot(state), palantirSettings: { ...state.palantirSettings, ...patch } })
+  }),
+
 
   selectConflict: (conflictId) => set((state) => state.campaign.conflicts.some((conflict) => conflict.id === conflictId) ? { campaign: { ...cloneCampaign(state.campaign), currentConflictId: conflictId } } : state),
 
@@ -1685,7 +1984,7 @@ export const useMapStore = create<MapState>((set) => ({
     campaign.treasuries[hero.factionId].gold -= hero.summonCostGold
     for (const locationState of Object.values(campaign.locationStates)) locationState.reserve = locationState.reserve.filter((slot) => slot.kind !== 'hero' || slot.entityId !== hero.id)
     const locationState = campaign.locationStates[location.id] ?? { locationId: location.id, recruitmentQueue: [], reserve: [], occupationTurnsLeft: 0 }
-    locationState.reserve.push({ slotId: `summoned-${hero.id}-${campaign.round}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId })
+    locationState.reserve.push({ slotId: `summoned-${hero.id}-${campaign.round}`, kind: 'hero', entityId: hero.id, objectId: hero.objectId, level: campaign.heroLevels?.[hero.id] ?? 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false })
     campaign.locationStates[location.id] = locationState
     campaign.heroStates[hero.id] = { ...campaign.heroStates[hero.id], status: 'active', summoned: true, summonLocationId: location.id, recoveryLocationId: null, healTurnsLeft: 0 }
     campaign.log.unshift(campaignEvent(campaign, `${hero.name} призван в «${location.name}» за ${hero.summonCostGold} золота.`, 'hero', hero.factionId))
@@ -1855,7 +2154,7 @@ export const useMapStore = create<MapState>((set) => ({
     // Герои всегда попадают в резерв; отряды — пока влезают в предел ОК
     // локации, остальные распускаются насовсем (не переполняют резерв).
     let usedCp = reserveCommandPoints(campaign.locationStates[locationId].reserve, state.unitTypes, state.heroes)
-    const heroesMoving = [...army.heroSlots, ...(army.commander?.kind === 'hero' ? [{ slotId: `reserve-hero-${army.commander.entityId}-${Date.now().toString(36)}`, kind: 'hero', entityId: army.commander.entityId, objectId: army.commander.objectId! }] : [])]
+    const heroesMoving = [...army.heroSlots, ...(army.commander?.kind === 'hero' ? [{ slotId: `reserve-hero-${army.commander.entityId}-${Date.now().toString(36)}`, kind: 'hero' as const, entityId: army.commander.entityId, objectId: army.commander.objectId!, level: state.campaign.heroLevels?.[army.commander.entityId] ?? 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false }] : [])]
     const movedUnits = []
     const lostUnits = []
     for (const slot of army.unitSlots) {

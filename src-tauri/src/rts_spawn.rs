@@ -9,6 +9,59 @@ const RING1_RADIUS: f64 = 140.0;
 const RING_GAP: f64 = 70.0;
 const MAX_PER_RING: usize = 8;
 
+/// Full definition of the starting-gold crate, copied from the reference
+/// bridge (spawn.py GOLD_BASE_OBJECT). Per-slot child objects override the
+/// resource amount and make the crate permanent.
+const GOLD_BASE_OBJECT: &str = r#"Object WOTR_StartingGold
+  Draw = W3DScriptedModelDraw ModuleTag_01
+    DefaultModelConditionState
+      Model = PchestTreasure
+      ParticleSysBone NONE GoldChestGlimmer
+      ParticleSysBone NONE GoldChestAura
+    End
+  End
+  EditorSorting   = MISC_MAN_MADE
+  DisplayName     = OBJECT:TreasureChest
+    Side          = Civilian
+  KindOf = SELECTABLE PARACHUTABLE IMMOBILE NOT_AUTOACQUIRABLE UNATTACKABLE CRATE
+  ThreatLevel = 0.0
+  Body = HighlanderBody ModuleTag_04
+    MaxHealth      = 1.0
+  End
+  Behavior = SalvageCrateCollide ModuleTag_02
+    ForbiddenKindOf = PROJECTILE ENVIRONMENT IGNORED_IN_GUI
+    ExecuteFX = FX_GoldChestPickup
+    BannerChance = 10%
+    LevelUpChance = 100%
+    LevelUpRadius = 100.0
+    ResourceChance = 20%
+    MinResource = 25
+    MaxResource = 75
+    AllowAIPickup = No
+  End
+  Behavior = DeletionUpdate ModuleTag_03
+    MinLifetime = 30000
+    MaxLifetime = 35000
+  End
+  Geometry = BOX
+  GeometryMajorRadius = 12.0
+  GeometryMinorRadius = 12.0
+  GeometryHeight = 12.0
+  GeometryIsSmall = Yes
+  Shadow          = SHADOW_VOLUME
+End
+"#;
+
+fn gold_child(slot: i64, amount: i64) -> String {
+    format!(
+        "ChildObject WOTR_StartingGold_Player_{slot} WOTR_StartingGold\n\n    ReplaceModule ModuleTag_02\n\n        Behavior = SalvageCrateCollide ModuleTag_022\n\n            ForbiddenKindOf = PROJECTILE ENVIRONMENT IGNORED_IN_GUI NEUTRALGOLLUM\n            BannerChance = 0%\n            LevelUpChance = 0%\n            LevelUpRadius = 0.0\n            ResourceChance = 100%\n            MinResource = {amount}\n            MaxResource = {amount}\n            AllowAIPickup = Yes\n            ExecuteFX = FX_GoldChestPickup\n        End\n\n    End\n\n    ReplaceModule ModuleTag_03\n\n        Behavior = DeletionUpdate ModuleTag_033\n\n            MinLifetime = -1\n            MaxLifetime = -1\n        End\n\n    End\n\nEnd\n"
+    )
+}
+
+fn command_point_child(slot: i64, points: i64) -> String {
+    format!("ChildObject WOTR_CommandPointBonus_Player_{slot} WOTR_CommandPointBonus\n    CommandPointBonus = {points}\nEnd\n")
+}
+
 fn faction_upgrade(id: &str) -> &'static str {
     match id {
         "men-of-the-west" | "men" => "Upgrade_MenFaction",
@@ -69,6 +122,78 @@ fn add(
     lines.push("    End".into());
     *tag += 1;
 }
+/// Maps a hero object to the `Upgrade_AllFactionHeroUpgrade<N>` that unlocks its
+/// fortress recruit button. The numbers are NOT the order heroes happen to sit
+/// in an army - they are fixed per faction by the mod's CommandButton set, so
+/// they must be looked up here. Using the army index instead revives whichever
+/// hero owns that slot (e.g. Theoden at index 0 revived Eowyn, who is Upgrade1).
+fn hero_upgrade_number(object_id: &str) -> Option<usize> {
+    let number = match object_id {
+        // Men of the West
+        "RohanEowyn" => 1,
+        "RohanEomer" => 2,
+        "GondorBoromir" => 3,
+        "RohanTheoden" => 4,
+        "GondorFaramir" => 5,
+        "GondorAragornMP" => 6,
+        "GondorGandalf" => 7,
+        // Elves
+        "ElvenHaldir" => 1,
+        "ElvenGlorfindel" => 2,
+        "ElvenArwen" => 3,
+        "ElvenLegolas" => 4,
+        "ElvenThranduil" => 5,
+        "ElvenElrond" => 6,
+        // Dwarves
+        "DwarvenCaptainofDale" => 1,
+        "DwarvenGloin" => 2,
+        "DwarvenGimli" => 3,
+        "DwarvenDain" => 4,
+        // Isengard
+        "IsengardWormTongue" => 1,
+        "IsengardLurtz" => 2,
+        "IsengardSharku" => 3,
+        "IsengardSaruman" => 4,
+        // Mordor
+        "MordorGothmog" => 1,
+        "MordorMouthOfSauron" => 2,
+        "KhamulFellBeast" => 3,
+        "MorgomirFellBeast" => 4,
+        "MordorWitchKingOnFellBeast" => 5,
+        // Angmar
+        "AngmarHwaldar" => 1,
+        "AngmarKarsh" => 2,
+        "AngmarMorgramir" => 3,
+        "AngmarRogash" => 4,
+        "AngmarWitchking" => 5,
+        // Goblins / Wild
+        "WildGoblinKing" => 1,
+        "WildAzog" => 2,
+        "WildShelob" => 3,
+        "Drogoth" => 4,
+        // Arnor
+        "ArnorArgeleb" => 1,
+        "ArnorArveleg" => 2,
+        "ArnorArvedui" => 3,
+        "ArnorCaptain" => 4,
+        // Ring heroes use Upgrade_FortressRingHero and are always level 10, so
+        // they never get a hero mod block.
+        _ => return None,
+    };
+    Some(number)
+}
+
+/// `Object <Hero>` block that grants the hero its per-faction unique upgrade
+/// and its campaign veterancy level. Mirrors `build_hero_mod` in the reference
+/// bridge (spawn.py): BFME needs an explicit `LevelToGrant`, so it is emitted
+/// even for level 1 - otherwise the hero keeps whatever the map default is.
+fn hero_mod_block(object_id: &str, upgrade_number: usize, level: i64) -> String {
+    let clamped = level.clamp(1, 10);
+    format!(
+        "Object {object_id}\n    AddModule\n        Behavior = GrantUpgradeCreate ModuleTag_HeroUpgradeGrant\n            UpgradeToGrant = Upgrade_AllFactionHeroUpgrade{upgrade_number}\n        End\n    End\n    AddModule\n        Behavior = ExperienceLevelCreate ModuleTag_MPLevelBonus\n            LevelToGrant = {clamped}\n        End\n    End\nEnd\n"
+    )
+}
+
 fn build_big(data: &[u8]) -> Vec<u8> {
     let name = INTERNAL_PATH.as_bytes();
     let header_len = 16usize;
@@ -93,11 +218,35 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
         .get("participants")
         .and_then(Value::as_array)
         .ok_or("battleConfig participants are missing")?;
-    let mut lines = vec![
-        "; generated by War of the Ring Tauri bridge".into(),
-        format!("Object {OBJECT_NAME}"),
-    ];
+    let mut prelude: Vec<String> = vec!["; generated by War of the Ring Tauri bridge".into()];
+    let mut needs_gold_base = false;
+    for participant in participants {
+        let slot = participant.get("slot").and_then(Value::as_i64).unwrap_or(0);
+        let bonuses = participant.get("bonuses");
+        let gold = bonuses
+            .and_then(|value| value.get("startingResources"))
+            .and_then(Value::as_i64)
+            .unwrap_or(0);
+        let command_points = bonuses
+            .and_then(|value| value.get("commandPointBonus"))
+            .and_then(Value::as_i64)
+            .unwrap_or(0);
+        if gold > 0 {
+            needs_gold_base = true;
+            prelude.push(gold_child(slot, gold));
+        }
+        if command_points > 0 {
+            prelude.push(command_point_child(slot, command_points));
+        }
+    }
+    if needs_gold_base {
+        prelude.insert(1, GOLD_BASE_OBJECT.to_string());
+    }
+    let mut lines = prelude;
+    lines.push(format!("Object {OBJECT_NAME}"));
     let mut tag = 0usize;
+    // `Object <Hero>` overrides are emitted after the anchor object closes.
+    let mut hero_mods: Vec<String> = Vec::new();
     for participant in participants {
         let faction = participant
             .get("factionId")
@@ -108,6 +257,36 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
             .get("gateAngleDeg")
             .and_then(Value::as_f64)
             .unwrap_or(45.0);
+        let slot = participant.get("slot").and_then(Value::as_i64).unwrap_or(0);
+        let bonuses = participant.get("bonuses");
+        let bonus_int = |key: &str| {
+            bonuses
+                .and_then(|value| value.get(key))
+                .and_then(Value::as_i64)
+                .unwrap_or(0)
+        };
+        // Контекстные бонусы владельца локации (см. §2/§7 ТЗ).
+        if bonus_int("startingResources") > 0 {
+            add(&mut lines, &mut tag, "Gold", trigger, &format!("WOTR_StartingGold_Player_{slot}"), 0, 0, None);
+        }
+        if bonus_int("commandPointBonus") > 0 {
+            add(&mut lines, &mut tag, "CP", trigger, &format!("WOTR_CommandPointBonus_Player_{slot}"), 0, 0, None);
+        }
+        if bonuses
+            .and_then(|value| value.get("signalFire"))
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+        {
+            add(&mut lines, &mut tag, "SignalFire", trigger, "SignalFire", 9999, 9999, None);
+        }
+        let start_pp = bonus_int("palantirStartingPoints");
+        if start_pp > 0 {
+            add(&mut lines, &mut tag, "StartPP", trigger, &format!("WOTR_StartPP_{start_pp}"), 0, 0, None);
+        }
+        let pp_rate = bonus_int("palantirIncomePerInterval");
+        if pp_rate > 0 {
+            add(&mut lines, &mut tag, "PPRate", trigger, &format!("WOTR_PPRate_{pp_rate}"), 0, 0, None);
+        }
         let units = participant
             .get("units")
             .and_then(Value::as_array)
@@ -189,10 +368,29 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
                 y,
                 Some(angle),
             );
+            // Every hero needs an explicit level object, level 1 included.
+            // The upgrade number comes from the fortress button table, never
+            // from the hero's position in this army.
+            let level = item.get("level").and_then(Value::as_i64).unwrap_or(1);
+            if let Some(upgrade_number) = hero_upgrade_number(object_id) {
+                hero_mods.push(hero_mod_block(object_id, upgrade_number, level));
+            }
+        }
+        // Носитель Кольца Всевластья появляется рядом с линией героев (§4.7).
+        if let Some(ring_hero) = participant
+            .get("ringHeroObjectId")
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+        {
+            let (x, y, angle) = hero_position(heroes.len(), heroes.len() + 1, gate);
+            add(&mut lines, &mut tag, "Ring", trigger, ring_hero, x, y, Some(angle));
         }
     }
     lines.push("End".into());
     lines.push(String::new());
+    for block in &hero_mods {
+        lines.push(block.clone());
+    }
     let ini = lines.join("\n").into_bytes();
     let big = build_big(&ini);
     if let Some(parent) = path.parent() {
@@ -203,4 +401,54 @@ pub fn generate(path: &Path, battle: &Value) -> Result<Value, String> {
     Ok(
         json!({"size":big.len(),"iniBytes":ini.len(),"objects":tag,"targetFileName":"__wotr_generated_presets.big"}),
     )
+}
+
+#[cfg(test)]
+mod hero_upgrade_tests {
+    use super::hero_upgrade_number;
+
+    /// The upgrade number is a property of the hero, not of its position in the
+    /// army. Theoden is Upgrade4 even when he marches alone (regression: he was
+    /// spawned as Upgrade1, which revived Eowyn instead).
+    #[test]
+    fn upgrade_number_is_per_hero_not_per_slot() {
+        assert_eq!(hero_upgrade_number("RohanTheoden"), Some(4));
+        assert_eq!(hero_upgrade_number("IsengardSaruman"), Some(4));
+        assert_eq!(hero_upgrade_number("RohanEowyn"), Some(1));
+    }
+
+    /// Numbers must match the fortress CommandButton set exactly.
+    #[test]
+    fn matches_fortress_command_buttons() {
+        for (object_id, expected) in [
+            ("RohanEowyn", 1), ("RohanEomer", 2), ("GondorBoromir", 3),
+            ("RohanTheoden", 4), ("GondorFaramir", 5), ("GondorAragornMP", 6),
+            ("GondorGandalf", 7),
+            ("ElvenHaldir", 1), ("ElvenGlorfindel", 2), ("ElvenArwen", 3),
+            ("ElvenLegolas", 4), ("ElvenThranduil", 5), ("ElvenElrond", 6),
+            ("DwarvenCaptainofDale", 1), ("DwarvenGloin", 2),
+            ("DwarvenGimli", 3), ("DwarvenDain", 4),
+            ("IsengardWormTongue", 1), ("IsengardLurtz", 2),
+            ("IsengardSharku", 3), ("IsengardSaruman", 4),
+            ("MordorGothmog", 1), ("MordorMouthOfSauron", 2),
+            ("KhamulFellBeast", 3), ("MorgomirFellBeast", 4),
+            ("MordorWitchKingOnFellBeast", 5),
+            ("AngmarHwaldar", 1), ("AngmarKarsh", 2), ("AngmarMorgramir", 3),
+            ("AngmarRogash", 4), ("AngmarWitchking", 5),
+            ("WildGoblinKing", 1), ("WildAzog", 2), ("WildShelob", 3),
+            ("Drogoth", 4),
+            ("ArnorArgeleb", 1), ("ArnorArveleg", 2), ("ArnorArvedui", 3),
+            ("ArnorCaptain", 4),
+        ] {
+            assert_eq!(hero_upgrade_number(object_id), Some(expected), "{object_id}");
+        }
+    }
+
+    /// Ring heroes use Upgrade_FortressRingHero and must not get a hero block.
+    #[test]
+    fn ring_heroes_have_no_upgrade_number() {
+        assert_eq!(hero_upgrade_number("ElvenGaladriel_RingHero"), None);
+        assert_eq!(hero_upgrade_number("MordorSauron_RingHero"), None);
+        assert_eq!(hero_upgrade_number("NotAHero"), None);
+    }
 }

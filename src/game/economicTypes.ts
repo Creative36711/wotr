@@ -1,4 +1,28 @@
-import type { EconomicTypeDefinition, LocalizedTranslations, SettlementType } from '../types'
+import type { BattleModifierSet, EconomicTypeDefinition, LocalizedTranslations, SettlementType } from '../types'
+import { normalizeBattleModifiers } from './battleModifiers'
+
+/** Context-layer battle bonuses granted to the owner of a location, per economic type. */
+const OWNER_BONUSES: Partial<Record<SettlementType, BattleModifierSet>> = {
+  capital: { owner: { startingResources: 1500, commandPointBonus: 300, palantirStartingPoints: 3, palantirIncomePerInterval: 1, signalFire: true } },
+  fortress: { owner: { startingResources: 1000, commandPointBonus: 200, palantirStartingPoints: 2, defenseBonus: 0.05 } },
+  city: { owner: { startingResources: 800, commandPointBonus: 150, palantirStartingPoints: 1 } },
+  port: { owner: { startingResources: 600, commandPointBonus: 100 } },
+  mine: { owner: { startingResources: 900, commandPointBonus: 50 } },
+  farm: { owner: { startingResources: 500 } },
+  village: { owner: { startingResources: 400 } },
+  camp: { owner: { startingResources: 300, commandPointBonus: 50 } },
+  signal_tower: { owner: { signalFire: true, palantirStartingPoints: 2 } },
+  monument: { owner: { palantirStartingPoints: 2, palantirIncomePerInterval: 1 } },
+  crossroads: { owner: { startingResources: 250 } },
+  ford: { owner: { startingResources: 200, ambushBonus: 0.1 } },
+  pass: { owner: { startingResources: 300, commandPointBonus: 50, ambushBonus: 0.15, defenseBonus: 0.05 } },
+  ruins: { owner: { startingResources: 150, ambushBonus: 0.05 } },
+  forest: { owner: { startingResources: 150, ambushBonus: 0.15, spawnBonus: 'ents' } },
+  mountains: { owner: { startingResources: 200, defenseBonus: 0.05, spawnBonus: 'trolls' } },
+  swamp: { owner: { terrainDebuff: 0.1 } },
+  wilderness: { owner: {} },
+}
+const bonuses = (id: SettlementType): BattleModifierSet => ({ owner: { ...(OWNER_BONUSES[id]?.owner ?? {}) } })
 
 export const ALL_SETTLEMENT_TYPES: SettlementType[] = [
   'village', 'city', 'fortress', 'capital', 'port', 'mine', 'farm',
@@ -10,29 +34,29 @@ const ru = (value: string): LocalizedTranslations => ({ ru: value })
 
 /** Built-in defaults used for new mods and missing entries. */
 export const DEFAULT_ECONOMIC_TYPES: EconomicTypeDefinition[] = [
-  { id: 'village', name: 'Village', nameTranslations: ru('Деревня'), gold: 30, materials: 0, recruitmentSlots: 1, commandPointLimit: 300, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'city', name: 'City', nameTranslations: ru('Город'), gold: 80, materials: 10, recruitmentSlots: 2, commandPointLimit: 600, visionRadius: 3, defenseBonus: 0.2, battleType: 'settlement', allowsCaptainHire: true, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'fortress', name: 'Fortress', nameTranslations: ru('Крепость'), gold: 100, materials: 20, recruitmentSlots: 3, commandPointLimit: 900, visionRadius: 4, defenseBonus: 0.4, battleType: 'siege', allowsCaptainHire: true, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'capital', name: 'Capital', nameTranslations: ru('Столица'), gold: 150, materials: 30, recruitmentSlots: 4, commandPointLimit: 1200, visionRadius: 5, defenseBonus: 0.5, battleType: 'settlement', allowsCaptainHire: true, isCapital: true, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'port', name: 'Port', nameTranslations: ru('Порт'), gold: 60, materials: 20, recruitmentSlots: 2, commandPointLimit: 500, visionRadius: 3, defenseBonus: 0.2, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'mine', name: 'Mine / Forge', nameTranslations: ru('Шахта / кузница'), gold: 20, materials: 40, recruitmentSlots: 2, commandPointLimit: 500, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'farm', name: 'Farm / Pasture', nameTranslations: ru('Ферма / пастбище'), gold: 50, materials: 0, recruitmentSlots: 1, commandPointLimit: 300, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'wilderness', name: 'Wilderness', nameTranslations: ru('Дикое владение'), gold: 0, materials: 0, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'swamp', name: 'Swamp', nameTranslations: ru('Болото'), gold: 0, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: false },
-  { id: 'forest', name: 'Forest', nameTranslations: ru('Лес'), gold: 10, materials: 20, recruitmentSlots: 1, commandPointLimit: 250, visionRadius: 3, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: false },
-  { id: 'mountains', name: 'Mountains', nameTranslations: ru('Горы'), gold: 5, materials: 30, recruitmentSlots: 1, commandPointLimit: 250, visionRadius: 3, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'ruins', name: 'Ruins', nameTranslations: ru('Руины'), gold: 5, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'monument', name: 'Monument / Shrine', nameTranslations: ru('Памятник / святилище'), gold: 5, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: false, allowedForStronghold: true },
-  { id: 'crossroads', name: 'Crossroads', nameTranslations: ru('Перекрёсток'), gold: 20, materials: 0, recruitmentSlots: 1, commandPointLimit: 200, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'ford', name: 'Ford', nameTranslations: ru('Брод'), gold: 15, materials: 0, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: false, allowedForStronghold: true },
-  { id: 'pass', name: 'Pass', nameTranslations: ru('Перевал'), gold: 15, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'signal_tower', name: 'Signal Tower', nameTranslations: ru('Сигнальная башня'), gold: 20, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 4, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true },
-  { id: 'camp', name: 'Camp', nameTranslations: ru('Лагерь'), gold: 20, materials: 5, recruitmentSlots: 1, commandPointLimit: 150, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: false, allowedForStronghold: true },
+  { id: 'village', name: 'Village', nameTranslations: ru('Деревня'), gold: 30, materials: 0, recruitmentSlots: 1, commandPointLimit: 300, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('village') },
+  { id: 'city', name: 'City', nameTranslations: ru('Город'), gold: 80, materials: 10, recruitmentSlots: 2, commandPointLimit: 600, visionRadius: 3, defenseBonus: 0.2, battleType: 'settlement', allowsCaptainHire: true, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 3, battleModifiers: bonuses('city') },
+  { id: 'fortress', name: 'Fortress', nameTranslations: ru('Крепость'), gold: 100, materials: 20, recruitmentSlots: 3, commandPointLimit: 900, visionRadius: 4, defenseBonus: 0.4, battleType: 'siege', allowsCaptainHire: true, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 3, battleModifiers: bonuses('fortress') },
+  { id: 'capital', name: 'Capital', nameTranslations: ru('Столица'), gold: 150, materials: 30, recruitmentSlots: 4, commandPointLimit: 1200, visionRadius: 5, defenseBonus: 0.5, battleType: 'settlement', allowsCaptainHire: true, isCapital: true, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 4, battleModifiers: bonuses('capital') },
+  { id: 'port', name: 'Port', nameTranslations: ru('Порт'), gold: 60, materials: 20, recruitmentSlots: 2, commandPointLimit: 500, visionRadius: 3, defenseBonus: 0.2, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 2, battleModifiers: bonuses('port') },
+  { id: 'mine', name: 'Mine / Forge', nameTranslations: ru('Шахта / кузница'), gold: 20, materials: 40, recruitmentSlots: 2, commandPointLimit: 500, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 2, battleModifiers: bonuses('mine') },
+  { id: 'farm', name: 'Farm / Pasture', nameTranslations: ru('Ферма / пастбище'), gold: 50, materials: 0, recruitmentSlots: 1, commandPointLimit: 300, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('farm') },
+  { id: 'wilderness', name: 'Wilderness', nameTranslations: ru('Дикое владение'), gold: 0, materials: 0, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 0, battleModifiers: bonuses('wilderness') },
+  { id: 'swamp', name: 'Swamp', nameTranslations: ru('Болото'), gold: 0, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: false , buildingSlots: 0, battleModifiers: bonuses('swamp') },
+  { id: 'forest', name: 'Forest', nameTranslations: ru('Лес'), gold: 10, materials: 20, recruitmentSlots: 1, commandPointLimit: 250, visionRadius: 3, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: false , buildingSlots: 0, battleModifiers: bonuses('forest') },
+  { id: 'mountains', name: 'Mountains', nameTranslations: ru('Горы'), gold: 5, materials: 30, recruitmentSlots: 1, commandPointLimit: 250, visionRadius: 3, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 0, battleModifiers: bonuses('mountains') },
+  { id: 'ruins', name: 'Ruins', nameTranslations: ru('Руины'), gold: 5, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('ruins') },
+  { id: 'monument', name: 'Monument / Shrine', nameTranslations: ru('Памятник / святилище'), gold: 5, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: false, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('monument') },
+  { id: 'crossroads', name: 'Crossroads', nameTranslations: ru('Перекрёсток'), gold: 20, materials: 0, recruitmentSlots: 1, commandPointLimit: 200, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('crossroads') },
+  { id: 'ford', name: 'Ford', nameTranslations: ru('Брод'), gold: 15, materials: 0, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: false, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('ford') },
+  { id: 'pass', name: 'Pass', nameTranslations: ru('Перевал'), gold: 15, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('pass') },
+  { id: 'signal_tower', name: 'Signal Tower', nameTranslations: ru('Сигнальная башня'), gold: 20, materials: 5, recruitmentSlots: 0, commandPointLimit: 0, visionRadius: 4, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: true, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('signal_tower') },
+  { id: 'camp', name: 'Camp', nameTranslations: ru('Лагерь'), gold: 20, materials: 5, recruitmentSlots: 1, commandPointLimit: 150, visionRadius: 2, defenseBonus: 0.1, battleType: 'settlement', allowsCaptainHire: false, isCapital: false, allowedForDomain: false, allowedForStronghold: true , buildingSlots: 1, battleModifiers: bonuses('camp') },
 ]
 
 const byId = (items: EconomicTypeDefinition[]) => {
   const map = {} as Record<SettlementType, EconomicTypeDefinition>
-  for (const item of DEFAULT_ECONOMIC_TYPES) map[item.id] = { ...item, nameTranslations: { ...item.nameTranslations } }
+  for (const item of DEFAULT_ECONOMIC_TYPES) map[item.id] = { ...item, nameTranslations: { ...item.nameTranslations }, battleModifiers: { owner: { ...(item.battleModifiers?.owner ?? {}) } } }
   for (const item of items) {
     if (!ALL_SETTLEMENT_TYPES.includes(item.id)) continue
     map[item.id] = {
@@ -51,22 +75,28 @@ const byId = (items: EconomicTypeDefinition[]) => {
       isCapital: Boolean(item.isCapital),
       allowedForDomain: item.allowedForDomain !== false,
       allowedForStronghold: Boolean(item.allowedForStronghold),
+      buildingSlots: Math.max(0, Math.min(8, Math.round(Number(item.buildingSlots ?? map[item.id].buildingSlots ?? 0)))),
+      battleModifiers: item.battleModifiers ? normalizeBattleModifiers(item.battleModifiers) : { owner: { ...(map[item.id].battleModifiers?.owner ?? {}) } },
     }
   }
   return map
 }
 
 let activeMap = byId(DEFAULT_ECONOMIC_TYPES)
-let activeList = DEFAULT_ECONOMIC_TYPES.map((item) => ({ ...item, nameTranslations: { ...item.nameTranslations } }))
+let activeList: EconomicTypeDefinition[] = DEFAULT_ECONOMIC_TYPES.map((item) => ({ ...item, nameTranslations: { ...item.nameTranslations }, battleModifiers: { owner: { ...(item.battleModifiers?.owner ?? {}) } } }))
 
 export function createDefaultEconomicTypes(): EconomicTypeDefinition[] {
-  return DEFAULT_ECONOMIC_TYPES.map((item) => ({ ...item, nameTranslations: { ...item.nameTranslations } }))
+  return DEFAULT_ECONOMIC_TYPES.map(cloneEconomicType)
+}
+
+export function cloneEconomicType(item: EconomicTypeDefinition): EconomicTypeDefinition {
+  return { ...item, nameTranslations: { ...item.nameTranslations }, battleModifiers: { owner: { ...(item.battleModifiers?.owner ?? {}) } } }
 }
 
 export function normalizeEconomicTypes(source: unknown): EconomicTypeDefinition[] {
   const incoming = Array.isArray(source) ? source as EconomicTypeDefinition[] : []
   const map = byId(incoming)
-  return ALL_SETTLEMENT_TYPES.map((id) => ({ ...map[id], nameTranslations: { ...map[id].nameTranslations } }))
+  return ALL_SETTLEMENT_TYPES.map((id) => cloneEconomicType(map[id]))
 }
 
 /** Activate definitions for runtime helpers (combat, fog, captains). */
@@ -76,7 +106,7 @@ export function setActiveEconomicTypes(definitions: EconomicTypeDefinition[]) {
 }
 
 export function getActiveEconomicTypes(): EconomicTypeDefinition[] {
-  return activeList.map((item) => ({ ...item, nameTranslations: { ...item.nameTranslations } }))
+  return activeList.map(cloneEconomicType)
 }
 
 export function getEconomicType(id: SettlementType | string | null | undefined): EconomicTypeDefinition {

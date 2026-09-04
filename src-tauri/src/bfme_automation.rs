@@ -1031,6 +1031,24 @@ const DIFF_OFFSETS: [f64; 4] = [0.0865, 0.1160, 0.1439, 0.1713];
 const DROP_STEP: f64 = 0.029;
 #[cfg(target_os = "windows")]
 const DROP_GAP: f64 = 0.033;
+/// Handicap («фора») column: 0 %, −5 % … −95 % (20 rows), see the reference
+/// automation in _test_integration-bfme/bridge/room.py.
+#[cfg(target_os = "windows")]
+const HANDICAP_COLUMN: f64 = 0.8031;
+#[cfg(target_os = "windows")]
+const HANDICAP_ROWS: usize = 20;
+/// Handicap rows are slightly taller than faction/color rows (measured in the
+/// reference automation as HANDICAP_STEP).
+#[cfg(target_os = "windows")]
+const HANDICAP_STEP_Y: f64 = 0.0305;
+
+/// Map a strategic handicap percentage (0 or negative multiple of 5) onto the
+/// BFME dropdown row index.
+#[cfg(target_os = "windows")]
+fn handicap_index(percent: f64) -> usize {
+    let steps = (percent.abs() / 5.0).round() as usize;
+    steps.min(HANDICAP_ROWS - 1)
+}
 /// Rating-column slot click coordinates on the «Счёт» screen (fractions of the
 /// window), ported from the Python detector config. Slot 1 is selected by default.
 #[cfg(target_os = "windows")]
@@ -1064,21 +1082,33 @@ fn set_difficulty(
 }
 
 #[cfg(target_os = "windows")]
-fn pick_dropdown(
+/// Pick a row from a slot dropdown.
+///
+/// `has_random_row` distinguishes the two list shapes in the BFME room (see
+/// `_test_integration-bfme/bridge/room.py`): faction and color lists start with
+/// a «Случайно» row, so a real item sits at row `index + 1`; the handicap list
+/// has no such row and its first row is already the 0 % value, so the value at
+/// `index` sits exactly on row `index`. `step` differs too (handicap rows are
+/// slightly taller than faction rows).
+fn pick_dropdown_ex(
     view: (i32, i32, i32, i32),
     slot: usize,
     column: f64,
     item_index: usize,
+    has_random_row: bool,
+    step: f64,
 ) -> Result<(), String> {
     let visible_rows = usize::max(4, 9usize.saturating_sub(slot));
-    let visible_items = visible_rows - 1;
+    // With a «Случайно» row one visible line is spent on it.
+    let visible_items = if has_random_row { visible_rows - 1 } else { visible_rows };
+    let row_offset = usize::from(has_random_row);
     let x = view.0 + (column * view.2 as f64) as i32;
     let selector_y = view.1 + (SLOT_Y[slot - 1] * view.3 as f64) as i32;
     let list_top = SLOT_Y[slot - 1] + DROP_GAP;
     click(x, selector_y)?;
     thread::sleep(Duration::from_millis(600));
     let target_y = if item_index < visible_items {
-        list_top + (item_index + 1) as f64 * DROP_STEP
+        list_top + (item_index + row_offset) as f64 * step
     } else {
         move_mouse(x, selector_y + (0.05 * view.3 as f64) as i32)?;
         let notches = item_index - visible_items + 1;
@@ -1086,11 +1116,20 @@ fn pick_dropdown(
             scroll(-1)?;
         }
         thread::sleep(Duration::from_millis(200));
-        list_top + (visible_rows - 1) as f64 * DROP_STEP
+        list_top + (visible_rows - 1) as f64 * step
     };
     click(x, view.1 + (target_y * view.3 as f64) as i32)?;
     thread::sleep(Duration::from_millis(400));
     Ok(())
+}
+
+fn pick_dropdown(
+    view: (i32, i32, i32, i32),
+    slot: usize,
+    column: f64,
+    item_index: usize,
+) -> Result<(), String> {
+    pick_dropdown_ex(view, slot, column, item_index, true, DROP_STEP)
 }
 
 #[cfg(target_os = "windows")]
@@ -1761,6 +1800,27 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
                 let adjusted = color - usize::from(color > player_color);
                 pick_dropdown(view, index + 1, 0.744, adjusted)?;
                 used_colors.push(color);
+            }
+
+            // Фора («handicap»): суммарный штраф стратегического слоя (§7).
+            for (index, participant) in participants.iter().enumerate() {
+                let percent = participant
+                    .get("handicapPercent")
+                    .and_then(Value::as_f64)
+                    .unwrap_or(0.0);
+                if percent >= 0.0 {
+                    continue;
+                }
+                let row = handicap_index(percent);
+                if row == 0 {
+                    continue;
+                }
+                log.write(format!(
+                    "[room] slot {} handicap {}%",
+                    index + 1,
+                    percent.round()
+                ));
+                pick_dropdown_ex(view, index + 1, HANDICAP_COLUMN, row, false, HANDICAP_STEP_Y)?;
             }
         }
 

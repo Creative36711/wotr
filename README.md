@@ -13,7 +13,7 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.49.0
+Application: 0.49.1
 world.json: 44
 roster.json: 17
 savegame.json: 61
@@ -29,7 +29,9 @@ savegame.json: 61
 
 **Selection and orders.** The left mouse button no longer means two different things depending on where it lands. Clicking your own army, city or hex always *selects* it; an order onto your own hex requires `Alt`+left click, which the inspector now states explicitly in the planning and movement hints. Clicking an empty hex in tactical view still issues an order, so garrisoning your own city stays a one-click action. After an order is placed the selection is cleared, so the next click cannot accidentally re-order the same army, and `Esc` clears the selection when no dialog is open.
 
-**Resolution above 1920x1080.** All automation geometry is fractional, but the templates, NCC thresholds and icon tolerances are calibrated in pixels of the reference resolution, so a 2K desktop broke *detection*, not clicks. Automated battles now force the game to 1920x1080 whenever the desktop is at least that large, and the user's own `Options.ini` value is restored right after the room is created - the same mechanism already used for windowed launches. On smaller desktops the resolution is left alone and the three absolute-pixel tolerances in the score-chart analysis, the graph-line band and the icon deduplication distance are scaled to the real frame size instead.
+**Detection at resolutions other than 1920x1080.** The score-screen detector scales its templates to the frame size, but the Rust port resampled them with nearest neighbour, while the reference detector (`_test_integration-bfme/match_result_detector`) reserves that for ±15 % of the reference scale and otherwise uses INTER_AREA/INTER_LINEAR. At 2560x1440 the scale is 1.33, so a blocky template was compared against a smoothly scaled game UI and the NCC score fell towards thresholds (0.85 / 0.72) that were tuned at 1920x1080. `Template::scaled` now resamples the way the reference does - averaging source pixels when shrinking, bilinear when growing - and at 1920x1080 it returns the template untouched, so nothing changes there. The absolute-pixel tolerances that were left unscaled (the score-chart gaps, the graph-line band, the icon deduplication distance) are scaled to the frame as well.
+
+The game's own resolution is **not** touched. An earlier build of this release forced automated battles into 1920x1080 on larger monitors; that was the wrong trade - it degraded the picture of a battle the player fights himself just to make pixel detection easier. Detection is fixed instead, and `score-chart.png` in the diagnostics folder is what allows thresholds to be re-tuned from a real capture if a particular resolution still misbehaves.
 
 **Save compatibility check.** `src-tauri/src/lib.rs` kept its own copies of the version constants and had fallen behind at 0.46.9, so the mod list reported *every* save as incompatible with the current build. The application version is now read from `CARGO_PKG_VERSION`, `SAVE_VERSION` is aligned with `SAVEGAME_DATA_VERSION`, and `scripts/check-version.mjs` fails the build if the two drift apart again.
 

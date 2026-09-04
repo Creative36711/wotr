@@ -1785,31 +1785,11 @@ fn spawn_game_process(executable: &Path, windowed: bool, temp_directory: &Path, 
     run_elevated_helper(&job_path, &result_path).map(|_| ())
 }
 
-/// Разрешение автоматических боёв. Автоматизация, шаблоны и допуски в пикселях
-/// откалиброваны на 1920×1080, поэтому на большем экране игра запускается
-/// именно в нём: монитор растянет кадр, а все константы останутся верными.
-/// На меньшем экране разрешение не трогаем — там допуски масштабируются.
-#[cfg(target_os = "windows")]
-const BATTLE_RESOLUTION: &str = "1920 1080";
-
-#[cfg(target_os = "windows")]
-fn battle_resolution() -> Option<&'static str> {
-    let width = unsafe { GetSystemMetrics(0) } as f64;
-    let height = unsafe { GetSystemMetrics(1) } as f64;
-    (width >= match_detector::REFERENCE_WIDTH && height >= match_detector::REFERENCE_HEIGHT)
-        .then_some(BATTLE_RESOLUTION)
-}
-
 #[cfg(target_os = "windows")]
 fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, temp_directory: &Path, log: &AutomationLog) -> Result<ResolutionRestore, String> {
     let mut restore = ResolutionRestore::none();
-    // Оконный режим калибровки работает в своём разрешении, боевой — в эталонном.
-    let target = if windowed {
-        Some(resolution.unwrap_or(CALIBRATION_RESOLUTION))
-    } else {
-        battle_resolution()
-    };
-    if let Some(target) = target {
+    if windowed {
+        let target = resolution.unwrap_or(CALIBRATION_RESOLUTION);
         for folder in profile_folders(executable, std::env::var("APPDATA").ok().as_deref()) {
             match read_ini_option(&folder, "Resolution") {
                 Some(current) => {
@@ -1827,7 +1807,7 @@ fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, temp
             }
         }
         log.write(format!(
-            "[launch] разрешение {target} (прежнее вернём после загрузки игры)"
+            "[launch] оконный режим {target} (прежнее разрешение вернём после загрузки игры)"
         ));
     }
     spawn_game_process(executable, windowed, temp_directory, log)?;

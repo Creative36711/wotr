@@ -104,19 +104,71 @@ impl Template {
         Template { width, height, data }
     }
 
+    /// Масштабирует шаблон под разрешение кадра.
+    ///
+    /// Раньше здесь был ближайший сосед. Эталонный детектор
+    /// (`match_result_detector/icon_finder.py`) считает его приемлемым только в
+    /// пределах ±15 % масштаба, а вне этого диапазона берёт INTER_AREA при
+    /// уменьшении и INTER_LINEAR при увеличении. На 2560×1440 масштаб равен
+    /// 1.33, то есть «ступеньки» ближайшего соседа сравнивались с гладко
+    /// растянутым интерфейсом игры и роняли NCC ниже порогов (0.85/0.72),
+    /// настроенных на 1920×1080. Здесь то же сглаживание, что в эталоне:
+    /// при уменьшении — среднее по исходному прямоугольнику, при увеличении —
+    /// билинейно. При scale == 1.0 шаблон возвращается без изменений, поэтому
+    /// поведение на 1920×1080 не меняется вовсе.
     pub fn scaled(&self, scale: f64) -> Template {
         let width = ((self.width as f64 * scale).round() as usize).max(4);
         let height = ((self.height as f64 * scale).round() as usize).max(4);
         if width == self.width && height == self.height {
             return self.clone();
         }
-        let mut data = Vec::with_capacity(width * height * 3);
-        for y in 0..height {
-            let source_y = (y * self.height) / height;
-            for x in 0..width {
-                let source_x = (x * self.width) / width;
-                let offset = (source_y * self.width + source_x) * 3;
-                data.extend_from_slice(&self.data[offset..offset + 3]);
+        let mut data = vec![0u8; width * height * 3];
+        if width <= self.width && height <= self.height {
+            for y in 0..height {
+                let y0 = y * self.height / height;
+                let y1 = (((y + 1) * self.height) / height).clamp(y0 + 1, self.height);
+                for x in 0..width {
+                    let x0 = x * self.width / width;
+                    let x1 = (((x + 1) * self.width) / width).clamp(x0 + 1, self.width);
+                    let mut sum = [0u32; 3];
+                    for source_y in y0..y1 {
+                        for source_x in x0..x1 {
+                            let offset = (source_y * self.width + source_x) * 3;
+                            sum[0] += u32::from(self.data[offset]);
+                            sum[1] += u32::from(self.data[offset + 1]);
+                            sum[2] += u32::from(self.data[offset + 2]);
+                        }
+                    }
+                    let count = ((y1 - y0) * (x1 - x0)) as u32;
+                    let target = (y * width + x) * 3;
+                    for channel in 0..3 {
+                        data[target + channel] = (sum[channel] / count) as u8;
+                    }
+                }
+            }
+        } else {
+            // Билинейно, с центрами пикселей как в cv2: (i + 0.5) * src / dst - 0.5.
+            let at = |x: isize, y: isize, channel: usize| -> f64 {
+                let cx = x.clamp(0, self.width as isize - 1) as usize;
+                let cy = y.clamp(0, self.height as isize - 1) as usize;
+                f64::from(self.data[(cy * self.width + cx) * 3 + channel])
+            };
+            for y in 0..height {
+                let sy = (((y as f64 + 0.5) * self.height as f64 / height as f64) - 0.5).max(0.0);
+                let y0 = sy.floor() as isize;
+                let fy = sy - y0 as f64;
+                for x in 0..width {
+                    let sx = (((x as f64 + 0.5) * self.width as f64 / width as f64) - 0.5).max(0.0);
+                    let x0 = sx.floor() as isize;
+                    let fx = sx - x0 as f64;
+                    let target = (y * width + x) * 3;
+                    for channel in 0..3 {
+                        let top = at(x0, y0, channel) * (1.0 - fx) + at(x0 + 1, y0, channel) * fx;
+                        let bottom = at(x0, y0 + 1, channel) * (1.0 - fx) + at(x0 + 1, y0 + 1, channel) * fx;
+                        let value = top * (1.0 - fy) + bottom * fy;
+                        data[target + channel] = value.round().clamp(0.0, 255.0) as u8;
+                    }
+                }
             }
         }
         Template { width, height, data }

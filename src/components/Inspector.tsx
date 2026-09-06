@@ -5,6 +5,8 @@ import { armyCommandPointLimit, armyCommandPoints, armyMovementBreakdown, armyMo
 import { canFactionPlan, isFactionActive, isMovementPhase } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes, garrisonIntelCategory, garrisonIntelLabel } from '../game/fogOfWar'
 import { recruitableUnitsAtLocation } from '../game/recruitment'
+import { attackerSupplyModifiers, supplyDecayFactor } from '../game/supply'
+import type { SupplyWorld } from '../game/supply'
 import { locationHexId, resolveGrid } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
 import { slotPowerMultiplier } from '../game/progression'
@@ -349,6 +351,30 @@ function ArmyInspector({ army }: { army: Army }) {
   const disbandArmy = useMapStore((state) => state.disbandArmy)
   const retreatEngagedArmy = useMapStore((state) => state.retreatEngagedArmy)
   const cancelArmyOrder = useMapStore((state) => state.cancelArmyOrder)
+  const buildingTypes = useMapStore((state) => state.buildingTypes)
+  const economicTypes = useMapStore((state) => state.economicTypes)
+  const palantirSettings = useMapStore((state) => state.palantirSettings)
+  const supplySettings = useMapStore((state) => state.supplySettings)
+  // Что армия несёт с собой: источник, остаток и бонус, с которым она атакует.
+  const supplyPool = army.supplyPool
+  const supplyWorld: SupplyWorld = {
+    campaign,
+    buildingTypes: buildingTypes ?? [],
+    economicTypes,
+    locationsByHex: new Map(locations.map((location) => [location.hex, location])),
+    locationById: new Map(locations.map((location) => [location.id, location])),
+    settings: supplySettings,
+  }
+  const supplySource = supplyPool ? locations.find((location) => location.id === supplyPool.sourceLocationId) ?? null : null
+  const supplyPercent = supplyPool ? Math.round(supplyDecayFactor(supplyPool, supplySettings) * 100) : 0
+  const supplyBonus = supplyPool ? attackerSupplyModifiers(supplyPool, supplySource, army.factionId, supplyWorld, palantirSettings) : {}
+  const supplyBonusText = [
+    supplyBonus.startingResources ? `+${supplyBonus.startingResources} ресурсов` : '',
+    supplyBonus.commandPointBonus ? `+${supplyBonus.commandPointBonus} КО` : '',
+    supplyBonus.palantirStartingPoints ? `+${supplyBonus.palantirStartingPoints} палантир` : '',
+    supplyBonus.palantirIncomePerInterval ? `+${supplyBonus.palantirIncomePerInterval}/такт палантир` : '',
+  ].filter(Boolean).join(', ')
+  const supplyLevel = !supplyPool ? 'empty' : supplyPercent >= 75 ? 'full' : supplyPercent >= 25 ? 'mid' : 'low'
   const faction = getFaction(factions, army.factionId)
   const readonly = mode === 'game'
   const active = campaign.playerFactionId === army.factionId && isFactionActive(campaign, factions, army.factionId)
@@ -477,6 +503,19 @@ function ArmyInspector({ army }: { army: Army }) {
         {mode === 'edit' && <section className="bfme-payload-card"><button type="button" onClick={() => setShowJson((value) => !value)}><span>◈</span><div><b>BFME Battle Payload</b><small>Командир, герои и отряды</small></div><i>{showJson ? '▴' : '▾'}</i></button>{showJson && <pre>{payload}</pre>}</section>}
 
         {mode === 'game' ? canFactionPlan(campaign, factions, army.factionId) ? <section className="army-game-help planning"><b>Управление в фазе планирования</b><p>{stationedLocation ? `Армия находится во владении/оплоте «${stationedLocation.name}». Стрелка ← переносит отряд в резерв.` : 'Для пополнения и расформирования армия должна находиться на гексе своего объекта карты.'}</p><p>Пока армия выделена, клик по любому гексу или локации — приказ движения; после приказа выделение снимается. Чтобы открыть локацию вместо приказа, сначала снимите выделение клавишей Esc. Отмена приказа: кнопка выше, Delete или ПКМ.</p>{stationedLocation && <button type="button" className="disband-army-button" onClick={() => { if (window.confirm(`Расформировать «${army.name}»? Войска перейдут в резерв, лишние будут распущены.`)) disbandArmy(stationedLocation.id, army.id) }}>Расформировать армию</button>}</section> : isMovementPhase(campaign.phase) ? <section className={`army-game-help ${army.engaged ? 'engagement' : ''}`}><b>{army.engaged ? 'Армия связана боем' : army.commander ? 'Приказ движения' : 'Армия без командира'}</b><p>{army.engaged ? 'Обычное движение заблокировано. Армия может отойти сразу в ближайшую свою локацию. Потери зависят от расстояния, а на следующий ход армия будет деморализована.' : army.commander ? 'Клик по любому гексу или локации, включая вражескую армию, — приказ движения, после приказа выделение снимается; Esc снимает выделение, если нужно открыть локацию. Отмена приказа: кнопка выше, Delete или ПКМ. При входе во вражеский гекс все оставшиеся ОД будут потрачены.' : 'Армия без командира остаётся неподвижной.'}</p>{army.engaged && active && <button type="button" className="engagement-retreat-button" onClick={() => retreatEngagedArmy(army.id)}>Отступить из боя</button>}</section> : <section className="army-game-help"><b>Армия ожидает приказов</b><p>В фазах конфликтов и последствий движение и управление составом недоступны.</p></section> : <section className="inspector-actions single-action"><button type="button" className="danger-button" onClick={() => { if (window.confirm(`Удалить армию «${army.name}»?`)) removeArmy(army.id) }}>Удалить армию</button></section>}
+
+        {mode === 'game' && <section className={`army-supply ${supplyLevel}`}>
+          <b>Снабжение</b>
+          {supplyPool
+            ? <>
+              <p>Источник: {supplySource?.name ?? supplyPool.sourceLocationId} (ход {supplyPool.sourceRound})</p>
+              <div className="supply-bar"><i style={{ width: `${supplyPercent}%` }} /></div>
+              <p>Осталось {supplyPercent}% · пройдено {supplyPool.hexesTravelled} гексов, {supplyPool.turnsElapsed} ходов</p>
+              <p>{supplyBonusText ? `Бонус при атаке: ${supplyBonusText}` : 'Припасы на исходе — бонусов почти нет'}</p>
+              <small>Пополняется на своих локациях; вдали от них припасы тратятся и на марше, и со временем.</small>
+            </>
+            : <p>Без снабжения — атака без бонусов. Встаньте на свою локацию и начните ход, чтобы взять припасы.</p>}
+        </section>}
       </div>
     </aside>
   )

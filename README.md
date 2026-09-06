@@ -13,11 +13,13 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.49.1
+Application: 0.49.2
 world.json: 44
 roster.json: 17
 savegame.json: 61
 ```
+
+0.49.2 adds an emergency exit from BFME. The automation blocks physical keyboard and mouse input while it drives the game (room setup and reading the score screen), and until now the only way out was Ctrl+Alt+Del plus killing the process by hand. While - and only while - that lock is held, a single `Ctrl` press now terminates every `game.dat` process, releases the input lock immediately and stops the automation: the conflict is reported as `ABORTED` instead of a winner being guessed, and the interface says so. The key is detected inside the low-level keyboard hook itself, so it works precisely in the window where nothing else reaches the system; the actual termination runs in a separate thread, because a low-level hook callback has a hard timeout and would be removed by Windows if it blocked. The lock message is written to the session's `automation.log`, and the conflict dialog states the shortcut before the launch.
 
 0.49.0 adds a play journal for reproducing sessions, screenshots of the two RTS moments that decide a battle, and a predictable mouse model for movement orders - now both cancellable and free of accidental re-orders.
 
@@ -492,6 +494,8 @@ After a battle starts, a background monitor polls the game window (0.5 s interva
 3. traces the highlighted player line to the victory coin or defeat flame;
 4. writes the outcome JSON (`COMPLETED`/`SURRENDER`/`UNKNOWN`) to `portable_data/temp/rts_battle_result_<conflict>.json`;
 5. closes every `game.dat` process.
+
+While the automation holds the input lock, a single `Ctrl` is the emergency exit: the game is terminated, input is released at once and the battle is reported as `ABORTED`.
 
 The same monitor also saves evidence into the session's diagnostics folder: a screenshot when the score screen appears and the exact chart frame that was analysed. Before that, right before the «Start Game» click, the room is captured as well, so a disputed battle can be compared against the slots, colors, handicaps and positions it really had. The screenshots are written as PNG by the application itself (no image crate - the deflate stream is stored uncompressed), and every automation step is appended to `automation.log` in that folder.
 

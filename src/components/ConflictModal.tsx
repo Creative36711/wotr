@@ -216,7 +216,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
           resolveConflictRts(conflict.id,result.winningTeam,outcomeDetail)
           setRtsMessage(`Бой завершён: победа стороны «${result.winningTeam==='good'?'Свет':'Тьма'}». BFME закрыт автоматически.`)
         }else{
-          setRtsMessage(`Победитель не определён (${result.status}). BFME закрыт; проведите автобой или повторите BFME-сражение.`)
+          setRtsMessage(result.status==='ABORTED'?'Аварийный выход по Ctrl: BFME закрыт, исход боя не определён. Проведите автобой или повторите BFME-сражение.':`Победитель не определён (${result.status}). BFME закрыт; проведите автобой или повторите BFME-сражение.`)
         }
         break
       }
@@ -228,7 +228,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     rtsWatchToken.current+=1
     setRtsWatching(false)
     setRtsBusy(true)
-    setRtsMessage('Подготовка файлов и автоматический запуск BFME. Подтвердите запрос Windows UAC, если он появится. После этого физический ввод временно блокируется до начала загрузки боя; аварийный выход — Ctrl+Alt+Del.')
+    setRtsMessage('Подготовка файлов и автоматический запуск BFME. Подтвердите запрос Windows UAC, если он появится. После этого физический ввод временно блокируется до начала загрузки боя. Пока ввод заблокирован, одиночный Ctrl — аварийный выход: игра закроется, а управление вернётся. Ctrl+Alt+Del тоже доступен.')
     try{
       const difficulty=RTS_DIFFICULTIES.find((item)=>item.id===campaign.aiDifficulty.rts)!
       // Фора считается относительно: общий для всех штраф не даёт никому

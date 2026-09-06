@@ -315,6 +315,12 @@ const INJECT_MAGIC: usize = 0x57415231;
 #[cfg(target_os = "windows")]
 const TH32CS_SNAPPROCESS: u32 = 0x0000_0002;
 #[cfg(target_os = "windows")]
+const VK_CONTROL: u32 = 0x11;
+#[cfg(target_os = "windows")]
+const WM_KEYDOWN: usize = 0x0100;
+#[cfg(target_os = "windows")]
+const WM_SYSKEYDOWN: usize = 0x0104;
+#[cfg(target_os = "windows")]
 const WH_KEYBOARD_LL: i32 = 13;
 #[cfg(target_os = "windows")]
 const WH_MOUSE_LL: i32 = 14;
@@ -796,9 +802,55 @@ pub fn stop_game() -> bool {
 }
 
 #[cfg(target_os = "windows")]
+/// Запрошен ли аварийный выход. Взводится хуком клавиатуры, пока ввод
+/// заблокирован, и сбрасывается при следующей блокировке.
+#[cfg(target_os = "windows")]
+static EMERGENCY_EXIT: AtomicBool = AtomicBool::new(false);
+
+#[cfg(target_os = "windows")]
+pub fn emergency_exit_requested() -> bool {
+    EMERGENCY_EXIT.load(Ordering::SeqCst)
+}
+
+/// Аварийный выход: закрыть BFME и вернуть пользователю мышь и клавиатуру.
+///
+/// Тяжёлая работа вынесена из хука в отдельный поток: у low-level хука жёсткий
+/// таймаут, и `TerminateProcess` прямо в callback заставил бы Windows снять хук.
+#[cfg(target_os = "windows")]
+fn run_emergency_exit() {
+    let started = thread::Builder::new()
+        .name("bfme-emergency-exit".into())
+        .spawn(|| {
+            let log = AutomationLog::start();
+            log.write("[exit] Ctrl при заблокированном вводе — аварийный выход: закрываю BFME и возвращаю управление");
+            let stopped = stop_game();
+            // Ввод возвращается немедленно, даже если процесс ещё жив: пользователь
+            // должен получить систему обратно в любом случае.
+            INPUT_BLOCKING.store(false, Ordering::SeqCst);
+            log.write(if stopped {
+                "[exit] BFME закрыт, физический ввод разблокирован".to_string()
+            } else {
+                "[exit] BFME закрыт не полностью, но физический ввод разблокирован".to_string()
+            });
+        });
+    if started.is_err() {
+        // Поток не создался — разблокируем ввод хотя бы так.
+        INPUT_BLOCKING.store(false, Ordering::SeqCst);
+    }
+}
+
 unsafe extern "system" fn keyboard_hook(code: i32, w_param: usize, l_param: isize) -> isize {
     if code >= 0 && INPUT_BLOCKING.load(Ordering::Relaxed) {
         let data = &*(l_param as *const KeyboardHookData);
+        // Аварийный выход. Работает только в этой ветке, то есть ровно тогда,
+        // когда ввод заблокирован автоматизацией и пользователь иначе не может
+        // ничего сделать: одиночный Ctrl закрывает игру и возвращает управление.
+        if data.vk_code == VK_CONTROL
+            && (w_param == WM_KEYDOWN || w_param == WM_SYSKEYDOWN)
+            && !EMERGENCY_EXIT.swap(true, Ordering::SeqCst)
+        {
+            run_emergency_exit();
+        }
         if data.extra_info != INJECT_MAGIC {
             return 1;
         }
@@ -877,7 +929,11 @@ impl InputLockGuard {
         if INPUT_BLOCKING.swap(true, Ordering::SeqCst) {
             return Err("Автоматизация BFME уже управляет мышью и клавиатурой".into());
         }
-        println!("[BFME] Физический ввод заблокирован; Ctrl+Alt+Del остаётся доступен.");
+        // Прошлый аварийный выход не должен мгновенно закрыть следующий бой.
+        EMERGENCY_EXIT.store(false, Ordering::SeqCst);
+        let message = "[BFME] Физический ввод заблокирован; Ctrl — аварийный выход (закроет BFME и вернёт управление), Ctrl+Alt+Del тоже доступен.";
+        println!("{message}");
+        append_diagnostics_line(message);
         Ok(Self)
     }
 }
@@ -1182,6 +1238,11 @@ fn click(x: i32, y: i32) -> Result<(), String> {
 
 #[cfg(target_os = "windows")]
 fn click_fraction(view: (i32, i32, i32, i32), x: f64, y: f64) -> Result<(), String> {
+    // После аварийного выхода по Ctrl играть уже не во что: не продолжаем кликать
+    // по закрывшемуся окну, а сразу возвращаем ошибку в вызывающий поток.
+    if emergency_exit_requested() {
+        return Err("Аварийный выход по Ctrl: BFME закрыт, автоматизация остановлена".into());
+    }
     click(
         view.0 + (x * view.2 as f64) as i32,
         view.1 + (y * view.3 as f64) as i32,
@@ -2096,6 +2157,10 @@ fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
     ));
     let deadline = Instant::now() + timeout;
     loop {
+        if emergency_exit_requested() {
+            log.write("[monitor] аварийный выход по Ctrl — ожидание статистики прекращено");
+            return json!({"status":"ABORTED","winningTeam":null,"winningSlot":null,"detail":"аварийный выход по Ctrl","elapsedSec":started.elapsed().as_secs()});
+        }
         if Instant::now() > deadline {
             return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"score screen timeout","elapsedSec":started.elapsed().as_secs()});
         }
@@ -2144,6 +2209,10 @@ fn analyse_score_screen(
     let mut frame: Option<RgbFrame> = None;
     let deadline = Instant::now() + ANALYSIS_TIMEOUT;
     while Instant::now() < deadline {
+        if emergency_exit_requested() {
+            log.write("[match] аварийный выход по Ctrl — разбор статистики прекращён");
+            return json!({"status":"ABORTED","winningTeam":null,"winningSlot":null,"detail":"аварийный выход по Ctrl"});
+        }
         if let Some(candidate) = capture_game_frame() {
             if !candidate.is_black() && is_score_screen(&candidate, &fortress, &marker) {
                 frame = Some(candidate);

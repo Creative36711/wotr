@@ -13,11 +13,13 @@ The project combines:
 ## Current data versions
 
 ```text
-Application: 0.49.2
+Application: 0.49.3
 world.json: 44
 roster.json: 17
 savegame.json: 61
 ```
+
+0.49.3 fixes the Windows build. Two log calls passed a string literal through `.into()` while the receiver is generic (`AutomationLog::write(impl AsRef<str>)`), which rustc rejects as an ambiguous type (E0283); the literals are passed directly now.
 
 0.49.2 adds an emergency exit from BFME. The automation blocks physical keyboard and mouse input while it drives the game (room setup and reading the score screen), and until now the only way out was Ctrl+Alt+Del plus killing the process by hand. While - and only while - that lock is held, a single `Ctrl` press now terminates every `game.dat` process, releases the input lock immediately and stops the automation: the conflict is reported as `ABORTED` instead of a winner being guessed, and the interface says so. The key is detected inside the low-level keyboard hook itself, so it works precisely in the window where nothing else reaches the system; the actual termination runs in a separate thread, because a low-level hook callback has a hard timeout and would be removed by Windows if it blocked. The lock message is written to the session's `automation.log`, and the conflict dialog states the shortcut before the launch.
 

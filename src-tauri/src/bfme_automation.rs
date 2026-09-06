@@ -1919,7 +1919,7 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
     set_diagnostics_folder(diagnostics.clone());
     match &diagnostics {
         Some(folder) => log.write(format!("[diag] папка диагностики: {}", folder.display())),
-        None => log.write("[diag] папка диагностики не задана — журнал и скриншоты не пишутся".into()),
+        None => log.write("[diag] папка диагностики не задана — журнал и скриншоты не пишутся"),
     }
     let language = config
         .get("language")
@@ -2229,7 +2229,7 @@ fn analyse_score_screen(
     if let Some(folder) = diagnostics {
         match save_frame_png(folder, "score-chart.png", &frame) {
             Some(path) => log.write(format!("[diag] кадр статистики сохранён: {}", path.display())),
-            None => log.write("[diag] кадр статистики сохранить не удалось".into()),
+            None => log.write("[diag] кадр статистики сохранить не удалось"),
         }
     }
     let icons = detect_icons(&frame);

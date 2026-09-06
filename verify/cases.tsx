@@ -45,6 +45,7 @@ await startSessionLog(CAMPAIGN_STARTED_AT, CAMPAIGN_META, undefined, true)
 check('папка кампании строится от даты создания сохранения', currentSessionKey() === CAMPAIGN_SESSION, currentSessionKey())
 check('в браузерном режиме папки диагностики нет', currentSessionFolder() === '')
 check('первая запись — начало кампании', (sessionLogEntries()[0]?.message ?? '').startsWith('новая кампания campaign-'), sessionLogEntries()[0]?.message ?? '<нет>')
+check('в журнале записано разрешение экрана', /"screen":"\d+x\d+@[\d.]+"/.test(sessionLogEntries()[0]?.message ?? ''), sessionLogEntries()[0]?.message ?? '<нет>')
 // «Продолжить» открывает ту же папку: партия определяется кампанией, а не
 // запуском, поэтому бои и журнал разных сессий не перетирают друг друга.
 await startSessionLog(CAMPAIGN_STARTED_AT, CAMPAIGN_META)

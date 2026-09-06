@@ -596,6 +596,36 @@ fn shrink_for_diagnostics(frame: &RgbFrame) -> RgbFrame {
     current
 }
 
+/// Разрешение основного экрана. К нему привязаны и клики (абсолютные координаты
+/// мыши нормализуются по нему), и распознавание, поэтому его полезно видеть рядом
+/// с каждым снимком.
+#[cfg(target_os = "windows")]
+fn monitor_resolution_label() -> String {
+    let width = unsafe { GetSystemMetrics(0) };
+    let height = unsafe { GetSystemMetrics(1) };
+    if width <= 0 || height <= 0 {
+        return String::new();
+    }
+    format!("{width}x{height}")
+}
+
+/// Имя скриншота с разрешением: `<имя>-<кадр>.png`, а если разрешение экрана
+/// отличается от снятого кадра — `<имя>-<кадр>@<экран>.png`. Проблемы с кликами
+/// и распознаванием почти всегда вызваны конкретным разрешением, поэтому оно
+/// пишется прямо в имя файла и видно без открытия снимка.
+#[cfg(target_os = "windows")]
+fn screenshot_name(name: &str, frame: &RgbFrame) -> String {
+    let stem = name.rsplit_once('.').map(|(stem, _)| stem).unwrap_or(name);
+    let capture = format!("{}x{}", frame.width, frame.height);
+    let monitor = monitor_resolution_label();
+    let label = if monitor.is_empty() || monitor == capture {
+        capture
+    } else {
+        format!("{capture}@{monitor}")
+    };
+    format!("{stem}-{label}.png")
+}
+
 #[cfg(target_os = "windows")]
 fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationLog) -> Option<PathBuf> {
     let shrunk = shrink_for_diagnostics(frame);
@@ -603,14 +633,18 @@ fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationL
     if std::fs::create_dir_all(folder).is_err() {
         return None;
     }
-    let path = folder.join(name);
+    let path = folder.join(screenshot_name(name, frame));
     std::fs::write(&path, &bytes).ok()?;
+    let monitor = monitor_resolution_label();
     log.write(format!(
-        "[diag] скриншот {}×{} ({} КБ) сохранён: {}",
+        "[diag] скриншот {}: кадр {}×{}, экран {}, в файле {}×{} ({} КБ)",
+        path.display(),
+        frame.width,
+        frame.height,
+        if monitor.is_empty() { "?" } else { monitor.as_str() },
         shrunk.width,
         shrunk.height,
-        bytes.len() / 1024,
-        path.display()
+        bytes.len() / 1024
     ));
     Some(path)
 }

@@ -97,7 +97,10 @@ export async function startSessionLog(createdAt: string | undefined, meta: Recor
       console.warn('Не удалось создать папку диагностики', error)
     }
   }
-  logEvent('session', wipe ? `новая кампания ${sessionKey}` : `продолжение кампании ${sessionKey}`, meta)
+  // Разрешение экрана пишем в журнал рядом со снимками: проблемы с кликами и
+  // распознаванием почти всегда привязаны к конкретному экрану игрока.
+  const screen = typeof window === 'undefined' ? 'нет' : `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio ?? 1}`
+  logEvent('session', wipe ? `новая кампания ${sessionKey}` : `продолжение кампании ${sessionKey}`, { ...meta, screen })
   if (snapshot !== undefined) await writeCampaignSnapshot(snapshot)
   await flushNow()
 }

@@ -172,6 +172,7 @@ interface MapState extends WorldSnapshot {
   removeBuildingType: (id: string) => void
   updateRingForging: (patch: Partial<RingForgingSettings>) => void
   updatePalantirSettings: (patch: Partial<PalantirSettings>) => void
+  updateSupplySettings: (patch: Partial<SupplySettings>) => void
   undo: () => void
   redo: () => void
 }
@@ -1935,6 +1936,11 @@ export const useMapStore = create<MapState>((set) => ({
   updatePalantirSettings: (patch) => set((state) => {
     if (state.mode !== 'edit') return state
     return pushHistory(state, { ...currentSnapshot(state), palantirSettings: { ...state.palantirSettings, ...patch } })
+  }),
+
+  updateSupplySettings: (patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    return pushHistory(state, { ...currentSnapshot(state), supplySettings: { ...(state.supplySettings ?? DEFAULT_SUPPLY_SETTINGS), ...patch } })
   }),
 
 

@@ -73,6 +73,8 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
   const updateRingForging = useMapStore((state) => state.updateRingForging)
   const palantirSettings = useMapStore((state) => state.palantirSettings)
   const updatePalantirSettings = useMapStore((state) => state.updatePalantirSettings)
+  const supplySettings = useMapStore((state) => state.supplySettings)
+  const updateSupplySettings = useMapStore((state) => state.updateSupplySettings)
   const updateOwnerModifier = (item: EconomicTypeDefinition, key: keyof OwnerBattleModifiers, value: number | boolean) => {
     const owner = { ...(item.battleModifiers?.owner ?? {}), [key]: value }
     updateEconomicType(item.id, { battleModifiers: { owner } })
@@ -238,6 +240,12 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
                 <label><span>Стартовые PP</span><input type="number" min="0" value={item.effects.battleModifiers.owner.palantirStartingPoints ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, palantirStartingPoints: Number(event.target.value) } } } })} /></label>
                 <label><span>PP за интервал</span><input type="number" min="0" value={item.effects.battleModifiers.owner.palantirIncomePerInterval ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, palantirIncomePerInterval: Number(event.target.value) } } } })} /></label>
               </div>
+              <div className="economy-type-grid">
+                <label><span>Ресурсы атакующему отсюда</span><input type="number" min="0" step="50" value={item.effects.attackSupplyModifiers?.startingResources ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, attackSupplyModifiers: { ...(item.effects.attackSupplyModifiers ?? {}), startingResources: Number(event.target.value) } } })} /></label>
+                <label><span>КО атакующему отсюда</span><input type="number" min="0" step="10" value={item.effects.attackSupplyModifiers?.commandPointBonus ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, attackSupplyModifiers: { ...(item.effects.attackSupplyModifiers ?? {}), commandPointBonus: Number(event.target.value) } } })} /></label>
+                <label><span>Палантир атакующему отсюда</span><input type="number" min="0" max="10" value={item.effects.attackSupplyModifiers?.palantirStartingPoints ?? 0} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, attackSupplyModifiers: { ...(item.effects.attackSupplyModifiers ?? {}), palantirStartingPoints: Number(event.target.value) } } })} /></label>
+              </div>
+              <p className="database-help">Бонус армии, выступающей из локации с этой постройкой. В отличие от обычного снабжения не тратится в дороге — это подготовленный к походу запас (осадный лагерь, разведпост).</p>
               <label className="inline-check"><input type="checkbox" checked={Boolean(item.effects.battleModifiers.owner.signalFire)} onChange={(event) => updateBuildingType(item.id, { effects: { ...item.effects, battleModifiers: { owner: { ...item.effects.battleModifiers.owner, signalFire: event.target.checked } } } })} />Сигнальный огонь</label>
             </article>)}</div>
           </>}
@@ -259,6 +267,20 @@ export default function WorldDataEditor({ onClose, activeMod, onModChange }: Wor
               <label><span>Максимум стартовых PP</span><input type="number" min="0" max="10" value={palantirSettings.maxStartingPointsFromModifiers} onChange={(event) => updatePalantirSettings({ maxStartingPointsFromModifiers: Number(event.target.value) })} /></label>
               <label><span>Максимум прироста PP</span><input type="number" min="0" max="10" value={palantirSettings.maxIncomePerIntervalFromModifiers} onChange={(event) => updatePalantirSettings({ maxIncomePerIntervalFromModifiers: Number(event.target.value) })} /></label>
             </div>
+            <h4 className="database-subhead">Снабжение армий</h4>
+            <p className="database-help">Атакующий получает бонусы не от локации боя, а от точки отправления: армия уносит припасы с собой и тратит их на марше и со временем. Здесь задаются коэффициенты этой деградации и правила пополнения.</p>
+            <label className="database-toggle"><input type="checkbox" checked={supplySettings.enabled} onChange={(event) => updateSupplySettings({ enabled: event.target.checked })} /><span>Система снабжения включена</span></label>
+            <div className="economy-type-grid">
+              <label><span>Потеря за гекс</span><input type="number" min="0" max="1" step="0.01" value={supplySettings.decayPerHex} onChange={(event) => updateSupplySettings({ decayPerHex: Number(event.target.value) })} /></label>
+              <label><span>Потеря за ход</span><input type="number" min="0" max="1" step="0.01" value={supplySettings.decayPerTurn} onChange={(event) => updateSupplySettings({ decayPerTurn: Number(event.target.value) })} /></label>
+              <label><span>Минимальная доля</span><input type="number" min="0" max="1" step="0.05" value={supplySettings.minRatio} onChange={(event) => updateSupplySettings({ minRatio: Number(event.target.value) })} /></label>
+              <label><span>Доля в дороге (supplyRatio)</span><input type="number" min="0" max="1" step="0.05" value={supplySettings.supplyRatio} onChange={(event) => updateSupplySettings({ supplyRatio: Number(event.target.value) })} /></label>
+            </div>
+            <label className="database-toggle"><input type="checkbox" checked={supplySettings.refillOnFormation} onChange={(event) => updateSupplySettings({ refillOnFormation: event.target.checked })} /><span>Выдавать припасы при формировании армии</span></label>
+            <label className="database-toggle"><input type="checkbox" checked={supplySettings.refillOnTurnStart} onChange={(event) => updateSupplySettings({ refillOnTurnStart: event.target.checked })} /><span>Пополнять в начале хода на своей локации</span></label>
+            <label className="database-toggle"><input type="checkbox" checked={supplySettings.refillOnTransit} onChange={(event) => updateSupplySettings({ refillOnTransit: event.target.checked })} /><span>Пополнять при транзите через свою локацию</span></label>
+            <label className="database-toggle"><input type="checkbox" checked={supplySettings.requiresOwnedOrigin} onChange={(event) => updateSupplySettings({ requiresOwnedOrigin: event.target.checked })} /><span>Точка отправления должна принадлежать фракции армии</span></label>
+            <label className="database-toggle"><input type="checkbox" checked={supplySettings.captureCountsAsOwned} onChange={(event) => updateSupplySettings({ captureCountsAsOwned: event.target.checked })} /><span>Захваченная в этом же ходу локация считается своей</span></label>
           </>}
 
           {tab === 'units' && <>

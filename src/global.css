@@ -740,6 +740,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .faction-card-row { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; }
 .faction-card-row select { width: 100px; }
 .inline-check { display: flex!important; align-items: center; gap: 5px; color: #788489; font-size: 11px; }
+/* Переключатель настроек снабжения в редакторе мира (0.51.x). */
+.database-toggle { display: flex; align-items: center; gap: 6px; margin: 5px 0; color: #788489; font-size: 11px; cursor: pointer; }
+.database-toggle input { width: 13px; height: 13px; accent-color: #6d8f5a; cursor: pointer; }
 .faction-editor-card footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding-top: 6px; border-top: 1px solid #263137; }
 .faction-editor-card code { color: #55636a; font-size: 10px; }
 .faction-editor-card footer button,.hero-editor-card footer button { border: 0; background: transparent; color: #a76159; font-size: 11px; cursor: pointer; }

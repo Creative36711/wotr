@@ -1112,7 +1112,7 @@ export const useMapStore = create<MapState>((set) => ({
     }
     campaign.activeFactionId = playerFaction.id
     campaign.turnMovements = []
-    campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, playerFaction.id) : []
+    campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, playerFaction.id, workingState.supplySettings) : []
     refreshFogIntel(campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, true)
     const nextWorld: WorldData = { ...gameWorld, version: WORLD_DATA_VERSION, armies, heroes, campaign, battles: [] }
     const gameSave = extractSaveGame(nextWorld, initialSave)
@@ -1699,7 +1699,7 @@ export const useMapStore = create<MapState>((set) => ({
         army.supplyPool = step.pool
         if (step.refilledAt) logEvent('снабжение', `${army.name} пополняет снабжение по пути`, { раунд: campaign.round, локация: step.refilledAt, гексов: path.length - 1 })
         else if (step.depleted) logEvent('снабжение', `${army.name}: припасы исчерпаны в пути`, { раунд: campaign.round, гексов: path.length - 1 })
-      })
+      }, state.supplySettings)
       if (side === campaign.playerSide) campaign.alliedPlans = []
       campaign.log.unshift(campaignEvent(campaign, `ИИ завершил движение остальных фракций стороны «${side === 'good' ? 'Свет' : 'Тьма'}».`, 'move', null))
     }
@@ -1725,7 +1725,7 @@ export const useMapStore = create<MapState>((set) => ({
       }
       campaign.activeFactionId = campaign.playerFactionId!
       campaign.turnMovements = []
-      campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId) : []
+      campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId, state.supplySettings) : []
     }
     const executePlayerOrders=()=>{
       const grid=resolveGrid(state.grid,locations,regions)

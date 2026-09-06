@@ -740,6 +740,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .faction-card-row { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; }
 .faction-card-row select { width: 100px; }
 .inline-check { display: flex!important; align-items: center; gap: 5px; color: #788489; font-size: 11px; }
+/* Без accent-color браузер рисует свою светлую галочку — на тёмном интерфейсе
+   она выглядит белой заплаткой. Правило глобальное, чтобы новая галочка нигде
+   не осталась неокрашенной; более частные правила (например, у переключателей
+   найма) этот цвет переопределяют. */
+input[type='checkbox'], input[type='radio'] { accent-color: #6d8f5a; cursor: pointer; }
 /* Переключатель настроек снабжения в редакторе мира (0.51.x). */
 .database-toggle { display: flex; align-items: center; gap: 6px; margin: 5px 0; color: #788489; font-size: 11px; cursor: pointer; }
 .database-toggle input { width: 13px; height: 13px; accent-color: #6d8f5a; cursor: pointer; }
@@ -1124,6 +1129,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .economy-type-card > header small { display: block; color: #66747a; font-size: 10px; }
 .economy-type-card > header b { color: #d7c59a; font-size: 14px; }
 .economy-type-card > header span { color: #8a969a; font-size: 11px; }
+/* Кнопка действия в шапке карточки (например, «Удалить» у типа постройки):
+   без своего правила она оставалась браузерной — светлой на тёмном фоне. */
+.economy-type-card > header > button { height: 26px; padding: 0 9px; border: 1px solid #573833; border-radius: 4px; background: #241715; color: #c2a49c; font-size: 11px; cursor: pointer; }
+.economy-type-card > header > button:hover { border-color: #7d4f47; background: #2e1d1a; color: #e3c8c0; }
+.economy-type-card > header > button:disabled { opacity: .45; cursor: not-allowed; }
 .economy-type-card > label > span,
 .economy-type-grid label > span { display: block; margin-bottom: 3px; color: #66747a; font-size: 10px; }
 .economy-type-card > label input,

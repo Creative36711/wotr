@@ -35,3 +35,9 @@
 .campaign-difficulty-panel header b { display:block; color:#c3b78e; font-family:Cinzel,serif; font-size:11px; }.campaign-difficulty-panel header small { display:block; margin-top:3px; color:#667277; font-size:8px; }
 .campaign-difficulty-panel label > span { display:block; margin-bottom:4px; color:#84908d; font-size:9px; }.campaign-difficulty-panel select { width:100%; height:30px; padding:0 7px; border:1px solid #3b484e; border-radius:4px; background:#081014; color:#c2c9c4; font-size:10px; }.campaign-difficulty-panel label small { display:block; margin-top:3px; color:#5f6b6f; font-size:8px; line-height:1.3; }
 @media(max-width:760px){.campaign-difficulty-panel{grid-template-columns:1fr}.campaign-difficulty-panel header{grid-column:1 / -1}}
+
+/* Кнопка журнала партии: открывает папку диагностики (desktop) или скачивает журнал (браузер). */
+.diagnostics-button { display:flex; align-items:center; gap:6px; height:34px; padding:0 10px; border:1px solid #3b474c; border-radius:5px; background:#111a1f; color:#929d9e; font-size:11px; cursor:pointer; }
+.diagnostics-button:hover { color:#d5d1c4; border-color:#5b676b; }
+.diagnostics-button span { color:#b69d68; }
+.diagnostics-button small { max-width:190px; overflow:hidden; padding-left:6px; border-left:1px solid #334045; color:#7d8889; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }

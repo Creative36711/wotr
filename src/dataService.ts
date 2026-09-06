@@ -15,6 +15,8 @@ import {
   VANILLA_STRONGHOLD_IDS,
 } from './game/regions'
 import { createNewSaveGame } from './game/saveGame'
+import { normalizeSupplySettings } from './game/supply'
+import { normalizeOwnerModifiers } from './game/battleModifiers'
 import { updateConflictRtsCompatibility } from './game/conflicts'
 import { heroIsDeployed, heroSummonLocation } from './game/heroes'
 import { defaultLocationTypesForUnit, defaultRequiredTagsForUnit, defaultTagsForLocation } from './game/recruitment'
@@ -255,6 +257,16 @@ function normalizeArmies(source: unknown, units: UnitType[], heroes: Hero[], cap
       movedRound: Number.isFinite(old.movedRound) ? Number(old.movedRound) : null,
       movedInPhase: old.movedInPhase === 'movement_first' || old.movedInPhase === 'movement_second' ? old.movedInPhase : null,
       exhaustedUntilRound: Number.isFinite(old.exhaustedUntilRound) ? Number(old.exhaustedUntilRound) : null,
+      // Снабжение армии: из мира/сейва берётся как есть, повреждённое — null.
+      supplyPool: old.supplyPool && typeof old.supplyPool === 'object' && typeof old.supplyPool.sourceLocationId === 'string'
+        ? {
+            sourceLocationId: old.supplyPool.sourceLocationId,
+            sourceRound: Math.max(0, Math.round(Number(old.supplyPool.sourceRound ?? 0))),
+            initialAmount: normalizeOwnerModifiers(old.supplyPool.initialAmount),
+            hexesTravelled: Math.max(0, Math.round(Number(old.supplyPool.hexesTravelled ?? 0))),
+            turnsElapsed: Math.max(0, Math.round(Number(old.supplyPool.turnsElapsed ?? 0))),
+          }
+        : null,
     } as Army
   })
 }
@@ -494,6 +506,8 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     maxStartingPointsFromModifiers: Math.max(0, Math.round(Number(source.palantirSettings?.maxStartingPointsFromModifiers ?? DEFAULT_PALANTIR_SETTINGS.maxStartingPointsFromModifiers))),
     maxIncomePerIntervalFromModifiers: Math.max(0, Math.round(Number(source.palantirSettings?.maxIncomePerIntervalFromModifiers ?? DEFAULT_PALANTIR_SETTINGS.maxIncomePerIntervalFromModifiers))),
   }
+  // Старые моды без supplySettings получают рабочий блок по умолчанию (§12).
+  const supplySettings = normalizeSupplySettings(source.supplySettings)
   const ringForging: RingForgingSettings = source.ringForging === undefined
     ? ((source.version ?? 0) < WORLD_DATA_VERSION ? createDefaultRingForging() : { ...createDefaultRingForging(), enabled: false })
     : normalizeRingForging(source.ringForging)
@@ -642,6 +656,7 @@ export function normalizeWorld(value: unknown, rosterValue?: unknown): WorldData
     buildingTypes,
     palantirSettings,
     ringForging,
+    supplySettings,
     campaign: { ...campaign, turnOrder: [...campaign.turnOrder], log: [...campaign.log] },
     battles: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35].includes(source.version) && Array.isArray(source.battles) ? source.battles.map((battle: any) => ({ ...battle, conflictId: battle.conflictId ?? null, attackerArmyIds: battle.attackerArmyIds ?? [battle.attackerArmyId], defenderArmyIds: battle.defenderArmyIds ?? [battle.defenderArmyId], attackerReinforcementArmyIds: battle.attackerReinforcementArmyIds ?? [], defenderReinforcementArmyIds: battle.defenderReinforcementArmyIds ?? [], defenseBonus: battle.defenseBonus ?? 0, winnerSide: battle.winnerSide ?? (battle.winnerArmyId === battle.attackerArmyId ? 'good' : 'evil'), garrisonLosses: battle.garrisonLosses ?? [] })) : [],
   }
@@ -884,3 +899,31 @@ export async function saveWorld(world: WorldData, modId: string) {
   await writeModJson(modId, 'mod', { ...metadata, updatedAt: new Date().toISOString(), dataVersions: { world: WORLD_DATA_VERSION, roster: ROSTER_DATA_VERSION } })
 }
 export const saveGame = (save: SaveGameData, modId: string) => writeModJson(modId, 'savegame', save)
+
+// ---------------------------------------------------------------------------
+// Диагностика партии: журнал действий и скриншоты RTS-боя
+// ---------------------------------------------------------------------------
+
+/**
+ * Создаёт папку диагностики `portable_data/diagnostics/<session>`.
+ *
+ * `wipe = true` (старт новой кампании) удаляет все остальные папки диагностики:
+ * одна кампания — одна папка, и в ней копится всё, что произошло за партию.
+ * Возвращает путь к папке или пустую строку в браузерном режиме.
+ */
+export async function beginDiagnosticsSession(session: string, wipe = false): Promise<string> {
+  if (!isTauriRuntime()) return ''
+  return invoke<string>('begin_diagnostics_session', { session, wipe })
+}
+
+/** Пишет или дописывает текстовый файл внутри папки диагностики сессии. */
+export async function writeDiagnosticsFile(session: string, name: string, contents: string, append = false): Promise<void> {
+  if (!isTauriRuntime()) return
+  await invoke('write_diagnostics_file', { session, name, contents, append })
+}
+
+/** Открывает папку диагностики в проводнике (только desktop). */
+export async function openDiagnosticsFolder(session: string): Promise<string> {
+  if (!isTauriRuntime()) return ''
+  return invoke<string>('open_diagnostics_folder', { session })
+}

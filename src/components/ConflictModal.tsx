@@ -5,7 +5,8 @@ import { commanderDefinition } from '../game/army'
 import { previewConflict } from '../game/conflicts'
 import { resolveGrid } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
-import { prepareAndStartRtsBattle, readRtsBattleResult } from '../dataService'
+import { prepareAndStartRtsBattle, readRtsBattleResult, writeDiagnosticsFile } from '../dataService'
+import { currentSessionKey, logEvent } from '../game/sessionLog'
 import { RTS_DIFFICULTIES } from '../rts'
 import { translateText } from '../i18n'
 import { collectOwnerModifiers } from '../game/battleModifiers'
@@ -59,8 +60,18 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
   const economicTypes = useMapStore.getState().economicTypes
   const ringForging = useMapStore.getState().ringForging
   const palantirSettings = useMapStore.getState().palantirSettings
-  const modifierContext = { campaign, regions, buildingTypes, economicTypes, ringForging, palantirSettings }
+  const supplySettings = useMapStore.getState().supplySettings
+  const modifierContext = { campaign, regions, buildingTypes, economicTypes, ringForging, palantirSettings, supplySettings }
   const preview = previewConflict(conflict, armies, locations, locationStates, units, heroes, captains, cell.terrain, modifierContext)
+  // Снабжение атакующего: видно, откуда армия несёт припасы и сколько осталось.
+  const supply = preview.attackerSupply
+  const supplyBonus = supply ? [
+    supply.finalAttackerModifiers.startingResources ? `+${supply.finalAttackerModifiers.startingResources} ресурсов` : '',
+    supply.finalAttackerModifiers.commandPointBonus ? `+${supply.finalAttackerModifiers.commandPointBonus} КО` : '',
+    supply.finalAttackerModifiers.palantirStartingPoints ? `+${supply.finalAttackerModifiers.palantirStartingPoints} палантир` : '',
+    supply.finalAttackerModifiers.palantirIncomePerInterval ? `+${supply.finalAttackerModifiers.palantirIncomePerInterval}/такт палантир` : '',
+  ].filter(Boolean).join(', ') : ''
+  const supplySourceName = supply?.sourceLocationId ? locations.find((candidate) => candidate.id === supply.sourceLocationId)?.name ?? supply.sourceLocationId : null
   const attackerEnemy = conflict.attackerSide !== campaign.playerSide
   const defenderEnemy = conflict.defenderSide !== campaign.playerSide
   const approximatePower = (power: number) => `${Math.max(0, Math.floor(power * .8 / 100) * 100)}–${Math.ceil(power * 1.2 / 100) * 100}`
@@ -141,10 +152,16 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     const ringState=campaign.ringState
     const carrierHere=ringState.forged&&ringState.ownerFactionId===factionId&&factionArmies.some((army)=>army.id===ringState.carrierArmyId)
     const ringHero=carrierHere?ringHeroObjectId(factions.find((faction)=>faction.id===factionId)):null
-    // Контекстные бонусы владельца локации: ресурсы, КО, палантир, сигнальный огонь (§2).
+    // Контекстные бонусы стороны: защитник берёт их у локации (ресурсы, КО,
+    // палантир, сигнальный огонь), атакующий — у снабжения, которое привёз из
+    // точки отправления. Механизм выдачи в BFME один и тот же: rts_spawn.rs
+    // читает bonuses у каждого участника, поэтому менять мост не нужно.
+    const compositionSide=factions.find((faction)=>faction.id===factionId)?.alignment??null
     const ownerBonuses=location?.side===factionId
       ?collectOwnerModifiers({location,region:regions.find((item)=>item.id===conflict.regionId)??null,factionId,campaign,buildingTypes,economicTypes,ringForging,palantirSettings})
-      :{}
+      :compositionSide&&compositionSide===conflict.attackerSide
+        ?preview.attackerModifiers??{}
+        :{}
     return {
       units:unitEntries,
       heroes:[...new Map(heroEntries.map((entry)=>[entry.objectId,entry])).values()].map((entry)=>({objectId:entry.objectId,level:campaign.heroLevels[entry.entityId]??1})),
@@ -209,12 +226,13 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       const result=await readRtsBattleResult(conflict.id).catch(()=>null)
       if(token!==rtsWatchToken.current)return
       if(result?.finishedAt){
+        logEvent('rts',`результат BFME-сражения «${selectedMapAsset?.mapName??conflict.rtsMapId}»`,result)
         if(result.winningTeam==='good'||result.winningTeam==='evil'){
           const outcomeDetail=result.status==='COMPLETED'&&result.winningSlot?`победил слот ${result.winningSlot}`:result.status==='SURRENDER'?'противник сдался':''
           resolveConflictRts(conflict.id,result.winningTeam,outcomeDetail)
           setRtsMessage(`Бой завершён: победа стороны «${result.winningTeam==='good'?'Свет':'Тьма'}». BFME закрыт автоматически.`)
         }else{
-          setRtsMessage(`Победитель не определён (${result.status}). BFME закрыт; проведите автобой или повторите BFME-сражение.`)
+          setRtsMessage(result.status==='ABORTED'?'Аварийный выход по Ctrl: BFME закрыт, исход боя не определён. Проведите автобой или повторите BFME-сражение.':`Победитель не определён (${result.status}). BFME закрыт; проведите автобой или повторите BFME-сражение.`)
         }
         break
       }
@@ -226,7 +244,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     rtsWatchToken.current+=1
     setRtsWatching(false)
     setRtsBusy(true)
-    setRtsMessage('Подготовка файлов и автоматический запуск BFME. Подтвердите запрос Windows UAC, если он появится. После этого физический ввод временно блокируется до начала загрузки боя; аварийный выход — Ctrl+Alt+Del.')
+    setRtsMessage('Подготовка файлов и автоматический запуск BFME. Подтвердите запрос Windows UAC, если он появится. После этого физический ввод временно блокируется до начала загрузки боя. Пока ввод заблокирован, одиночный Ctrl — аварийный выход: игра закроется, а управление вернётся. Ctrl+Alt+Del тоже доступен.')
     try{
       const difficulty=RTS_DIFFICULTIES.find((item)=>item.id===campaign.aiDifficulty.rts)!
       // Фора считается относительно: общий для всех штраф не даёт никому
@@ -239,7 +257,16 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       })))
       const participants=orderedRtsFactionIds.map((id,slotIndex)=>({slot:slotIndex+1,factionId:id,listIndex:activeMod.rts.factionOrder.indexOf(id),color:factions.find((faction)=>faction.id===id)?.rtsColor,side:factions.find((faction)=>faction.id===id)?.alignment??'good',gateAngleDeg:45,handicapPercent:handicaps.get(id)?.percent??0,handicapReasons:handicaps.get(id)?.reasons??[],...rtsComposition(id)}))
       const {startPositions,fortressOwnerSlot}=buildStartPositions(participants)
-      const battleConfig={version:1,language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
+      const sessionKey=currentSessionKey()
+      // Отдельная папка на каждый бой: за партию боёв может быть много, и снимки
+      // с конфигурацией не должны перезаписывать друг друга.
+      const battleStamp=new Date().toISOString().replace(/[^0-9]/g,'').slice(8,14)
+      const battleKey=sessionKey?`r${campaign.round}-${conflict.id}-${battleStamp}`:''
+      const battleConfig={version:1,diagnostics:{session:sessionKey||null,battle:battleKey||null},language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,modifiers:{defender:preview.defenderModifiers??null,attacker:preview.attackerModifiers??null,attackerSupply:preview.attackerSupply??null},map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
+      // Полная конфигурация боя — в папку боя внутри диагностики кампании: по ней
+      // сражение воспроизводится один в один, а скриншоты Rust кладёт туда же.
+      if(sessionKey&&battleKey)await writeDiagnosticsFile(sessionKey,`battles/${battleKey}/battle.json`,`${JSON.stringify(battleConfig,null,1)}\n`,false).catch((error)=>console.warn('Не удалось сохранить конфигурацию боя',error))
+      logEvent('rts',`запуск BFME: карта «${selectedMapAsset?.mapName??conflict.rtsMapId}», слоты ${conflict.rtsAttackerSlots}×${conflict.rtsDefenderSlots}, владелец оплота — слот ${fortressOwnerSlot??'не задан'}`,participants.map((participant)=>`${participant.slot}:${participant.factionId}:${participant.color}:${participant.side}:${participant.handicapPercent}%`))
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)
       if(!report.ok){setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
       const token=rtsWatchToken.current
@@ -267,6 +294,9 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
             <footer><span>Итого оборона</span><strong>{defenderEnemy && pending ? approximatePower(preview.defenderPower) : conflict.defenderPower ?? preview.defenderPower}</strong><small>{preview.defenderUnits} отрядов · укрепления +{Math.round(preview.defenseBonus * 100)}%{defenderEnemy && pending ? ' · оценка ±20%' : ''}</small></footer>
           </section>
         </div>
+        {supply && <section className="supply-context"><b>Снабжение атакующих</b>{supplySourceName
+          ? <span>Точка отправления: {supplySourceName} (ход {supply.sourceRound}) · пройдено {supply.hexesTravelled} гексов, {supply.turnsElapsed} ходов · осталось {Math.round(supply.decayFactor * 100)}%</span>
+          : <span>Без снабжения — атака без бонусов</span>}{supplyBonus && <small>Бонус атаки: {supplyBonus}</small>}</section>}
         {pending && playerReinforcementOptions.length > 0 && <section className="reinforcement-choice-panel"><header><div><b>Ваши армии доступны как подкрепления</b><small>Решение принимает игрок. Не участвующая армия сохранит свои ОД.</small></div><span>{playerReinforcementOptions.filter(({ option }) => (option.side === conflict.attackerSide ? conflict.attackerReinforcementArmyIds : conflict.defenderReinforcementArmyIds).includes(option.armyId)).length}/{playerReinforcementOptions.length}</span></header><div>{playerReinforcementOptions.map(({ option, army }) => { const selected = (option.side === conflict.attackerSide ? conflict.attackerReinforcementArmyIds : conflict.defenderReinforcementArmyIds).includes(army.id); return <article key={army.id} className={selected ? 'selected' : ''}><span className="reinforcement-choice-flag" style={{ '--choice-color': getFaction(factions, army.factionId).color } as CSSProperties}>⚑</span><div><b>{army.name}</b><small>{option.tier === 'immediate' ? 'Соседний гекс · вступает немедленно' : `Два гекса · стоимость подхода ${option.pathCost} ОД`} · {army.unitSlots.length} отрядов</small></div><button type="button" className={selected ? 'decline' : 'join'} onClick={() => setReinforcementParticipation(conflict.id, army.id, !selected)}>{selected ? 'Не вмешиваться' : 'Присоединиться'}</button></article> })}</div></section>}
         {pending&&rtsBlockReason&&<div className="rts-readiness-warning"><b>BFME-сражение пока недоступно</b><span>{rtsBlockReason}</span>{!appSettings?.rtsExecutablePath&&desktopRuntime&&<small>После выбора EXE вернитесь к этому конфликту — начинать кампанию заново не нужно.</small>}</div>}
         {pending ? <div className="conflict-actions"><button type="button" className="auto" onClick={() => resolveConflict(conflict.id)}>⚔ Провести автобой</button><button type="button" className="rts" disabled={!rtsReady||rtsBusy} title={rtsBlockReason??'Проверить BIG-файлы и запустить BFME'} onClick={()=>void runRts()}>BFME · {rtsBusy?'подготовка…':rtsWatching?'идёт бой…':`${conflict.rtsAttackerSlots}×${conflict.rtsDefenderSlots}`}</button><button type="button" className="retreat" disabled={!canRetreat} onClick={() => retreatConflictDefender(conflict.id)}>↩ Отступить защитником</button></div> : <div className="conflict-result-strip"><span>{conflict.winnerSide === conflict.attackerSide ? 'Атакующие победили' : 'Защитники победили'}</span><b>Потери: {conflict.attackerLosses} / {conflict.defenderLosses}</b>{nextPending && <button type="button" onClick={() => selectConflict(nextPending.id)}>Следующий бой →</button>}</div>}

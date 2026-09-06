@@ -4,6 +4,7 @@ import { areFactionsHostile, getFaction, TERRAIN_BY_ID, WORLD_HEIGHT, WORLD_WIDT
 import { armyCommandPointLimit, armyCommandPoints, armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/army'
 import { movementTargetLabel } from '../game/ai'
 import { canPlayerMoveArmy, factionSide } from '../game/campaign'
+import { supplyDecayFactor } from '../game/supply'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import {
   findPath,
@@ -177,6 +178,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
   const heroes = useMapStore((state) => state.heroes)
   const captains = useMapStore((state) => state.captains)
   const campaign = useMapStore((state) => state.campaign)
+  const supplySettings = useMapStore((state) => state.supplySettings)
   const selectedId = useMapStore((state) => state.selectedId)
   const selectedArmyId = useMapStore((state) => state.selectedArmyId)
   const selectedHexId = useMapStore((state) => state.selectedHexId)
@@ -593,19 +595,25 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
 
   const affordableOrder=(army:typeof armies[number],targetHexId:string)=>{const calculated=findPath(logicalGrid.byId,army.hexId,targetHexId,army.factionId);const interception=calculated.findIndex((id,index)=>index>0&&enemyHexIds.has(id));const full=interception>0?calculated.slice(0,interception+1):calculated;if(full.length<2)return null;let selected=full.slice(0,2);for(let length=2;length<=full.length;length++){const candidate=full.slice(0,length);if(pathMovementCost(candidate,logicalGrid.byId,army.factionId)>army.movementRemaining)break;selected=candidate}const cost=pathMovementCost(selected,logicalGrid.byId,army.factionId);return cost<=army.movementRemaining?{path:selected,destinationId:selected.at(-1)!,cost}:null}
 
-  /** Issues a movement order and returns the map to cinematic view so the arrow stays visible. */
+  /** Issues a movement order, clears the selection and returns the map to cinematic view so the arrow stays visible. */
   const placeArmyOrder=(army:typeof armies[number],order:{path:string[];destinationId:string;cost:number},destinationLocationId:string|null)=>{
     const destination=logicalGrid.byId.get(order.destinationId)
     if(!destination)return false
     moveArmy(army.id,order.destinationId,order.path,order.cost,destination.terrain,destinationLocationId)
     const placed=useMapStore.getState().campaign.pendingOrders.some((item)=>item.armyId===army.id&&item.destinationHexId===order.destinationId)
-    if(placed&&mode==='game'){setViewMode('cinematic');selectHex(null)}
+    // Приказ отдан — выделение снимается. Иначе следующий клик по своему городу
+    // снова менял бы пункт назначения вместо того, чтобы открыть город.
+    if(placed&&mode==='game'){setViewMode('cinematic');selectHex(null);selectArmy(null)}
     return placed
   }
 
   const handlePinPointerDown = (event: ReactPointerEvent<HTMLButtonElement>, location: MapLocation) => {
     event.stopPropagation()
     if (hexEdit) return // Маркеры не сбрасывают массовое выделение гексов.
+    // Пока выделена армия, клик по карте — всегда приказ движения: и по пустому
+    // гексу, и по локации, своей или чужой. Иначе клик по собственному городу
+    // переключал инспектор на город вместо того, чтобы вести армию дальше.
+    // Выделение снимается клавишей Esc или автоматически после приказа.
     if (mode === 'game' && selectedArmy && canPlayerMoveArmy(campaign, factions, selectedArmy.factionId) && !selectedArmy.engaged) {
       const order=affordableOrder(selectedArmy,location.hex)
       const destination=order?logicalGrid.byId.get(order.destinationId):null
@@ -836,7 +844,13 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
               <g className="pending-order-lines">
                 {pendingOrderPaths.map(({order,path,army})=>{
                   const color=getFaction(factions,army!.factionId).color
-                  return <path key={order.armyId} d={path} markerEnd={`url(#${orderMarkerId(color)})`} style={{'--order-color':color}as CSSProperties} onContextMenu={(event)=>{event.preventDefault();event.stopPropagation();cancelArmyOrder(order.armyId)}}><title>{`${translateText(army!.name)} → ${order.cost} ОД · ПКМ — отменить приказ`}</title></path>
+                  // Явный крестик в конце стрелки: приказ можно отменить одним
+                  // кликом, не запоминая про правую кнопку мыши.
+                  const endCell=logicalGrid.byId.get(order.destinationHexId)
+                  return <g key={order.armyId} className="pending-order">
+                    <path d={path} markerEnd={`url(#${orderMarkerId(color)})`} style={{'--order-color':color}as CSSProperties} onContextMenu={(event)=>{event.preventDefault();event.stopPropagation();cancelArmyOrder(order.armyId)}}><title>{`${translateText(army!.name)} → ${order.cost} ОД · ПКМ — отменить приказ`}</title></path>
+                    {endCell&&<g className="order-cancel-badge" style={{'--order-color':color}as CSSProperties} transform={`translate(${endCell.x+40} ${endCell.y-40})`} onPointerDown={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();cancelArmyOrder(order.armyId)}}><title>{`Отменить приказ: ${translateText(army!.name)}`}</title><circle className="badge-hit" r="28"/><circle className="badge-ring" r="21"/><path className="badge-cross" d="M -7.5 -7.5 L 7.5 7.5 M 7.5 -7.5 L -7.5 7.5"/></g>}
+                  </g>
                 })}
               </g>
             )}
@@ -915,6 +929,13 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
               '--army-scale': pinScale,
               '--army-color': faction.color,
             } as CSSProperties
+            // Индикатор снабжения: одним взглядом видно, какие армии на полном
+            // снабжении, какие истощены, а какие вышли без припасов.
+            const supplyFactor = army.supplyPool ? supplyDecayFactor(army.supplyPool, supplySettings) : 0
+            const supplyLevel = !army.supplyPool ? 'empty' : supplyFactor >= .75 ? 'full' : supplyFactor >= .25 ? 'mid' : 'low'
+            const supplyLabel = army.supplyPool
+              ? `Снабжение ${Math.round(supplyFactor * 100)}% из «${locations.find((candidate) => candidate.id === army.supplyPool?.sourceLocationId)?.name ?? army.supplyPool?.sourceLocationId}»`
+              : 'Без снабжения'
             return (
               <button
                 type="button"
@@ -930,8 +951,9 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
                   } else selectArmy(army.id)
                 }}
                 onContextMenu={(event)=>{if(campaign.pendingOrders.some((order)=>order.armyId===army.id)){event.preventDefault();event.stopPropagation();cancelArmyOrder(army.id)}}}
-                title={enemyToPlayer ? `${displayArmyName} · ${displayCommander}${army.movedRound === campaign.round ? ' · двигалась в этом раунде' : ''}` : `${army.name} · ${armyCommandTotal}/${armyCommandLimit} ОК · ${army.movementRemaining}/${movementCap} ОД · ${leaderName ?? 'Нет командира'}`}
+                title={enemyToPlayer ? `${displayArmyName} · ${displayCommander}${army.movedRound === campaign.round ? ' · двигалась в этом раунде' : ''}` : `${army.name} · ${armyCommandTotal}/${armyCommandLimit} ОК · ${army.movementRemaining}/${movementCap} ОД · ${leaderName ?? 'Нет командира'} · ${supplyLabel}`}
               >
+                {mode === 'game' && army.factionId === campaign.playerFactionId && <span className={`army-supply-dot ${supplyLevel}`} aria-label={supplyLabel} />}
                 <span className="army-banner"><i>⚔</i></span>
                 <b>{enemyToPlayer ? '?' : occupiedSlots}</b>
                 <span className="army-label"><strong>{displayArmyName}</strong><small>{enemyToPlayer ? `${displayCommander}${army.movedRound === campaign.round ? ' · перемещалась' : ''}` : `${army.status === 'retreating' ? 'Деморализована · сила −20%' : displayCommander} · ${army.movementRemaining}/${movementCap} ОД`}</small></span>

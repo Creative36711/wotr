@@ -5,6 +5,10 @@ import { armyCommandPointLimit, armyCommandPoints, armyMovementBreakdown, armyMo
 import { canFactionPlan, isFactionActive, isMovementPhase } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes, garrisonIntelCategory, garrisonIntelLabel } from '../game/fogOfWar'
 import { recruitableUnitsAtLocation } from '../game/recruitment'
+import { attackerSupplyModifiers, fixedSupplyAt, scaleSupply, supplyAmountAt, supplyDecayFactor } from '../game/supply'
+import type { SupplyWorld } from '../game/supply'
+import { collectOwnerModifiers, mergeOwnerModifiers } from '../game/battleModifiers'
+import type { OwnerBattleModifiers } from '../types'
 import { locationHexId, resolveGrid } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
 import { slotPowerMultiplier } from '../game/progression'
@@ -332,6 +336,7 @@ function ArmyInspector({ army }: { army: Army }) {
   const [unitToAdd, setUnitToAdd] = useState('')
   const [heroToAdd, setHeroToAdd] = useState('')
   const [showJson, setShowJson] = useState(false)
+  const { language } = useI18n()
   const mode = useMapStore((state) => state.mode)
   const factions = useMapStore((state) => state.factions)
   const grid = useMapStore((state) => state.grid)
@@ -347,6 +352,31 @@ function ArmyInspector({ army }: { army: Army }) {
   const transferArmyToReserve = useMapStore((state) => state.transferArmyToReserve)
   const disbandArmy = useMapStore((state) => state.disbandArmy)
   const retreatEngagedArmy = useMapStore((state) => state.retreatEngagedArmy)
+  const cancelArmyOrder = useMapStore((state) => state.cancelArmyOrder)
+  const buildingTypes = useMapStore((state) => state.buildingTypes)
+  const economicTypes = useMapStore((state) => state.economicTypes)
+  const palantirSettings = useMapStore((state) => state.palantirSettings)
+  const supplySettings = useMapStore((state) => state.supplySettings)
+  // Что армия несёт с собой: источник, остаток и бонус, с которым она атакует.
+  const supplyPool = army.supplyPool
+  const supplyWorld: SupplyWorld = {
+    campaign,
+    buildingTypes: buildingTypes ?? [],
+    economicTypes,
+    locationsByHex: new Map(locations.map((location) => [location.hex, location])),
+    locationById: new Map(locations.map((location) => [location.id, location])),
+    settings: supplySettings,
+  }
+  const supplySource = supplyPool ? locations.find((location) => location.id === supplyPool.sourceLocationId) ?? null : null
+  const supplyPercent = supplyPool ? Math.round(supplyDecayFactor(supplyPool, supplySettings) * 100) : 0
+  const supplyBonus = supplyPool ? attackerSupplyModifiers(supplyPool, supplySource, army.factionId, supplyWorld, palantirSettings) : {}
+  const supplyBonusText = [
+    supplyBonus.startingResources ? `+${supplyBonus.startingResources} ресурсов` : '',
+    supplyBonus.commandPointBonus ? `+${supplyBonus.commandPointBonus} КО` : '',
+    supplyBonus.palantirStartingPoints ? `+${supplyBonus.palantirStartingPoints} палантир` : '',
+    supplyBonus.palantirIncomePerInterval ? `+${supplyBonus.palantirIncomePerInterval}/такт палантир` : '',
+  ].filter(Boolean).join(', ')
+  const supplyLevel = !supplyPool ? 'empty' : supplyPercent >= 75 ? 'full' : supplyPercent >= 25 ? 'mid' : 'low'
   const faction = getFaction(factions, army.factionId)
   const readonly = mode === 'game'
   const active = campaign.playerFactionId === army.factionId && isFactionActive(campaign, factions, army.factionId)
@@ -384,6 +414,9 @@ function ArmyInspector({ army }: { army: Army }) {
   const payload = JSON.stringify(buildBfmeArmyPayload(army, unitTypes, heroes, captains), null, 2)
   const carriesRing = isRingCarrier(campaign, army.id)
   const transferRing = useMapStore.getState().transferRing
+  // Приказ движения этой армии: его можно заменить или отменить целиком.
+  const pendingOrder = campaign.pendingOrders.find((order) => order.armyId === army.id) ?? null
+  const orderDestination = pendingOrder ? locations.find((location) => location.id === pendingOrder.locationId) ?? null : null
 
   const changeCommander = (value: string) => {
     if (!value) { updateArmy(army.id, { commander: null }); return }
@@ -417,6 +450,16 @@ function ArmyInspector({ army }: { army: Army }) {
           <div><span>Сила</span><b>{Math.round(power)}</b></div>
         </section>
         {army.status === 'retreating' && <section className="demoralized-warning"><b>Деморализована</b><span>0 ОД в этом раунде · −20% силы при нападении. Статус снимется в начале следующего хода фракции.</span></section>}
+
+        {pendingOrder && <section className="movement-order-card">
+          <span className="order-arrow">➤</span>
+          <div>
+            <small>Приказ движения · {pendingOrder.cost} ОД · {Math.max(1, pendingOrder.path.length - 1)} гекс.</small>
+            <b>→ {orderDestination ? getDisplayName(orderDestination, language) : `гекс ${pendingOrder.destinationHexId}`}</b>
+            <p>Приказ можно заменить другим гексом. Если армия должна остаться на месте — отмените приказ (кнопка, клавиша Delete или ПКМ по стрелке/армии).</p>
+          </div>
+          <button type="button" className="cancel-order-button" onClick={() => cancelArmyOrder(army.id)}>Отменить приказ</button>
+        </section>}
 
         <section className={`army-leader-card ${commander ? '' : 'missing'}`}>
           <span className="leader-portrait" style={{ '--portrait-color': faction.color, ...(commanderPortrait ? { backgroundImage: `url(${commanderPortrait})` } : {}) } as CSSProperties}></span>
@@ -461,7 +504,20 @@ function ArmyInspector({ army }: { army: Army }) {
 
         {mode === 'edit' && <section className="bfme-payload-card"><button type="button" onClick={() => setShowJson((value) => !value)}><span>◈</span><div><b>BFME Battle Payload</b><small>Командир, герои и отряды</small></div><i>{showJson ? '▴' : '▾'}</i></button>{showJson && <pre>{payload}</pre>}</section>}
 
-        {mode === 'game' ? canFactionPlan(campaign, factions, army.factionId) ? <section className="army-game-help planning"><b>Управление в фазе планирования</b><p>{stationedLocation ? `Армия находится во владении/оплоте «${stationedLocation.name}». Стрелка ← переносит отряд в резерв.` : 'Для пополнения и расформирования армия должна находиться на гексе своего объекта карты.'}</p>{stationedLocation && <button type="button" className="disband-army-button" onClick={() => { if (window.confirm(`Расформировать «${army.name}»? Войска перейдут в резерв, лишние будут распущены.`)) disbandArmy(stationedLocation.id, army.id) }}>Расформировать армию</button>}</section> : isMovementPhase(campaign.phase) ? <section className={`army-game-help ${army.engaged ? 'engagement' : ''}`}><b>{army.engaged ? 'Армия связана боем' : army.commander ? 'Приказ движения' : 'Армия без командира'}</b><p>{army.engaged ? 'Обычное движение заблокировано. Армия может отойти сразу в ближайшую свою локацию. Потери зависят от расстояния, а на следующий ход армия будет деморализована.' : army.commander ? 'Выберите доступный гекс или вражескую армию. При входе во вражеский гекс все оставшиеся ОД будут потрачены.' : 'Армия без командира остаётся неподвижной.'}</p>{army.engaged && active && <button type="button" className="engagement-retreat-button" onClick={() => retreatEngagedArmy(army.id)}>Отступить из боя</button>}</section> : <section className="army-game-help"><b>Армия ожидает приказов</b><p>В фазах конфликтов и последствий движение и управление составом недоступны.</p></section> : <section className="inspector-actions single-action"><button type="button" className="danger-button" onClick={() => { if (window.confirm(`Удалить армию «${army.name}»?`)) removeArmy(army.id) }}>Удалить армию</button></section>}
+        {mode === 'game' ? canFactionPlan(campaign, factions, army.factionId) ? <section className="army-game-help planning"><b>Управление в фазе планирования</b><p>{stationedLocation ? `Армия находится во владении/оплоте «${stationedLocation.name}». Стрелка ← переносит отряд в резерв.` : 'Для пополнения и расформирования армия должна находиться на гексе своего объекта карты.'}</p><p>Пока армия выделена, клик по любому гексу или локации — приказ движения; после приказа выделение снимается. Чтобы открыть локацию вместо приказа, сначала снимите выделение клавишей Esc. Отмена приказа: кнопка выше, Delete или ПКМ.</p>{stationedLocation && <button type="button" className="disband-army-button" onClick={() => { if (window.confirm(`Расформировать «${army.name}»? Войска перейдут в резерв, лишние будут распущены.`)) disbandArmy(stationedLocation.id, army.id) }}>Расформировать армию</button>}</section> : isMovementPhase(campaign.phase) ? <section className={`army-game-help ${army.engaged ? 'engagement' : ''}`}><b>{army.engaged ? 'Армия связана боем' : army.commander ? 'Приказ движения' : 'Армия без командира'}</b><p>{army.engaged ? 'Обычное движение заблокировано. Армия может отойти сразу в ближайшую свою локацию. Потери зависят от расстояния, а на следующий ход армия будет деморализована.' : army.commander ? 'Клик по любому гексу или локации, включая вражескую армию, — приказ движения, после приказа выделение снимается; Esc снимает выделение, если нужно открыть локацию. Отмена приказа: кнопка выше, Delete или ПКМ. При входе во вражеский гекс все оставшиеся ОД будут потрачены.' : 'Армия без командира остаётся неподвижной.'}</p>{army.engaged && active && <button type="button" className="engagement-retreat-button" onClick={() => retreatEngagedArmy(army.id)}>Отступить из боя</button>}</section> : <section className="army-game-help"><b>Армия ожидает приказов</b><p>В фазах конфликтов и последствий движение и управление составом недоступны.</p></section> : <section className="inspector-actions single-action"><button type="button" className="danger-button" onClick={() => { if (window.confirm(`Удалить армию «${army.name}»?`)) removeArmy(army.id) }}>Удалить армию</button></section>}
+
+        {mode === 'game' && <section className={`army-supply ${supplyLevel}`}>
+          <b>Снабжение</b>
+          {supplyPool
+            ? <>
+              <p>Источник: {supplySource?.name ?? supplyPool.sourceLocationId} (ход {supplyPool.sourceRound})</p>
+              <div className="supply-bar"><i style={{ width: `${supplyPercent}%` }} /></div>
+              <p>Осталось {supplyPercent}% · пройдено {supplyPool.hexesTravelled} гексов, {supplyPool.turnsElapsed} ходов</p>
+              <p>{supplyBonusText ? `Бонус при атаке: ${supplyBonusText}` : 'Припасы на исходе — бонусов почти нет'}</p>
+              <small>Пополняется на своих локациях; вдали от них припасы тратятся и на марше, и со временем.</small>
+            </>
+            : <p>Без снабжения — атака без бонусов. Встаньте на свою локацию и начните ход, чтобы взять припасы.</p>}
+        </section>}
       </div>
     </aside>
   )
@@ -500,6 +556,10 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
   const startBuilding = useMapStore((state) => state.startBuilding)
   const demolishBuilding = useMapStore((state) => state.demolishBuilding)
   const buildingTypesList = useMapStore((state) => state.buildingTypes)
+  const locationEconomicTypes = useMapStore((state) => state.economicTypes)
+  const locationPalantirSettings = useMapStore((state) => state.palantirSettings)
+  const locationRingForging = useMapStore((state) => state.ringForging)
+  const locationSupplySettings = useMapStore((state) => state.supplySettings)
   const transferReserveToArmy = useMapStore((state) => state.transferReserveToArmy)
   const formArmy = useMapStore((state) => state.formArmy)
   const duplicateLocation = useMapStore((state) => state.duplicateLocation)
@@ -565,6 +625,40 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
     )
   }
 
+  // Бонусы локации для обеих сторон: защитник берёт их у места, атакующий —
+  // увозит с собой как снабжение (экономическая часть × supplyRatio) плюс
+  // фиксированный бонус построек-плацдармов.
+  const locationSupplyWorld: SupplyWorld = {
+    campaign,
+    buildingTypes: buildingTypesList ?? [],
+    economicTypes: locationEconomicTypes,
+    locationsByHex: new Map(locations.map((item) => [item.hex, item])),
+    locationById: new Map(locations.map((item) => [item.id, item])),
+    settings: locationSupplySettings,
+  }
+  const defenseBonuses = collectOwnerModifiers({
+    location,
+    region: regions.find((item) => item.id === location.regionId) ?? null,
+    factionId: location.side,
+    campaign,
+    buildingTypes: buildingTypesList ?? [],
+    economicTypes: locationEconomicTypes,
+    ringForging: locationRingForging,
+    palantirSettings: locationPalantirSettings,
+  })
+  const carriedSupply = scaleSupply(supplyAmountAt(location, location.side, locationSupplyWorld), locationSupplySettings.supplyRatio)
+  const attackBonuses = mergeOwnerModifiers(carriedSupply, fixedSupplyAt(location, location.side, locationSupplyWorld))
+  const bonusLines = (amount: OwnerBattleModifiers) => [
+    amount.startingResources ? `+${amount.startingResources} ресурсов` : '',
+    amount.commandPointBonus ? `+${amount.commandPointBonus} КО` : '',
+    amount.palantirStartingPoints ? `+${amount.palantirStartingPoints} палантир` : '',
+    amount.palantirIncomePerInterval ? `+${amount.palantirIncomePerInterval}/такт палантир` : '',
+    amount.signalFire ? 'Сигнальный огонь' : '',
+    amount.defenseBonus ? `+${Math.round(amount.defenseBonus * 100)}% к обороне` : '',
+    amount.ambushBonus ? `+${Math.round(amount.ambushBonus * 100)}% засада` : '',
+  ].filter(Boolean)
+  const defenseLines = bonusLines(defenseBonuses)
+  const attackLines = bonusLines(attackBonuses)
   const faction = getFaction(factions, location.side)
   const locationRegion = regions.find((region) => region.id === location.regionId) ?? null
   const regionOwner = locationRegion?.ownerFactionId ? getFaction(factions, locationRegion.ownerFactionId) : null
@@ -650,6 +744,21 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
           <details className="recruitment-overrides"><summary>Уникальные разрешения и запреты</summary><p>Базовый список рассчитывается автоматически. Override всегда действует только для юнитов текущего владельца.</p><div>{previewFactionUnits.map((unit) => <article key={unit.id}><b>{unit.name}</b><label><input type="checkbox" checked={location.extraRecruitables.includes(unit.id)} onChange={(event) => updateLocation(location.id, { extraRecruitables: event.target.checked ? [...location.extraRecruitables, unit.id] : location.extraRecruitables.filter((id) => id !== unit.id) })} />Разрешить дополнительно</label><label><input type="checkbox" checked={location.blockedRecruitables.includes(unit.id)} onChange={(event) => updateLocation(location.id, { blockedRecruitables: event.target.checked ? [...location.blockedRecruitables, unit.id] : location.blockedRecruitables.filter((id) => id !== unit.id) })} />Запретить</label></article>)}</div></details>
         </section> : <section className="location-economy-panel">
           <header><div><small>{economicTypeLabel(location.economicType, language)}</small><b>Экономика объекта</b></div><span>+{location.income.gold} зол. · +{location.income.materials} мат.</span></header>
+          <section className="location-battle-bonuses">
+            <h4>Бонусы в битве BFME</h4>
+            <div className="bonus-columns">
+              <div className="bonus-column defense">
+                <b>При обороне</b>
+                {defenseLines.length ? defenseLines.map((line) => <span key={line}>{line}</span>) : <span className="bonus-empty">Нет бонусов</span>}
+                <small>Экономический тип, постройки, полный контроль региона.</small>
+              </div>
+              <div className="bonus-column attack">
+                <b>При атаке отсюда</b>
+                {attackLines.length ? attackLines.map((line) => <span key={line}>{line}</span>) : <span className="bonus-empty">Нет бонусов</span>}
+                <small>Снабжение ×{locationSupplySettings.supplyRatio} в дороге тратится; плацдармы дают полный бонус.</small>
+              </div>
+            </div>
+          </section>
           {canFactionPlan(campaign, factions, location.side) ? <>
             <div className="location-treasury"><span>Казна: <b>{treasury?.gold ?? 0}</b></span><span>Материалы: <b>{treasury?.materials ?? 0}</b></span></div>
             {locationState.occupationTurnsLeft > 0 && <div className="occupation-warning"><b>Объект оккупирован</b><span>Полноценный найм и призыв героев будут доступны через {locationState.occupationTurnsLeft} ход{locationState.occupationTurnsLeft === 1 ? '' : 'а'} фракции. Сейчас доступны только отряды с разрешением на найм во время оккупации.</span></div>}

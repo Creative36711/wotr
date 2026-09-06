@@ -9,7 +9,7 @@ import type {
   SettlementType,
 } from '../types'
 import { getEconomicType } from './economicTypes'
-import { createEmptyBattleModifiers, normalizeBattleModifiers } from './battleModifiers'
+import { createEmptyBattleModifiers, normalizeBattleModifiers, normalizeOwnerModifiers } from './battleModifiers'
 
 const ru = (value: string): LocalizedTranslations => ({ ru: value })
 
@@ -32,7 +32,7 @@ const type = (
   allowedEconomicTypes: economic,
   maxPerLocation: 1, maxPerFaction: 0, destroyedOnCapture: true,
   effects: {
-    armyUpgrades: [], battleModifiers: createEmptyBattleModifiers(), recruitLevelBonus: 0, ringForgeBonus: 0,
+    armyUpgrades: [], battleModifiers: createEmptyBattleModifiers(), attackSupplyModifiers: {}, recruitLevelBonus: 0, ringForgeBonus: 0,
     ...effects,
   },
   ...extra,
@@ -50,6 +50,8 @@ export const DEFAULT_BUILDING_TYPES: BuildingTypeDefinition[] = [
   type('storehouse', 'Storehouse', 'Склад', 'The owner starts a BFME battle here with +150 extra resources.', 'Владелец начинает битву BFME здесь с дополнительными 150 ресурсов.', '▣', 100, 1, BROAD, { battleModifiers: { owner: { startingResources: 150 } } }),
   type('barracks-annex', 'Barracks Annex', 'Пристройка казарм', 'Raises the owner command point limit by 100 in a BFME battle here.', 'Повышает лимит командных очков владельца на 100 в битве BFME здесь.', '▤', 150, 2, MILITARY, { battleModifiers: { owner: { commandPointBonus: 100 } } }),
   type('palantir-tower', 'Palantir Tower', 'Башня палантира', 'Grants +3 starting palantir points and +1 income per tick in a BFME battle here.', 'Даёт +3 стартовых очка палантира и +1 к приросту в битве BFME здесь.', '◍', 250, 2, ['capital', 'city', 'fortress', 'signal_tower'], { battleModifiers: { owner: { palantirStartingPoints: 3, palantirIncomePerInterval: 1 } } }),
+  type('siege-camp', 'Siege Camp', 'Осадный лагерь', 'Armies setting out from here carry +100 starting resources and +20 command points into the battle, with no road losses.', 'Армии, выступающие отсюда, несут в бой +100 стартовых ресурсов и +20 командных очков без потерь в дороге.', '⛺', 150, 2, ['capital', 'city', 'fortress', 'camp'], { attackSupplyModifiers: { startingResources: 100, commandPointBonus: 20 } }),
+  type('scout-post', 'Scout Post', 'Разведпост', 'Armies setting out from here start a BFME battle with +2 palantir points.', 'Армии, выступающие отсюда, начинают битву BFME с +2 очками палантира.', '👁', 100, 1, ['capital', 'city', 'fortress', 'camp', 'crossroads', 'pass'], { attackSupplyModifiers: { palantirStartingPoints: 2 } }),
   type('ring-forge', 'Ring Forge', 'Кольцекузня', 'Advances the One Ring forging by 1 progress every turn, for free.', 'Каждый ход бесплатно продвигает ковку Кольца Всевластья на 1 единицу.', '◎', 300, 3, ['capital', 'fortress'], { ringForgeBonus: 1 }, { maxPerFaction: 1, destroyedOnCapture: true }),
 ]
 
@@ -102,6 +104,7 @@ export function normalizeBuildingTypes(source: unknown): BuildingTypeDefinition[
       effects: {
         armyUpgrades: Array.isArray(effects.armyUpgrades) ? UPGRADE_IDS.filter((upgrade) => effects.armyUpgrades.includes(upgrade)) : [],
         battleModifiers: normalizeBattleModifiers(effects.battleModifiers),
+        attackSupplyModifiers: normalizeOwnerModifiers(effects.attackSupplyModifiers),
         recruitLevelBonus: Math.max(0, Math.min(9, Math.round(Number(effects.recruitLevelBonus ?? 0)))),
         ringForgeBonus: Math.max(0, Math.min(10, Math.round(Number(effects.ringForgeBonus ?? 0)))),
       },

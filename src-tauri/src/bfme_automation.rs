@@ -7,7 +7,7 @@ use std::{
     process::Command,
     ptr::{null, null_mut},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         mpsc, OnceLock,
     },
     thread,
@@ -217,6 +217,7 @@ extern "system" {
     fn TranslateMessage(message: *const Message) -> i32;
     fn DispatchMessageW(message: *const Message) -> isize;
     fn GetCursorPos(point: *mut Point) -> i32;
+    fn GetAsyncKeyState(v_key: i32) -> i16;
     fn RegisterHotKey(window: Hwnd, id: i32, modifiers: u32, vk_code: u32) -> i32;
     fn UnregisterHotKey(window: Hwnd, id: i32) -> i32;
     fn PeekMessageW(message: *mut Message, window: Hwnd, min: u32, max: u32, remove: u32) -> i32;
@@ -315,6 +316,16 @@ const INJECT_MAGIC: usize = 0x57415231;
 #[cfg(target_os = "windows")]
 const TH32CS_SNAPPROCESS: u32 = 0x0000_0002;
 #[cfg(target_os = "windows")]
+const VK_CONTROL: u32 = 0x11;
+#[cfg(target_os = "windows")]
+const VK_LCONTROL: u32 = 0xA2;
+#[cfg(target_os = "windows")]
+const VK_RCONTROL: u32 = 0xA3;
+#[cfg(target_os = "windows")]
+const WM_KEYDOWN: usize = 0x0100;
+#[cfg(target_os = "windows")]
+const WM_SYSKEYDOWN: usize = 0x0104;
+#[cfg(target_os = "windows")]
 const WH_KEYBOARD_LL: i32 = 13;
 #[cfg(target_os = "windows")]
 const WH_MOUSE_LL: i32 = 14;
@@ -403,7 +414,7 @@ impl AutomationLog {
     fn write(&self, message: impl AsRef<str>) {
         let mut now = WindowsSystemTime::default();
         unsafe { GetLocalTime(&mut now) };
-        println!(
+        let line = format!(
             "[{:02}:{:02}:{:02} +{:6.1}s] {}",
             now.hour,
             now.minute,
@@ -411,6 +422,411 @@ impl AutomationLog {
             self.started.elapsed().as_secs_f64(),
             message.as_ref()
         );
+        println!("{line}");
+        // Копия в portable_data/diagnostics/<сессия>/automation.log: из консоли
+        // игру обычно не запускают, а без файла разбор полётов невозможен.
+        append_diagnostics_line(&line);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Диагностика боя: папка сессии, файл журнала и скриншоты
+// ---------------------------------------------------------------------------
+
+/// Папка диагностики текущего боя. Её задаёт `battle_config.diagnostics.folder`
+/// (абсолютный путь считает lib.rs), а читает каждая стадия автоматизации —
+/// вплоть до elevated-копии процесса.
+#[cfg(target_os = "windows")]
+static DIAGNOSTICS_FOLDER: OnceLock<std::sync::Mutex<Option<PathBuf>>> = OnceLock::new();
+
+#[cfg(target_os = "windows")]
+fn diagnostics_slot() -> &'static std::sync::Mutex<Option<PathBuf>> {
+    DIAGNOSTICS_FOLDER.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+#[cfg(target_os = "windows")]
+fn set_diagnostics_folder(folder: Option<PathBuf>) {
+    if let Ok(mut guard) = diagnostics_slot().lock() {
+        *guard = folder;
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn diagnostics_folder() -> Option<PathBuf> {
+    diagnostics_slot().lock().ok().and_then(|guard| guard.clone())
+}
+
+#[cfg(target_os = "windows")]
+fn diagnostics_folder_from(config: &Value) -> Option<PathBuf> {
+    config
+        .get("diagnostics")
+        .and_then(|value| value.get("folder"))
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+}
+
+#[cfg(target_os = "windows")]
+fn append_diagnostics_line(line: &str) {
+    use std::io::Write;
+    let Some(folder) = diagnostics_folder() else { return };
+    if std::fs::create_dir_all(&folder).is_err() {
+        return;
+    }
+    let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(folder.join("automation.log"))
+    else {
+        return;
+    };
+    let _ = writeln!(file, "{line}");
+}
+
+// --- PNG без внешних крейтов -------------------------------------------------
+
+#[cfg(target_os = "windows")]
+fn crc32(data: &[u8]) -> u32 {
+    let mut table = [0u32; 256];
+    for index in 0..256usize {
+        let mut value = index as u32;
+        for _ in 0..8 {
+            value = if value & 1 != 0 { 0xEDB8_8320 ^ (value >> 1) } else { value >> 1 };
+        }
+        table[index] = value;
+    }
+    let mut crc = 0xFFFF_FFFFu32;
+    for byte in data {
+        crc = table[((crc ^ u32::from(*byte)) & 0xFF) as usize] ^ (crc >> 8);
+    }
+    crc ^ 0xFFFF_FFFF
+}
+
+#[cfg(target_os = "windows")]
+fn adler32(data: &[u8]) -> u32 {
+    let mut a = 1u32;
+    let mut b = 0u32;
+    for byte in data {
+        a = (a + u32::from(*byte)) % 65521;
+        b = (b + a) % 65521;
+    }
+    (b << 16) | a
+}
+
+#[cfg(target_os = "windows")]
+fn push_png_chunk(out: &mut Vec<u8>, kind: &[u8], data: &[u8]) {
+    out.extend_from_slice(&(data.len() as u32).to_be_bytes());
+    let start = out.len();
+    out.extend_from_slice(kind);
+    out.extend_from_slice(data);
+    let crc = crc32(&out[start..]);
+    out.extend_from_slice(&crc.to_be_bytes());
+}
+
+/// PNG 8 бит RGB. Сжатие отключено («stored»-блоки deflate), поэтому внешних
+/// крейтов не нужно; кадр 1920×1080 занимает около 6 МБ, а старые сессии
+/// диагностики чистятся автоматически.
+#[cfg(target_os = "windows")]
+fn encode_png(width: usize, height: usize, rgb: &[u8]) -> Option<Vec<u8>> {
+    if width == 0 || height == 0 || rgb.len() < width * height * 3 {
+        return None;
+    }
+    let row = width * 3;
+    let mut raw: Vec<u8> = Vec::with_capacity(height * (row + 1));
+    for y in 0..height {
+        raw.push(0);
+        raw.extend_from_slice(&rgb[y * row..(y + 1) * row]);
+    }
+    let mut zlib: Vec<u8> = vec![0x78, 0x01];
+    let blocks = raw.chunks(65535).count();
+    for (index, block) in raw.chunks(65535).enumerate() {
+        zlib.push(u8::from(index + 1 == blocks));
+        let length = block.len() as u16;
+        zlib.extend_from_slice(&length.to_le_bytes());
+        zlib.extend_from_slice(&(!length).to_le_bytes());
+        zlib.extend_from_slice(block);
+    }
+    zlib.extend_from_slice(&adler32(&raw).to_be_bytes());
+
+    let mut out: Vec<u8> = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
+    let mut header: Vec<u8> = Vec::with_capacity(13);
+    header.extend_from_slice(&(width as u32).to_be_bytes());
+    header.extend_from_slice(&(height as u32).to_be_bytes());
+    header.extend_from_slice(&[8, 2, 0, 0, 0]);
+    push_png_chunk(&mut out, b"IHDR", &header);
+    push_png_chunk(&mut out, b"IDAT", &zlib);
+    push_png_chunk(&mut out, b"IEND", &[]);
+    Some(out)
+}
+
+/// Половинное уменьшение кадра усреднением квадратов 2×2.
+#[cfg(target_os = "windows")]
+fn halve_frame(frame: &RgbFrame) -> RgbFrame {
+    let width = (frame.width / 2).max(1);
+    let height = (frame.height / 2).max(1);
+    let row = frame.width * 3;
+    let mut data = vec![0u8; width * height * 3];
+    for y in 0..height {
+        for x in 0..width {
+            let source = (y * 2) * row + (x * 2) * 3;
+            for channel in 0..3 {
+                let a = u32::from(frame.data[source + channel]);
+                let b = u32::from(frame.data[source + 3 + channel]);
+                let c = u32::from(frame.data[source + row + channel]);
+                let d = u32::from(frame.data[source + row + 3 + channel]);
+                data[(y * width + x) * 3 + channel] = ((a + b + c + d) / 4) as u8;
+            }
+        }
+    }
+    RgbFrame { width, height, data }
+}
+
+/// Скриншоты диагностики уменьшаются, пока кадр крупнее 1280×720 (не больше двух
+/// раз): текст интерфейса остаётся читаемым, а папка кампании не разрастается —
+/// PNG без сжатия занимает 5.9 МБ на кадр 1920×1080 и 1.5 МБ на 960×540.
+#[cfg(target_os = "windows")]
+fn shrink_for_diagnostics(frame: &RgbFrame) -> RgbFrame {
+    if frame.width <= 1280 || frame.height <= 720 {
+        return frame.clone();
+    }
+    let mut current = halve_frame(frame);
+    if current.width > 1280 && current.height > 720 {
+        current = halve_frame(&current);
+    }
+    current
+}
+
+/// Разрешение основного экрана. К нему привязаны и клики (абсолютные координаты
+/// мыши нормализуются по нему), и распознавание, поэтому его полезно видеть рядом
+/// с каждым снимком.
+#[cfg(target_os = "windows")]
+fn monitor_resolution_label() -> String {
+    let width = unsafe { GetSystemMetrics(0) };
+    let height = unsafe { GetSystemMetrics(1) };
+    if width <= 0 || height <= 0 {
+        return String::new();
+    }
+    format!("{width}x{height}")
+}
+
+/// Имя скриншота с разрешением: `<имя>-<кадр>.png`, а если разрешение экрана
+/// отличается от снятого кадра — `<имя>-<кадр>@<экран>.png`. Проблемы с кликами
+/// и распознаванием почти всегда вызваны конкретным разрешением, поэтому оно
+/// пишется прямо в имя файла и видно без открытия снимка.
+#[cfg(target_os = "windows")]
+fn screenshot_name(name: &str, frame: &RgbFrame) -> String {
+    let stem = name.rsplit_once('.').map(|(stem, _)| stem).unwrap_or(name);
+    let capture = format!("{}x{}", frame.width, frame.height);
+    let monitor = monitor_resolution_label();
+    let label = if monitor.is_empty() || monitor == capture {
+        capture
+    } else {
+        format!("{capture}@{monitor}")
+    };
+    format!("{stem}-{label}.png")
+}
+
+#[cfg(target_os = "windows")]
+fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationLog) -> Option<PathBuf> {
+    save_frame_named(folder, name, frame, log, true)
+}
+
+/// Полноразмерный снимок. Уменьшение экономит место, но для разбора спорного
+/// исхода нужен кадр ровно в том разрешении, в котором работал детектор, —
+/// поэтому в сомнительных случаях пишется и такой файл.
+#[cfg(target_os = "windows")]
+fn save_frame_png_full(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationLog) -> Option<PathBuf> {
+    save_frame_named(folder, name, frame, log, false)
+}
+
+#[cfg(target_os = "windows")]
+fn save_frame_named(
+    folder: &Path,
+    name: &str,
+    frame: &RgbFrame,
+    log: &AutomationLog,
+    shrink: bool,
+) -> Option<PathBuf> {
+    let stored = if shrink { shrink_for_diagnostics(frame) } else { frame.clone() };
+    let bytes = encode_png(stored.width, stored.height, &stored.data)?;
+    if std::fs::create_dir_all(folder).is_err() {
+        return None;
+    }
+    let path = folder.join(screenshot_name(name, frame));
+    std::fs::write(&path, &bytes).ok()?;
+    let monitor = monitor_resolution_label();
+    log.write(format!(
+        "[diag] скриншот {}: кадр {}×{}, экран {}, в файле {}×{} ({} КБ)",
+        path.display(),
+        frame.width,
+        frame.height,
+        if monitor.is_empty() { "?" } else { monitor.as_str() },
+        stored.width,
+        stored.height,
+        bytes.len() / 1024
+    ));
+    Some(path)
+}
+
+/// Обстановка игрока в момент боя: разрешения экранов, геометрия окна игры,
+/// версия приложения и путь к BFME. Проблемы с кликами и распознаванием почти
+/// всегда привязаны к этим числам, поэтому они пишутся отдельным файлом, даже
+/// если снимков по какой-то причине не осталось.
+#[cfg(target_os = "windows")]
+fn write_environment_report(
+    diagnostics: Option<&Path>,
+    executable: &Path,
+    config: &Value,
+    log: &AutomationLog,
+) {
+    let Some(folder) = diagnostics else { return };
+    let metric = |index: i32| unsafe { GetSystemMetrics(index) };
+    let view = find_game_window().and_then(|(window, _)| viewport(window).ok());
+    let report = json!({
+        "screen": monitor_resolution_label(),
+        "primaryScreen": { "width": metric(0), "height": metric(1) },
+        "virtualScreen": {
+            "x": metric(76), "y": metric(77), "width": metric(78), "height": metric(79),
+            "monitors": metric(80)
+        },
+        "gameWindow": match view {
+            Some((x, y, w, h)) => json!({ "x": x, "y": y, "width": w, "height": h }),
+            None => Value::Null,
+        },
+        "appVersion": env!("CARGO_PKG_VERSION"),
+        "saveVersion": config.get("version").cloned().unwrap_or(Value::Null),
+        "executable": executable.to_string_lossy(),
+        "conflictId": config.get("conflictId").cloned().unwrap_or(Value::Null),
+        "modId": config.get("modId").cloned().unwrap_or(Value::Null),
+        "language": config.get("language").cloned().unwrap_or(Value::Null),
+        "windowed": config.get("launch").and_then(|value| value.get("windowed")).cloned().unwrap_or(Value::Null),
+        "writtenAtUnix": std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|elapsed| elapsed.as_secs())
+            .unwrap_or(0),
+    });
+    let path = folder.join("environment.json");
+    match std::fs::write(&path, format!("{}\n", serde_json::to_string_pretty(&report).unwrap_or_default())) {
+        Ok(()) => log.write(format!("[diag] обстановка записана: {}", path.display())),
+        Err(error) => log.write(format!("[diag] обстановку записать не удалось: {error}")),
+    }
+}
+
+/// Почему экран статистики подтверждён или нет: лучшие совпадения шаблонов и их
+/// оценка против порога. Это главный ключ к разбору случая «программа встала в
+/// ступор» — видно, чего именно не хватило детектору на разрешении игрока.
+#[cfg(target_os = "windows")]
+fn score_screen_report(frame: &RgbFrame, fortress: &match_detector::Template, marker: &match_detector::Template) -> String {
+    let scale = match_detector::scale_for(frame.width, frame.height);
+    let best = |template: &match_detector::Template, roi: (f64, f64, f64, f64), nms: f64| -> (f64, f64, f64) {
+        let hits = match_detector::find_template(
+            frame,
+            &template.scaled(scale),
+            match_detector::roi_pixels(roi, frame.width, frame.height),
+            0.05,
+            nms,
+        );
+        hits.iter().fold((0.0f64, -1.0f64, -1.0f64), |best, hit| {
+            if hit.score > best.0 { (hit.score, hit.x, hit.y) } else { best }
+        })
+    };
+    let (fortress_score, fortress_x, fortress_y) = best(fortress, match_detector::FORTRESS_ROI, 20.0);
+    let (marker_score, marker_x, marker_y) = best(marker, match_detector::SCORE_MARKER_ROI, 100.0);
+    format!(
+        "кадр {}×{}, масштаб {:.3}: крепость лучшая {:.3} @ ({:.0},{:.0}) при пороге {:.2}; маркер лучший {:.3} @ ({:.0},{:.0}) при пороге {:.2}",
+        frame.width,
+        frame.height,
+        scale,
+        fortress_score,
+        fortress_x,
+        fortress_y,
+        match_detector::FORTRESS_THRESHOLD,
+        marker_score,
+        marker_x,
+        marker_y,
+        match_detector::SCORE_MARKER_THRESHOLD
+    )
+}
+
+/// Снимок экрана в момент, когда детектор принимает решение о победителе:
+/// виден подсвеченный слот рейтинга и линия, по которой сделан вывод.
+///
+/// `full = true` добавляет кадр в исходном разрешении — так сохраняется при
+/// сдаче и при неопределённом исходе, когда итог и нужно разбирать по снимку.
+#[cfg(target_os = "windows")]
+fn save_decision_screenshot(diagnostics: Option<&Path>, fallback: &RgbFrame, log: &AutomationLog, full: bool) {
+    let Some(folder) = diagnostics else { return };
+    let frame = capture_game_frame().unwrap_or_else(|| fallback.clone());
+    if save_frame_png(folder, "score-chart.png", &frame, log).is_none() {
+        log.write("[diag] кадр решения сохранить не удалось");
+    }
+    if full && save_frame_png_full(folder, "score-chart-full.png", &frame, log).is_none() {
+        log.write("[diag] полноразмерный кадр решения сохранить не удалось");
+    }
+}
+
+/// `analysis.json` — что именно увидел детектор: размер кадра, масштаб, все
+/// найденные иконки с координатами и оценками, состав слотов. Без этого разбор
+/// неверного исхода превращается в гадание.
+#[cfg(target_os = "windows")]
+fn write_analysis_report(
+    diagnostics: Option<&Path>,
+    frame: &RgbFrame,
+    players: &[PlayerInfo],
+    icons: &[match_detector::DetectedIcon],
+    log: &AutomationLog,
+) {
+    let Some(folder) = diagnostics else { return };
+    let report = json!({
+        "frame": { "width": frame.width, "height": frame.height },
+        "scale": match_detector::scale_for(frame.width, frame.height),
+        "screen": monitor_resolution_label(),
+        "thresholds": {
+            "fortress": match_detector::FORTRESS_THRESHOLD,
+            "scoreMarker": match_detector::SCORE_MARKER_THRESHOLD,
+            "icon": match_detector::ICON_THRESHOLD,
+        },
+        "players": players.iter().map(|player| json!({
+            "slot": player.slot,
+            "color": player.color,
+            "side": player.side,
+        })).collect::<Vec<Value>>(),
+        "icons": icons.iter().map(|icon| json!({
+            "kind": icon.kind,
+            "x": icon.x,
+            "y": icon.y,
+            "score": icon.score,
+        })).collect::<Vec<Value>>(),
+    });
+    let path = folder.join("analysis.json");
+    match std::fs::write(&path, format!("{}\n", serde_json::to_string_pretty(&report).unwrap_or_default())) {
+        Ok(()) => log.write(format!("[diag] разбор детектора записан: {}", path.display())),
+        Err(error) => log.write(format!("[diag] разбор детектора записать не удалось: {error}")),
+    }
+}
+
+/// Снимок текущего окна игры в папку диагностики.
+#[cfg(target_os = "windows")]
+fn save_screenshot(folder: Option<&Path>, name: &str, log: &AutomationLog) {
+    let Some(folder) = folder else {
+        log.write(format!("[diag] {name}: папка диагностики не задана — скриншот пропущен"));
+        return;
+    };
+    let Some((window, _)) = find_game_window() else {
+        log.write(format!("[diag] {name}: окно игры не найдено"));
+        return;
+    };
+    let Ok(view) = viewport(window) else {
+        log.write(format!("[diag] {name}: не удалось получить размеры окна"));
+        return;
+    };
+    match capture_viewport(view) {
+        Ok(frame) => {
+            if save_frame_png(folder, name, &frame, log).is_none() {
+                log.write(format!("[diag] {name}: не удалось закодировать PNG"));
+            }
+        }
+        Err(error) => log.write(format!("[diag] {name}: захват экрана не удался: {error}")),
     }
 }
 
@@ -622,14 +1038,102 @@ pub fn stop_game() -> bool {
 }
 
 #[cfg(target_os = "windows")]
+/// Запрошен ли аварийный выход. Взводится хуком клавиатуры или сторожевым
+/// потоком, пока ввод заблокирован, и сбрасывается при следующей блокировке.
+#[cfg(target_os = "windows")]
+static EMERGENCY_EXIT: AtomicBool = AtomicBool::new(false);
+
+/// Поколение блокировки ввода: сторожевой поток выходит, когда оно меняется.
+#[cfg(target_os = "windows")]
+static INPUT_LOCK_GENERATION: AtomicU64 = AtomicU64::new(0);
+
+/// Сколько клавиш записать в журнал диагностики (одна на блокировку): по коду
+/// видно, что именно приходит в хук, если аварийный выход снова не сработает.
+#[cfg(target_os = "windows")]
+static KEY_LOG_REMAINING: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(target_os = "windows")]
+pub fn emergency_exit_requested() -> bool {
+    EMERGENCY_EXIT.load(Ordering::SeqCst)
+}
+
+/// Аварийный выход: закрыть BFME и вернуть пользователю мышь и клавиатуру.
+///
+/// Тяжёлая работа вынесена из хука в отдельный поток: у low-level хука жёсткий
+/// таймаут, и `TerminateProcess` прямо в callback заставил бы Windows снять хук.
+#[cfg(target_os = "windows")]
+fn run_emergency_exit() {
+    let started = thread::Builder::new()
+        .name("bfme-emergency-exit".into())
+        .spawn(|| {
+            let log = AutomationLog::start();
+            log.write("[exit] Ctrl при заблокированном вводе — аварийный выход: закрываю BFME и возвращаю управление");
+            let stopped = stop_game();
+            // Ввод возвращается немедленно, даже если процесс ещё жив: пользователь
+            // должен получить систему обратно в любом случае.
+            INPUT_BLOCKING.store(false, Ordering::SeqCst);
+            log.write(if stopped {
+                "[exit] BFME закрыт, физический ввод разблокирован".to_string()
+            } else {
+                "[exit] BFME закрыт не полностью, но физический ввод разблокирован".to_string()
+            });
+        });
+    if started.is_err() {
+        // Поток не создался — разблокируем ввод хотя бы так.
+        INPUT_BLOCKING.store(false, Ordering::SeqCst);
+    }
+}
+
 unsafe extern "system" fn keyboard_hook(code: i32, w_param: usize, l_param: isize) -> isize {
     if code >= 0 && INPUT_BLOCKING.load(Ordering::Relaxed) {
         let data = &*(l_param as *const KeyboardHookData);
+        // Низкоуровневый хук (WH_KEYBOARD_LL) отдаёт не общий VK_CONTROL, а код
+        // конкретной клавиши — VK_LCONTROL/VK_RCONTROL. Сравнение только с 0x11
+        // поэтому никогда не срабатывало: проверяем все три варианта.
+        let is_ctrl = data.vk_code == VK_CONTROL
+            || data.vk_code == VK_LCONTROL
+            || data.vk_code == VK_RCONTROL;
+        let pressed = w_param == WM_KEYDOWN || w_param == WM_SYSKEYDOWN;
+        if KEY_LOG_REMAINING.load(Ordering::Relaxed) > 0 {
+            KEY_LOG_REMAINING.fetch_sub(1, Ordering::Relaxed);
+            append_diagnostics_line(&format!(
+                "[exit] при заблокированном вводе получена клавиша vk={:#04x}",
+                data.vk_code
+            ));
+        }
+        // Аварийный выход. Работает только в этой ветке, то есть ровно тогда,
+        // когда ввод заблокирован автоматизацией и пользователь иначе не может
+        // ничего сделать: одиночный Ctrl закрывает игру и возвращает управление.
+        if is_ctrl && pressed && !EMERGENCY_EXIT.swap(true, Ordering::SeqCst) {
+            run_emergency_exit();
+        }
+        // Ctrl пропускаем дальше, а не проглатываем: состояние клавиши обновится,
+        // и сторожевой поток продублирует выход, если хук чем-то не сработал.
+        if is_ctrl {
+            return CallNextHookEx(null_mut(), code, w_param, l_param);
+        }
         if data.extra_info != INJECT_MAGIC {
             return 1;
         }
     }
     CallNextHookEx(null_mut(), code, w_param, l_param)
+}
+
+/// Второй, независимый от хука путь аварийного выхода: пока ввод заблокирован,
+/// поток опрашивает физическое состояние Ctrl.
+#[cfg(target_os = "windows")]
+fn input_watchdog(generation: u64) {
+    while INPUT_LOCK_GENERATION.load(Ordering::SeqCst) == generation
+        && INPUT_BLOCKING.load(Ordering::Relaxed)
+    {
+        if unsafe { GetAsyncKeyState(VK_CONTROL as i32) } < 0
+            && !EMERGENCY_EXIT.swap(true, Ordering::SeqCst)
+        {
+            run_emergency_exit();
+            return;
+        }
+        thread::sleep(Duration::from_millis(80));
+    }
 }
 
 #[cfg(target_os = "windows")]
@@ -703,7 +1207,16 @@ impl InputLockGuard {
         if INPUT_BLOCKING.swap(true, Ordering::SeqCst) {
             return Err("Автоматизация BFME уже управляет мышью и клавиатурой".into());
         }
-        println!("[BFME] Физический ввод заблокирован; Ctrl+Alt+Del остаётся доступен.");
+        // Прошлый аварийный выход не должен мгновенно закрыть следующий бой.
+        EMERGENCY_EXIT.store(false, Ordering::SeqCst);
+        KEY_LOG_REMAINING.store(1, Ordering::SeqCst);
+        let generation = INPUT_LOCK_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+        let _ = thread::Builder::new()
+            .name("bfme-input-watchdog".into())
+            .spawn(move || input_watchdog(generation));
+        let message = "[BFME] Физический ввод заблокирован; Ctrl — аварийный выход (закроет BFME и вернёт управление), Ctrl+Alt+Del тоже доступен.";
+        println!("{message}");
+        append_diagnostics_line(message);
         Ok(Self)
     }
 }
@@ -712,6 +1225,8 @@ impl InputLockGuard {
 impl Drop for InputLockGuard {
     fn drop(&mut self) {
         INPUT_BLOCKING.store(false, Ordering::SeqCst);
+        // Сторожевой поток видит новое поколение и завершается сам.
+        INPUT_LOCK_GENERATION.fetch_add(1, Ordering::SeqCst);
         println!("[BFME] Физический ввод разблокирован.");
     }
 }
@@ -1008,6 +1523,11 @@ fn click(x: i32, y: i32) -> Result<(), String> {
 
 #[cfg(target_os = "windows")]
 fn click_fraction(view: (i32, i32, i32, i32), x: f64, y: f64) -> Result<(), String> {
+    // После аварийного выхода по Ctrl играть уже не во что: не продолжаем кликать
+    // по закрывшемуся окну, а сразу возвращаем ошибку в вызывающий поток.
+    if emergency_exit_requested() {
+        return Err("Аварийный выход по Ctrl: BFME закрыт, автоматизация остановлена".into());
+    }
     click(
         view.0 + (x * view.2 as f64) as i32,
         view.1 + (y * view.3 as f64) as i32,
@@ -1679,6 +2199,14 @@ pub enum FlowOutcome {
 
 #[cfg(target_os = "windows")]
 fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory: &Path, log: &AutomationLog) -> Result<FlowOutcome, String> {
+    // Папка диагностики боя: туда пишутся automation.log и скриншоты.
+    let diagnostics = diagnostics_folder_from(config);
+    set_diagnostics_folder(diagnostics.clone());
+    match &diagnostics {
+        Some(folder) => log.write(format!("[diag] папка диагностики: {}", folder.display())),
+        None => log.write("[diag] папка диагностики не задана — журнал и скриншоты не пишутся"),
+    }
+    write_environment_report(diagnostics.as_deref(), executable, config, log);
     let language = config
         .get("language")
         .and_then(Value::as_str)
@@ -1715,6 +2243,9 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         activate_window(window);
         wait_for_menu_ready(window, log, language)?;
         let view = viewport(window)?;
+        // Размер клиентской области в журнале: по нему видно, в каком
+        // разрешении игра реально отрисовывает кадр.
+        log.write(format!("[window] клиентская область {}×{}", view.2, view.3));
         // Прогрев ввода: на холодном старте окно появляется раньше, чем игра
         // начинает принимать инжектируемый SendInput — первый клик ушёл бы
         // «в пустоту». Активируем окно и даём ему осесть.
@@ -1840,6 +2371,18 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
             return Ok(FlowOutcome::CoordinatesTested);
         }
 
+        // Скриншот комнаты перед стартом: карта, слоты, цвета, гандикапы и
+        // позиции. Без него «странный» бой не воспроизвести.
+        log.write(format!(
+            "[diag] окно игры: x={} y={} {}×{}, экран {}",
+            view.0,
+            view.1,
+            view.2,
+            view.3,
+            monitor_resolution_label()
+        ));
+        write_environment_report(diagnostics.as_deref(), executable, config, log);
+        save_screenshot(diagnostics.as_deref(), "room-before-start.png", log);
         log.write("[room] clicking Start Game");
         click_fraction(view, 0.8836, 0.9542)?;
         thread::sleep(START_COUNTDOWN);
@@ -1909,6 +2452,10 @@ fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
     ));
     let deadline = Instant::now() + timeout;
     loop {
+        if emergency_exit_requested() {
+            log.write("[monitor] аварийный выход по Ctrl — ожидание статистики прекращено");
+            return json!({"status":"ABORTED","winningTeam":null,"winningSlot":null,"detail":"аварийный выход по Ctrl","elapsedSec":started.elapsed().as_secs()});
+        }
         if Instant::now() > deadline {
             return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"score screen timeout","elapsedSec":started.elapsed().as_secs()});
         }
@@ -1918,7 +2465,7 @@ fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
         if let Some(frame) = capture_game_frame() {
             if !frame.is_black() && is_score_screen(&frame, &fortress, &marker) {
                 log.write("[match] экран статистики найден — анализирую победителя");
-                let mut result = analyse_score_screen(&players, log);
+                let mut result = analyse_score_screen(&players, log, diagnostics_folder_from(config).as_deref());
                 if let Some(object) = result.as_object_mut() {
                     object.insert("elapsedSec".into(), json!(started.elapsed().as_secs()));
                 }
@@ -1930,7 +2477,11 @@ fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
 }
 
 #[cfg(target_os = "windows")]
-fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
+fn analyse_score_screen(
+    players: &[PlayerInfo],
+    log: &AutomationLog,
+    diagnostics: Option<&Path>,
+) -> Value {
     let _input_lock = InputLockGuard::acquire();
     let fortress = match_detector::fortress_template();
     let marker = match_detector::score_marker_template();
@@ -1950,6 +2501,10 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
     let mut frame: Option<RgbFrame> = None;
     let deadline = Instant::now() + ANALYSIS_TIMEOUT;
     while Instant::now() < deadline {
+        if emergency_exit_requested() {
+            log.write("[match] аварийный выход по Ctrl — разбор статистики прекращён");
+            return json!({"status":"ABORTED","winningTeam":null,"winningSlot":null,"detail":"аварийный выход по Ctrl"});
+        }
         if let Some(candidate) = capture_game_frame() {
             if !candidate.is_black() && is_score_screen(&candidate, &fortress, &marker) {
                 frame = Some(candidate);
@@ -1959,16 +2514,42 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
         thread::sleep(RETRY_DELAY);
     }
     let Some(frame) = frame else {
-        return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no valid chart frame"});
+        // Раньше здесь был тихий выход: игрок видел полминуты заблокированного
+        // ввода и пустую папку диагностики. Теперь пишем, чего не хватило
+        // детектору, и сохраняем кадр в полном разрешении.
+        let report = match capture_game_frame() {
+            Some(last) => {
+                let report = score_screen_report(&last, &fortress, &marker);
+                if let Some(folder) = diagnostics {
+                    save_frame_png_full(folder, "score-chart-timeout.png", &last, log);
+                }
+                report
+            }
+            None => "кадр захватить не удалось".to_string(),
+        };
+        log.write(format!(
+            "[match] экран статистики не подтверждён за {:?} — {}",
+            ANALYSIS_TIMEOUT, report
+        ));
+        return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":format!("no valid chart frame; {report}")});
     };
+    log.write(format!("[match] экран статистики подтверждён: {}", score_screen_report(&frame, &fortress, &marker)));
     let icons = detect_icons(&frame);
     if icons.is_empty() {
+        // Иконок нет — значит, разбирать нечего: сохраняем кадр целиком, по нему
+        // видно, что именно не так с масштабом или порогом.
+        if let Some(folder) = diagnostics {
+            save_frame_png_full(folder, "score-chart-no-icons.png", &frame, log);
+        }
         return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"victory/defeat icons not found"});
     }
     log.write(format!("[match] найдено иконок: {}", icons.len()));
+    write_analysis_report(diagnostics, &frame, players, &icons, log);
 
-    let max_x_gap = 80.0f64;
-    let max_y_gap = 60.0f64;
+    // Допуски в эталонных пикселях 1920×1080 — масштабируем под реальный кадр.
+    let scale = match_detector::scale_for(frame.width, frame.height);
+    let max_x_gap = 80.0f64 * scale;
+    let max_y_gap = 60.0f64 * scale;
     let mut slots: Vec<u64> = players.iter().map(|player| player.slot).collect();
     slots.sort_unstable();
     slots.dedup();
@@ -1980,6 +2561,17 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
             if let Some(view) = view {
                 if slot >= 2 && (slot as usize) <= RATING_SLOT_FRAC.len() + 1 {
                     let (fx, fy) = RATING_SLOT_FRAC[(slot - 2) as usize];
+                    // Координаты клика — в журнал: «вместо цвета нажалась фора»
+                    // разбирается именно по этим числам и геометрии окна.
+                    log.write(format!(
+                        "[match] слот {slot}: клик по рейтингу в ({:.0},{:.0}), доля окна ({:.4},{:.4}), окно {}×{}",
+                        view.0 as f64 + fx * view.2 as f64,
+                        view.1 as f64 + fy * view.3 as f64,
+                        fx,
+                        fy,
+                        view.2,
+                        view.3
+                    ));
                     if click_fraction(view, fx, fy).is_err() {
                         log.write(format!("[match] не удалось кликнуть слот {slot} рейтинга"));
                     }
@@ -1989,10 +2581,17 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
         }
         let current = capture_game_frame().unwrap_or_else(|| frame.clone());
         let Some((x_end, y_end)) = line_endpoint(&current, &player.color, &icons, true) else {
-            log.write(format!("[match] слот {slot} ({}): яркая линия не найдена — сдача", player.color));
+            log.write(format!(
+                "[match] слот {slot} ({}): яркая линия не найдена — сдача (кадр {}×{})",
+                player.color, current.width, current.height
+            ));
             surrendered_slot = Some(slot);
             break;
         };
+        log.write(format!(
+            "[match] слот {slot} ({}): конец линии ({:.0},{:.0})",
+            player.color, x_end, y_end
+        ));
         let mut candidates: Vec<&match_detector::DetectedIcon> = icons
             .iter()
             .filter(|icon| {
@@ -2004,9 +2603,22 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
             let dr = (right.x - x_end).hypot(right.y - y_end);
             dl.partial_cmp(&dr).unwrap_or(std::cmp::Ordering::Equal)
         });
+        for (rank, icon) in candidates.iter().take(3).enumerate() {
+            log.write(format!(
+                "[match] слот {slot}: кандидат {} — {} @ ({:.0},{:.0}) оценка {:.3}",
+                rank + 1,
+                icon.kind,
+                icon.x,
+                icon.y,
+                icon.score
+            ));
+        }
         match candidates.first() {
             Some(icon) if icon.kind == "victory" => {
                 log.write(format!("[match] слот {slot} ({}): линия дошла до монеты победы", player.color));
+                // Кадр ровно в момент вывода о победителе: подсвечен слот {slot},
+                // линия доведена до монеты — спорный исход разбирается по нему.
+                save_decision_screenshot(diagnostics, &frame, log, false);
                 return json!({
                     "status":"COMPLETED",
                     "winningTeam":player.side,
@@ -2026,6 +2638,9 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
     if let Some(slot) = surrendered_slot {
         if let Some(player) = players.iter().find(|item| item.slot == slot) {
             let winner = players.iter().find(|item| item.side != player.side);
+            // Решение о сдаче тоже фиксируем кадром — и сразу в полном
+            // разрешении: на нём видно слот, у которого не нашлось яркой линии.
+            save_decision_screenshot(diagnostics, &frame, log, true);
             return json!({
                 "status":"SURRENDER",
                 "winningTeam":winner.map(|item| item.side.clone()),
@@ -2034,6 +2649,9 @@ fn analyse_score_screen(players: &[PlayerInfo], log: &AutomationLog) -> Value {
             });
         }
     }
+    // Исход не определён — кадр тем более нужен, и в полном разрешении:
+    // по нему видно, что именно детектор не смог разобрать.
+    save_decision_screenshot(diagnostics, &frame, log, true);
     json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no conclusive victory icon"})
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { phaseIcon, phaseLabel } from '../game/campaign'
+import { currentSessionFolder, currentSessionKey, revealSessionLog } from '../game/sessionLog'
 import { useMapStore } from '../store/useMapStore'
 import type { SaveState } from '../types'
 
@@ -59,6 +60,7 @@ export default function Topbar({ saveState, onSave, onOpenData, onMenu, activeMo
       {mode === 'game' && <div className={`campaign-phase-bar phase-${campaign.phase}`}><span>{phaseIcon(campaign.phase)}</span><div><small>Раунд {campaign.round}</small><b>{campaign.phase.startsWith('planning_')?`Ваш ход · ${playerFaction?.label??''}`:campaign.phase==='aftermath'?'Итоги хода':campaign.phase==='conflicts'?'Сражения':phaseLabel(campaign)}</b></div><i /><strong>Золото {campaignGold} <em>{campaignBalance >= 0 ? '+' : ''}{campaignBalance}</em></strong><strong>Материалы {campaignMaterials}</strong></div>}
 
       <div className="top-actions">
+        {mode === 'game' && <button type="button" className="diagnostics-button" onClick={() => void revealSessionLog()} title={currentSessionFolder() ? `Журнал партии и скриншоты боёв: ${currentSessionFolder()}` : 'Скачать журнал партии'}><span>❯</span> Журнал{currentSessionKey() ? <small>{currentSessionKey()}</small> : null}</button>}
         <button type="button" className="menu-button" onClick={onMenu}><span>☰</span> Главное меню</button>
         {mode==='edit'&&<><div className={`save-status ${saveState}`} title={`Данные активного мода: ${activeModName}`}><i/><span>{saveState==='idle'?'world.json':saveLabels[saveState]}</span></div><span className="action-divider"/><button type="button" className="icon-button" onClick={undo} disabled={!historyLength} title="Отменить (Ctrl+Z)">↶</button><button type="button" className="icon-button" onClick={redo} disabled={!futureLength} title="Повторить (Ctrl+Y)">↷</button></>}
 

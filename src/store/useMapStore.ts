@@ -14,6 +14,16 @@ import { chooseRingCarrier, createDefaultRingForging, createDefaultRingState, in
 import { DEFAULT_PALANTIR_SETTINGS } from '../game/battleModifiers'
 import { availableUpgrades, DEFAULT_HERO_MAX_LEVEL, DEFAULT_UNIT_MAX_LEVEL, grantBattleExperience, heroMaxLevel, unitMaxLevel } from '../game/progression'
 import { applySaveGame, createNewSaveGame, extractSaveGame } from '../game/saveGame'
+import { describe, logEvent, registerTurnContext } from '../game/sessionLog'
+import {
+  createSupplyPool,
+  DEFAULT_SUPPLY_SETTINGS,
+  mergeSupplyPools,
+  travelAlongPath,
+  turnStartSupply,
+} from '../game/supply'
+import type { SupplyWorld } from '../game/supply'
+import type { SupplySettings } from '../types'
 import { hexDistance, locationHexId, neighborIds, parseHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
 import {
   emptyRegion,
@@ -69,6 +79,7 @@ interface WorldSnapshot {
   buildingTypes: BuildingTypeDefinition[]
   palantirSettings: PalantirSettings
   ringForging: RingForgingSettings
+  supplySettings: SupplySettings
   campaign: CampaignState
   battles: AutoBattleReport[]
 }
@@ -161,6 +172,7 @@ interface MapState extends WorldSnapshot {
   removeBuildingType: (id: string) => void
   updateRingForging: (patch: Partial<RingForgingSettings>) => void
   updatePalantirSettings: (patch: Partial<PalantirSettings>) => void
+  updateSupplySettings: (patch: Partial<SupplySettings>) => void
   undo: () => void
   redo: () => void
 }
@@ -172,6 +184,7 @@ const cloneArmies = (items: Army[]) => items.map((army) => ({
   commander: army.commander ? { ...army.commander } : null,
   unitSlots: army.unitSlots.map((slot) => ({ ...slot })),
   heroSlots: army.heroSlots.map((slot) => ({ ...slot })),
+  supplyPool: army.supplyPool ? { ...army.supplyPool, initialAmount: { ...army.supplyPool.initialAmount } } : null,
 }))
 const cloneCampaign = (campaign: CampaignState): CampaignState => ({
   ...campaign,
@@ -195,6 +208,7 @@ const cloneCampaign = (campaign: CampaignState): CampaignState => ({
 })
 const cloneBattles = (items: AutoBattleReport[]) => items.map((item) => ({ ...item, attackerArmyIds: [...(item.attackerArmyIds ?? [item.attackerArmyId])], defenderArmyIds: [...(item.defenderArmyIds ?? [item.defenderArmyId])], attackerReinforcementArmyIds: [...(item.attackerReinforcementArmyIds ?? [])], defenderReinforcementArmyIds: [...(item.defenderReinforcementArmyIds ?? [])], attackerLosses: item.attackerLosses.map((loss) => ({ ...loss })), defenderLosses: item.defenderLosses.map((loss) => ({ ...loss })), garrisonLosses: (item.garrisonLosses ?? []).map((loss) => ({ ...loss })) }))
 const cloneSnapshot = (snapshot: WorldSnapshot): WorldSnapshot => ({
+  supplySettings: { ...(snapshot.supplySettings ?? DEFAULT_SUPPLY_SETTINGS) },
   locations: cloneLocations(snapshot.locations),
   grid: cloneGrid(snapshot.grid),
   factions: snapshot.factions.map((item) => ({ ...item })),
@@ -218,6 +232,7 @@ const currentSnapshot = (state: MapState): WorldSnapshot => ({
   locations: state.locations, grid: state.grid, factions: state.factions, economicTypes: state.economicTypes, unitTypes: state.unitTypes,
   heroes: state.heroes, captains: state.captains, armies: state.armies, regions: state.regions,
   buildingTypes: state.buildingTypes, palantirSettings: state.palantirSettings, ringForging: state.ringForging,
+  supplySettings: state.supplySettings ?? DEFAULT_SUPPLY_SETTINGS,
   campaign: state.campaign, battles: state.battles,
 })
 const snapshotToWorld = (snapshot: WorldSnapshot): WorldData => ({ version: WORLD_DATA_VERSION, ...cloneSnapshot(snapshot) })
@@ -281,14 +296,26 @@ function preparePlanningSide(state: MapState, campaign: CampaignState, sourceArm
   let armies = cloneArmies(sourceArmies)
   let heroes = sourceHeroes.map((hero) => ({ ...hero }))
   campaign.activeFactionId = campaign.playerFactionId && factionSide(state.factions, campaign.playerFactionId) === side ? campaign.playerFactionId : firstFactionForSide(state.factions, side, campaign)
-  armies = armies.map((army) => factionSide(state.factions, army.factionId) === side && factionIsActive(campaign, army.factionId) ? {
-    ...army,
-    movementRemaining: army.exhaustedUntilRound !== null && army.exhaustedUntilRound >= campaign.round ? 0 : armyMovementCap(army, heroes, state.captains, state.unitTypes),
-    status: army.exhaustedUntilRound !== null && army.exhaustedUntilRound >= campaign.round ? 'retreating' as const : army.status === 'garrison' ? 'garrison' as const : 'ready' as const,
-    engaged: false,
-    movedRound: null,
-    movedInPhase: null,
-  } : army)
+  const supplyWorld = supplyWorldFor(state, campaign)
+  armies = armies.map((army) => {
+    if (!(factionSide(state.factions, army.factionId) === side && factionIsActive(campaign, army.factionId))) return army
+    const refreshed: Army = {
+      ...army,
+      movementRemaining: army.exhaustedUntilRound !== null && army.exhaustedUntilRound >= campaign.round ? 0 : armyMovementCap(army, heroes, state.captains, state.unitTypes),
+      status: army.exhaustedUntilRound !== null && army.exhaustedUntilRound >= campaign.round ? 'retreating' as const : army.status === 'garrison' ? 'garrison' as const : 'ready' as const,
+      engaged: false,
+      movedRound: null,
+      movedInPhase: null,
+    }
+    // Снабжение: даже стоящая армия съедает запасы, а стоянка на своей локации
+    // пополняет их полностью.
+    const standingLocation = state.locations.find((location) => locationHexId(location, state.grid.config) === army.hexId) ?? null
+    const step = turnStartSupply(army, standingLocation, campaign.round, supplyWorld)
+    refreshed.supplyPool = step.pool
+    if (step.refilledAt) logEvent('снабжение', `${army.name} пополняет снабжение в «${standingLocation?.name ?? step.refilledAt}»`, { раунд: campaign.round, локация: step.refilledAt })
+    else if (step.depleted) logEvent('снабжение', `${army.name}: припасы исчерпаны`, { раунд: campaign.round })
+    return refreshed
+  })
 
   for (const hero of heroes.filter((candidate) => factionSide(state.factions, candidate.factionId) === side && factionIsActive(campaign, candidate.factionId))) {
     const heroState = campaign.heroStates[hero.id] ?? {
@@ -581,6 +608,25 @@ function modifierContext(state: MapState, campaign: CampaignState, regions: Regi
     economicTypes: state.economicTypes,
     ringForging: state.ringForging ?? createDefaultRingForging(),
     palantirSettings: state.palantirSettings ?? DEFAULT_PALANTIR_SETTINGS,
+    supplySettings: state.supplySettings ?? DEFAULT_SUPPLY_SETTINGS,
+  }
+}
+
+/** Всё, что нужно расчёту снабжения, собранное из текущего состояния. */
+function supplyWorldFor(state: MapState, campaign: CampaignState): SupplyWorld {
+  const locationsByHex = new Map<string, MapLocation>()
+  const locationById = new Map<string, MapLocation>()
+  for (const location of state.locations) {
+    locationsByHex.set(locationHexId(location, state.grid.config), location)
+    locationById.set(location.id, location)
+  }
+  return {
+    campaign,
+    buildingTypes: state.buildingTypes ?? [],
+    economicTypes: state.economicTypes,
+    locationsByHex,
+    locationById,
+    settings: state.supplySettings ?? DEFAULT_SUPPLY_SETTINGS,
   }
 }
 
@@ -991,7 +1037,7 @@ function processAftermath(state: MapState, campaign: CampaignState, sourceArmies
 export const useMapStore = create<MapState>((set) => ({
   locations: [], grid: { config: { ...DEFAULT_GRID_CONFIG }, cells: {} }, factions: [], economicTypes: createDefaultEconomicTypes(), unitTypes: [], heroes: [], captains: [], armies: [], regions: [],
   buildingTypes: createDefaultBuildingTypes(), palantirSettings: { ...DEFAULT_PALANTIR_SETTINGS }, ringForging: createDefaultRingForging(),
-  campaign: createDefaultCampaign([]), battles: [], editorTemplate: null, gameSave: null, selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null,
+  campaign: createDefaultCampaign([]), battles: [], supplySettings: DEFAULT_SUPPLY_SETTINGS, editorTemplate: null, gameSave: null, selectedId: null, selectedHexId: null, selectedHexIds: [], selectedArmyId: null, latestBattleId: null,
   mode: 'edit', viewMode: 'cinematic', hexEdit: false, addKind: null, history: [], future: [], revision: 0,
 
   initialize: (world, saveGame) => {
@@ -1066,7 +1112,7 @@ export const useMapStore = create<MapState>((set) => ({
     }
     campaign.activeFactionId = playerFaction.id
     campaign.turnMovements = []
-    campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, playerFaction.id) : []
+    campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, playerFaction.id, workingState.supplySettings) : []
     refreshFogIntel(campaign, armies, gameWorld.locations, gameWorld.factions, gameWorld.grid, gameWorld.regions, true)
     const nextWorld: WorldData = { ...gameWorld, version: WORLD_DATA_VERSION, armies, heroes, campaign, battles: [] }
     const gameSave = extractSaveGame(nextWorld, initialSave)
@@ -1475,6 +1521,7 @@ export const useMapStore = create<MapState>((set) => ({
       baseUnitSlotLimit: 15, heroSlotLimit: 2, commander,
       unitSlots: [{ slotId: `${id}-unit-1`, kind: 'unit', entityId: initialUnit.id, objectId: initialUnit.objectId, level: 1, weaponUpgrade: false, armorUpgrade: false, bannerUpgrade: false }], heroSlots: [],
       status: 'ready', canInitiateBattle: true, engaged: false, movedRound: null, movedInPhase: null, exhaustedUntilRound: null,
+      supplyPool: createSupplyPool(creationLocation, faction.id, state.campaign.round, supplyWorldFor(state, state.campaign)),
     }
     const armies = [...cloneArmies(state.armies), draft]
     draft.name = generateArmyName(draft, armies, state.factions, state.locations, state.heroes, state.grid.config)
@@ -1646,7 +1693,13 @@ export const useMapStore = create<MapState>((set) => ({
     const runSideAiMovement = (side: StrategicSide) => {
       if (!campaign.aiEnabled) return
       const sidePlans = side === campaign.playerSide ? campaign.alliedPlans : []
-      armies = runAiMovement(side, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId, heroes, sidePlans)
+      const aiSupplyWorld = supplyWorldFor(state, campaign)
+      armies = runAiMovement(side, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId, heroes, sidePlans, (army, path) => {
+        const step = travelAlongPath(army.supplyPool, path, army.factionId, campaign.round, aiSupplyWorld)
+        army.supplyPool = step.pool
+        if (step.refilledAt) logEvent('снабжение', `${army.name} пополняет снабжение по пути`, { раунд: campaign.round, локация: step.refilledAt, гексов: path.length - 1 })
+        else if (step.depleted) logEvent('снабжение', `${army.name}: припасы исчерпаны в пути`, { раунд: campaign.round, гексов: path.length - 1 })
+      }, state.supplySettings)
       if (side === campaign.playerSide) campaign.alliedPlans = []
       campaign.log.unshift(campaignEvent(campaign, `ИИ завершил движение остальных фракций стороны «${side === 'good' ? 'Свет' : 'Тьма'}».`, 'move', null))
     }
@@ -1672,7 +1725,7 @@ export const useMapStore = create<MapState>((set) => ({
       }
       campaign.activeFactionId = campaign.playerFactionId!
       campaign.turnMovements = []
-      campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId) : []
+      campaign.alliedPlans = campaign.aiEnabled ? planAlliedMovement(campaign.playerSide, campaign, armies, locations, state.factions, state.grid, regions, campaign.playerFactionId, state.supplySettings) : []
     }
     const executePlayerOrders=()=>{
       const grid=resolveGrid(state.grid,locations,regions)
@@ -1681,6 +1734,12 @@ export const useMapStore = create<MapState>((set) => ({
         const interception=order.path.findIndex((hex,index)=>index>0&&armies.some((enemy)=>enemy.hexId===hex&&areFactionsHostile(state.factions,enemy.factionId,army.factionId)));const path=interception>0?order.path.slice(0,interception+1):order.path;const destination=path.at(-1)!;const cost=pathMovementCost(path,grid.byId,army.factionId);if(cost>army.movementRemaining)continue
         const enemies=armies.filter((enemy)=>enemy.hexId===destination&&areFactionsHostile(state.factions,enemy.factionId,army.factionId));const target=locations.find((location)=>location.hex===destination)??(order.locationId?locations.find((location)=>location.id===order.locationId)??null:null);const hostile=Boolean(target&&areFactionsHostile(state.factions,target.side,army.factionId));const committed=enemies.length>0||hostile;if(committed&&!army.canInitiateBattle)continue
         army.hexId=destination;army.movementRemaining=committed?0:Math.max(0,army.movementRemaining-cost);army.status=army.movementRemaining>0?'ready':'marched';army.engaged=committed;army.movedRound=campaign.round;army.movedInPhase='movement_first'
+        // Снабжение считается по исполненному пути: перехват обрывает маршрут,
+        // и припасы тратятся ровно на пройденные гексы.
+        const supplyStep = travelAlongPath(army.supplyPool, path, army.factionId, campaign.round, supplyWorldFor(state, campaign))
+        army.supplyPool = supplyStep.pool
+        if (supplyStep.refilledAt) logEvent('снабжение', `${army.name} пополняет снабжение по пути`, { раунд: campaign.round, локация: supplyStep.refilledAt, гексов: path.length - 1 })
+        else if (supplyStep.depleted) logEvent('снабжение', `${army.name}: припасы исчерпаны в пути`, { раунд: campaign.round, гексов: path.length - 1 })
         campaign.turnMovements.push({id:`log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`,round:campaign.round,factionId:army.factionId,armyName:army.name,commanderName:armyCommanderName(army,heroes),action:committed?'besieged':'moved',targetLabel:target?.name??movementTargetLabel(destination,locations,regions,grid),distance:path.length-1,armyId:army.id,originHexId,destinationHexId:destination})
         if(committed){for(const enemy of enemies)enemy.engaged=true;campaign.log.unshift(campaignEvent(campaign,`${army.name} входит в зону боя и связывает противника.`,'move',army.factionId))}else if(target?.side==='civilian'){captureLocation(locations,regions,campaign,target.id,army.factionId,state.buildingTypes);campaign.log.unshift(campaignEvent(campaign,`${army.name} занимает нейтральную локацию «${target.name}».`,'capture',army.factionId))}else campaign.log.unshift(campaignEvent(campaign,`${army.name} перемещается на ${cost} ОД.`,'move',army.factionId))
       }
@@ -1858,7 +1917,7 @@ export const useMapStore = create<MapState>((set) => ({
     const created: BuildingTypeDefinition = {
       id, name: 'New Building', nameTranslations: { ru: 'Новая постройка' }, description: '', descriptionTranslations: {}, icon: '▣',
       cost: 150, buildTime: 2, allowedStructuralTypes: ['domain', 'stronghold'], allowedEconomicTypes: [], maxPerLocation: 1, maxPerFaction: 0, destroyedOnCapture: true,
-      effects: { armyUpgrades: [], battleModifiers: { owner: {} }, recruitLevelBonus: 0, ringForgeBonus: 0 },
+      effects: { armyUpgrades: [], battleModifiers: { owner: {} }, attackSupplyModifiers: {}, recruitLevelBonus: 0, ringForgeBonus: 0 },
     }
     return pushHistory(state, { ...currentSnapshot(state), buildingTypes: [...state.buildingTypes, created] })
   }),
@@ -1877,6 +1936,11 @@ export const useMapStore = create<MapState>((set) => ({
   updatePalantirSettings: (patch) => set((state) => {
     if (state.mode !== 'edit') return state
     return pushHistory(state, { ...currentSnapshot(state), palantirSettings: { ...state.palantirSettings, ...patch } })
+  }),
+
+  updateSupplySettings: (patch) => set((state) => {
+    if (state.mode !== 'edit') return state
+    return pushHistory(state, { ...currentSnapshot(state), supplySettings: { ...(state.supplySettings ?? DEFAULT_SUPPLY_SETTINGS), ...patch } })
   }),
 
 
@@ -2071,6 +2135,11 @@ export const useMapStore = create<MapState>((set) => ({
     if (source.unitSlots.length <= 1) return state
     const armies = cloneArmies(state.armies)
     const from = armies.find((item) => item.id === sourceArmyId)!
+    // Отряд уходит в другую армию: подготовка к походу не теряется, поэтому
+    // принимающая армия получает снабжение — при слиянии берутся более свежие
+    // припасы, но худшие счётчики пути и времени из двух.
+    const receiving = armies.find((item) => item.id === targetArmyId)!
+    receiving.supplyPool = mergeSupplyPools(receiving.supplyPool, from.supplyPool, state.supplySettings ?? DEFAULT_SUPPLY_SETTINGS)
     const to = armies.find((item) => item.id === targetArmyId)!
     from.unitSlots = from.unitSlots.filter((item) => item.slotId !== slotId)
     to.unitSlots.push({ ...slot })
@@ -2136,7 +2205,8 @@ export const useMapStore = create<MapState>((set) => ({
     const firstUnit = campaign.locationStates[locationId].reserve.find((slot) => slot.kind === 'unit')!
     campaign.locationStates[locationId].reserve = campaign.locationStates[locationId].reserve.filter((slot) => slot.slotId !== firstUnit.slotId)
     const id = makeId(`army-${faction.id}`, state.armies.map((army) => army.id))
-    const army: Army = { id, name: '', factionId: faction.id, hexId: locationHexId(location, state.grid.config), movementRemaining: 0, baseUnitSlotLimit: 15, heroSlotLimit: 2, commander, unitSlots: [{ ...firstUnit }], heroSlots: [], status: 'ready', canInitiateBattle: true, engaged: false, movedRound: null, movedInPhase: null, exhaustedUntilRound: null }
+    const army: Army = { id, name: '', factionId: faction.id, hexId: locationHexId(location, state.grid.config), movementRemaining: 0, baseUnitSlotLimit: 15, heroSlotLimit: 2, commander, unitSlots: [{ ...firstUnit }], heroSlots: [], status: 'ready', canInitiateBattle: true, engaged: false, movedRound: null, movedInPhase: null, exhaustedUntilRound: null, supplyPool: createSupplyPool(location, faction.id, campaign.round, supplyWorldFor(state, campaign)) }
+    if (army.supplyPool) logEvent('снабжение', `Новая армия получает припасы в «${location.name}»`, { раунд: campaign.round, локация: location.id, припасы: army.supplyPool.initialAmount })
     army.name = generateArmyName(army, state.armies, state.factions, state.locations, state.heroes, state.grid.config)
     return { ...gameCommit(state, { campaign, armies: [...cloneArmies(state.armies), army] }), selectedArmyId: id }
   }),
@@ -2200,3 +2270,55 @@ export const useMapStore = create<MapState>((set) => ({
     return { ...snap, history: [...state.history, cloneSnapshot(currentSnapshot(state))].slice(-HISTORY_LIMIT), future: state.future.slice(1), revision: state.revision + 1 }
   }),
 }))
+
+// ---------------------------------------------------------------------------
+// Журнал партии
+// ---------------------------------------------------------------------------
+// Каждый экшен стора пишется в диагностику вместе с аргументами и полученным
+// раундом/фазой: по такой записи партию можно повторить шаг за шагом, а спорный
+// RTS-бой разобрать по приложенным скриншотам.
+
+registerTurnContext(() => {
+  const campaign = useMapStore.getState().campaign
+  return { round: campaign.round, phase: campaign.phase }
+})
+
+/** Грубая оценка размера, чтобы в журнал не попал сериализованный мир на 20 МБ. */
+function estimatePayloadSize(value: unknown, depth = 0): number {
+  if (value === null || typeof value !== 'object') return 1
+  if (Array.isArray(value)) return value.length
+  if (depth >= 2) return 64
+  let total = 0
+  for (const key of Object.keys(value)) {
+    total += estimatePayloadSize((value as Record<string, unknown>)[key], depth + 1)
+    if (total > 256) return total
+  }
+  return total
+}
+
+function describeArgument(value: unknown) {
+  if (value === null || value === undefined || typeof value !== 'object') return describe(value)
+  if (estimatePayloadSize(value) > 256) {
+    const keys = Array.isArray(value) ? `${value.length} элементов` : Object.keys(value).slice(0, 8).join(',')
+    return `⟨${keys}⟩`
+  }
+  return describe(value)
+}
+
+const LOGGABLE_ACTION = /^[a-z]/
+{
+  const state = useMapStore.getState() as unknown as Record<string, unknown>
+  const patch: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(state)) {
+    if (typeof value !== 'function' || !LOGGABLE_ACTION.test(key)) continue
+    const action = value as (...args: unknown[]) => unknown
+    patch[key] = (...args: unknown[]) => {
+      const result = action(...args)
+      try {
+        logEvent('действие', key, args.length ? args.slice(0, 4).map(describeArgument) : undefined)
+      } catch { /* Журнал не должен ломать игру. */ }
+      return result
+    }
+  }
+  useMapStore.setState(patch)
+}

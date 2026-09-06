@@ -3,6 +3,8 @@ import { armyCommandPointLimit, createCaptainCommander, createHeroCommander, fac
 import { factionIsActive, factionSide } from './campaign'
 import { heroIsDeployed, heroUnlockSatisfied } from './heroes'
 import { recruitableUnitsAtLocation } from './recruitment'
+import { DEFAULT_SUPPLY_SETTINGS, supplyDecayFactor } from './supply'
+import type { SupplySettings } from '../types'
 import { captainHireEconomicTypes } from './economicTypes'
 import { cellMovementCost, findPath, hexDistance, locationHexId, neighborIds, resolveGrid } from '../hex/hexGrid'
 import { canBuild, createBuildingInstance } from './buildings'
@@ -180,6 +182,9 @@ export function runAiPlanning(
         movedRound: null,
         movedInPhase: null,
         exhaustedUntilRound: null,
+        // Снабжение армия ИИ получит в начале своего хода, стоя на своей
+        // локации (refillOnTurnStart): здесь нет контекста построек и мира.
+        supplyPool: null,
       }
       army.name = generateArmyName(army, nextArmies, factions, locations, heroes, grid.config)
       nextArmies.push(army)
@@ -240,6 +245,7 @@ function chooseArmyMarchTarget(
   factions: FactionDefinition[],
   grid: HexGridData,
   claimedTargetIds: Set<string>,
+  supplySettings: SupplySettings,
 ): MarchTarget | null {
   const allTargets = hostileLocations.map((location) => {
     const targetHexId = locationHexId(location, grid.config)
@@ -252,6 +258,22 @@ function chooseArmyMarchTarget(
   const unclaimedTargets = allTargets.filter((item) => !claimedTargetIds.has(item.location.id))
   const targets = (availableTargets.length ? availableTargets : unclaimedTargets.length ? unclaimedTargets : allTargets)
     .sort((left, right) => hexDistance(origin, left.target) - hexDistance(origin, right.target) || left.garrison - right.garrison || left.location.name.localeCompare(right.location.name, 'ru'))
+  // Снабжение в планировании ИИ. На лёгкой сложности припасы игнорируются.
+  // На средней ИИ не отправляет армию туда, где она придёт с пустыми руками.
+  // На сложной — предпочитает короткий бросок из подготовленной базы.
+  const difficulty = campaign.aiDifficulty?.strategic ?? 'warrior'
+  if (difficulty === 'recruit' || !supplySettings.enabled || !targets.length) return targets[0] ?? null
+  const pool = army.supplyPool
+  const arrivalFactor = (target: MarchTarget) => {
+    if (!pool) return 0
+    return Math.max(supplySettings.minRatio, Math.min(1, supplyDecayFactor(pool, supplySettings) - hexDistance(origin, target.target) * supplySettings.decayPerHex))
+  }
+  const demanding = difficulty === 'veteran' || difficulty === 'slayer'
+  const supplied = targets.filter((target) => arrivalFactor(target) >= (demanding ? 0.5 : 0.05))
+  // Подходящих целей нет — ИИ не парализуется: на сложной берёт ту, где
+  // припасов останется больше, на средней идёт к ближайшей.
+  if (supplied.length) return supplied[0]
+  if (demanding) return [...targets].sort((left, right) => arrivalFactor(right) - arrivalFactor(left))[0] ?? null
   return targets[0] ?? null
 }
 
@@ -297,6 +319,7 @@ export function planAlliedMovement(
   grid: HexGridData,
   regions: Region[],
   excludedFactionId: string | null = campaign.playerFactionId,
+  supplySettings: SupplySettings = DEFAULT_SUPPLY_SETTINGS,
 ): AlliedMovementPlan[] {
   const logicalGrid = resolveGrid(grid, locations, regions)
   const hostileLocations = hostileLocationsForSide(side, locations, factions)
@@ -306,7 +329,7 @@ export function planAlliedMovement(
     if (!armyCanMarch(campaign, factions, army, side, excludedFactionId)) continue
     const origin = logicalGrid.byId.get(army.hexId)
     if (!origin) continue
-    const target = chooseArmyMarchTarget(army, origin, armies, hostileLocations, logicalGrid, campaign, factions, grid, claimedTargetIds)
+    const target = chooseArmyMarchTarget(army, origin, armies, hostileLocations, logicalGrid, campaign, factions, grid, claimedTargetIds, supplySettings)
     if (!target) continue
     let path = findPath(logicalGrid.byId, army.hexId, target.targetHexId, army.factionId)
     if (path.length < 2) continue
@@ -339,6 +362,9 @@ export function runAiMovement(
   excludedFactionId: string | null = campaign.playerFactionId,
   heroes: Hero[] = [],
   plans: AlliedMovementPlan[] = [],
+  /** Учёт снабжения: вызывается с исполненным путём каждой двинувшейся армии. */
+  onArmyTravel?: (army: Army, path: string[]) => void,
+  supplySettings: SupplySettings = DEFAULT_SUPPLY_SETTINGS,
 ) {
   const nextArmies = armies.map((army) => ({ ...army, commander: army.commander ? { ...army.commander } : null, unitSlots: army.unitSlots.map((slot) => ({ ...slot })), heroSlots: army.heroSlots.map((slot) => ({ ...slot })) }))
   const logicalGrid = resolveGrid(grid, locations, regions)
@@ -370,7 +396,7 @@ export function runAiMovement(
       }
     }
     if (!usedPlan) {
-      const target = chooseArmyMarchTarget(army, origin, nextArmies, hostileLocations, logicalGrid, campaign, factions, grid, claimedTargetIds)
+      const target = chooseArmyMarchTarget(army, origin, nextArmies, hostileLocations, logicalGrid, campaign, factions, grid, claimedTargetIds, supplySettings)
       if (!target) {
         recordTurnMovement(campaign, army, heroes, 'stayed', movementTargetLabel(army.hexId, locations, regions, logicalGrid), 0)
         continue
@@ -405,6 +431,7 @@ export function runAiMovement(
       army.engaged = true
       for (const candidate of nextArmies) if (candidate.hexId === destinationId && areFactionsHostile(factions, candidate.factionId, army.factionId)) candidate.engaged = true
     }
+    onArmyTravel?.(army, path.slice(0, destinationIndex + 1))
     recordTurnMovement(campaign, army, heroes, hostileArmy || hostileLocation ? 'besieged' : 'moved', movementTargetLabel(destinationId, locations, regions, logicalGrid), destinationIndex, originHexId, destinationId)
   }
   return nextArmies

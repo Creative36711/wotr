@@ -1,508 +1,224 @@
 # War of the Ring Remaster
 
-A portable desktop remaster of **War of the Ring** for *The Battle for Middle-earth II: The Rise of the Witch-king 2.01*.
+Глобальная стратегическая кампания по Средиземью для **The Lord of the Rings: The Battle for Middle-earth II — The Rise of the Witch-king 2.01**.
 
-The project combines:
+Приложение ведёт стратегический слой (карта, армии, экономика, герои, Кольцо, ИИ), а настоящий бой **запускает внутри BFME2:RotWK**: собирает составы армий, поднимает сетевую комнату, расставляет игроков и по экрану счёта определяет победителя. Там, где RTS-бой невозможен (нет карты, не уложились в ограничения BFME, бой между двумя фракциями ИИ), конфликт разрешается встроенным автобоем.
 
-- a global turn-based strategy;
-- a complete world and roster editor;
-- isolated user mods;
-- portable Tauri desktop packaging;
-- a native Windows bridge that prepares and launches real ROTWK battles.
+- **Стек:** Tauri 2 (Rust) + React 18 + TypeScript + Zustand, сборка Vite. Сервера и базы данных нет.
+- **Платформа:** Windows (мост в BFME работает только там). В браузере работает стратегия и редактор, запуск BFME — нет.
+- **Распространение:** портативный `.exe`, данные лежат рядом с ним в `portable_data/`.
+- **Версия:** 0.51.10 · форматы данных: `world.json` 45, `roster.json` 17, `savegame.json` 62.
+- **Языки:** русский и английский (английский — канонический для контента).
 
-## Current data versions
+---
 
-```text
-Application: 0.48.3
-world.json: 44
-roster.json: 17
-savegame.json: 61
-```
+## Главная идея
 
-0.48.3 unblocks sieges that were wrongly reported as RTS-incompatible. A siege additionally required the location to carry an `rtsFortress.defenderStartPosition`, but that point is only an optional refinement - it pins the defender onto the fortress spawn instead of a random defence point, and the launcher already falls back to the generic defence pool when it is absent. Requiring it silently rejected perfectly playable maps: of the 21 strongholds that ship with a BFME map, only 7 satisfied the check, so **14 of them - including Cair Andros, Osgiliath, Morannon, Carn Dum and Fornost - could never be fought in the RTS** and fell back to auto-resolve. The check now only demands a map and a legal number of factions per side. The rejection message was also generic ("check the number of factions and slots"), which is why the cause was impossible to guess; it now names the actual problem, e.g. that the attacking side has too many factions for BFME's four-slot limit, or that no map is assigned to the location.
+BFME2 — закрытый SAGE-движок: у него нет ни API, ни моддинга кампании, ни способа «сказать» ему, чем воюют армии. Поэтому проект разрезан по живому:
 
-0.48.2 fixes hero revival in generated battles. Each fortress hero button is unlocked by a fixed `Upgrade_AllFactionHeroUpgrade<N>` defined by the mod's CommandButton set - Eowyn is 1, Eomer 2, Boromir 3, Theoden 4, and so on per faction. The generator was instead numbering heroes by their position in the marching army, so a lone Theoden was emitted as Upgrade1 and the fortress revived **Eowyn** in his place; the same slip turned a solo Saruman into Grima Wormtongue. The number is now looked up per hero object from a table transcribed from the button definitions, covering all 39 buttons across the eight factions, and it is verified against the roster so every hero resolves and no two heroes of one faction share a number. Ring heroes (Galadriel and Sauron) correctly get no block at all, since they are gated by `Upgrade_FortressRingHero` and are always level 10. Rust unit tests lock the mapping in place.
-
-0.48.1 fixes the issues found in the first 0.48.0 playtest. **Handicap is now relative**: previously every army that had spent its movement got a "forced march" penalty, so both sides of an ordinary battle received an identical -10 %, which is meaningless because the BFME handicap only ever expresses a *relative* advantage. The forced-march penalty is gone and the remaining penalties (demoralization after a lost battle, an enemy Ring) are normalised so the strongest side always sits at 0 % and only a genuinely weaker side is handicapped. The handicap dropdown also clicked the wrong row: unlike the faction and color lists it has no leading «Случайно» entry and uses a taller row step, so row selection is now driven by an explicit `has_random_row`/`step` pair taken from the reference automation. **Heroes now always get an explicit `Object <Hero>` block** with `GrantUpgradeCreate` and `ExperienceLevelCreate`, level 1 included, exactly like the reference `build_hero_mod` - without it BFME kept the map default instead of the campaign level. **Unit level caps come from the game data**, not from a global setting: the per-object table in `_test_integration-bfme/docs/units_rotwk_2.01.md` is embedded as `ROTWK_UNIT_LEVEL_CAPS` (5 regular / 10 heroic / 0 for siege engines and ents) and used as the default for every roster entry, while the editor still allows a per-unit override. The non-editable palantir fields (base starting points, base income, the hard-coded 2-minute tick) and the world-wide default level fields were removed from the Ring tab, since BFME hard-codes them. Buildings now show a **localized name and a hover description in both languages** everywhere (turn panel, location inspector, editor), and the editor gained a description field. Chokepoint economic types (pass, ford, ruins, forest, mountains) previously granted auto-battle-only bonuses, so a real battle at e.g. the Gap of Rohan showed no trace of ownership - they now also grant modest starting resources and command points. The window title next to the icon follows the selected UI language (HTML title plus the native Tauri caption, with the required `core:window:allow-set-title` permission). Finally, the app version is synchronized across `package.json`, `tauri.conf.json`, `Cargo.toml` and `Cargo.lock`, and a new `scripts/check-version.mjs` guard runs as part of `npm run build` so a compiled build can never again report a stale version.
-
-0.48.0 adds the permanent army layer, contextual battle modifiers, strategic buildings and the Ring-forging race. Units and heroes now keep a level (`maxLevel` in roster.json, +1 per battle for every survivor, no decay) and three ratchet upgrades — weapons, armor and banner — gated per unit by `availableUpgrades`; both feed the auto-battle power multiplicatively and are exported to BFME as level auras and upgrade auras. Economic types gained `buildingSlots` and an owner-side `battleModifiers` block (starting resources, command points, palantír points and income, signal fire, defense/ambush bonuses, terrain debuff), regions gained a `fullControlBonus`, and `world.json` gained `buildingTypes`, `palantirSettings`, `ringForging`, `defaultUnitMaxLevel` and `defaultHeroMaxLevel`. Locations can host buildings (forge, armory, banner workshop, beacon, training camp, storehouse, barracks annex, palantír tower, ring forge) that build over several turns, grant permanent upgrades to armies stationed at the location, raise the recruitment start level, and are destroyed or captured with the location. The Ring-forging race lets every faction invest gold each turn (ring forges add free progress); the first faction to finish receives the One Ring, which is carried by a specific army, can be handed to another army in the same hex, and passes to the victor when its bearer is annihilated. All of this reaches real BFME battles through the spawn bridge (starting-gold crates, command-point bonuses, signal fires, palantír start/rate objects, the faction Ring hero) and through the room handicap: demoralization, forced marches and an enemy Ring are summed into a single penalty and snapped to the BFME −5 % grid. The editor gained Buildings and Ring tabs plus per-unit level/upgrade fields and full-control bonus fields for regions, and the turn panel gained building and Ring-forging sections. These data revisions are intentionally incompatible with previous campaign saves.
-
-0.46.0 integrates the real RTS battle flow end to end: 51 imported BFME MapCaches with calibrated minimap coordinates, randomized start positions (the fortress owner always takes the main defense point of a stronghold), a coordinate-calibration tool and a coordinate-test tool in the editor, automatic score-screen winner detection, and automatic BFME shutdown after the winner is determined. The default «Vanilla 2.01» mod now ships its `_patch201ini.big` and `__wotr_maps.big` archives plus every default MapCache embedded in the executable and restores them into `portable_data` on the first launch, so BIG files no longer need to be installed manually.
-
-0.46.1 fixes the first 0.46.0 build: the generated `templates.rs` now joins its hex chunks with `concat!` (Rust has no implicit adjacent string-literal concatenation), the calibration hotkey channel is kept in a static `Mutex` (`mpsc::Receiver` is `!Sync`), and borrow-checker conflicts in the battle-launch command are resolved.
-
-0.46.2 fixes the start-position pools and the RTS aftermath. The coordinate test now maps slots strictly by range (slots 1-4 take defense points, slots 5-8 take attack points) instead of by faction alignment, and the stronghold main point is excluded from the shuffled pool so it can never be assigned twice (the 8th click used to repeat the first position). A real RTS battle now resolves exactly like an auto-battle with a known winner: `resolveConflictRts` runs the standard conflict simulation (losses, hero fates, retreats, capture) with only `winnerSide` forced from the BFME detector.
-
-0.46.3 hardens the launch flow. The Options.ini resolution is restored at a deeper milestone (after the LAN room is created, or when the main menu is detected during calibration) instead of a fixed 5-second timer that raced the cold start. Cold-start input warmup from the Python prototype is ported: the game window is activated (ShowWindow/SetForegroundWindow/BringWindowToTop/SetActiveWindow/SetFocus) with a settle pause, and «Сеть» -> «Лок. сеть» is retried when the main-menu marker proves the clicks went nowhere. Every launch path (battles, coordinate tests, calibration) now closes a running game first — BIG files in the game folder are locked while game.dat is alive — and relaunches fresh. Calibration launches the game through the elevated helper (lotrbfme2ep1.exe requires elevation, os error 740). The fortress defender start point moved from a standalone inspector menu into the BFME-coordinates card as a selectable defense point (`fortressDefenseIndex`); when no point is designated, all start positions randomize like a regular location. Weathertop (Amon Sûl) now uses the `map mp weathertop` cache and its calibrated coordinates. The fortress defender start point is designated (first defense point) for Helm's Deep, Minas Tirith, Rivendell, Erebor, Isengard, Dol Guldur and Minas Morgul.
-
-0.46.4 restores the timing constants accidentally removed from `match_detector.rs` together with the dead code cleanup (broke the build), and designates the main defense point for the seven strongholds.
-
-0.46.8 ships eight gameplay and usability fixes. The window title is now always English («War of the Ring» in `tauri.conf.json` and in the dynamic `document.title`), no matter which UI language is picked. Calibration closes the game automatically after the eighth point, exactly like F10 (resolution is restored first). Belfalas ships with calibrated RTS coordinates (4 defense + 4 attack slots). Treebeard's Hill is now a stronghold (economic type «camp») instead of a domain, so it no longer claims surrounding hexes. Recruitment now shows the command points each unit occupies (hire list, queue and reserve rows), the hire button is disabled when the location's CP limit is exhausted, and the «←»/«→» transfer buttons between army, reserve and stationed armies are disabled per-slot when the CP limit would be exceeded. Disbanding an army no longer overflows the location reserve: heroes always transfer, units fill the reserve up to the location's CP limit and the rest are disbanded permanently (logged in the chronicle). A new in-place transfer lets you move units between two armies of the same faction standing in the same hex (selector in the army inspector, per-slot «→» button). Isengard's RTS line color changed from black to white everywhere (as in the prototype) because black was unreadable on the dark chart.
-
-0.46.5 reworks the calibration session to run entirely inside the elevated helper, mirroring `tools/calibrate.py` (which elevated itself via `ensure_admin`): system hotkeys (`RegisterHotKey` F9/F10 with a message loop, as in `tools/hotkey.py`) are used instead of a low-level keyboard hook — an LL hook in the non-elevated app never receives keys while the elevated game window has focus (UIPI), which made F9 dead. Progress is published to `rts_calibration_status.json` and polled by the UI; the editor Stop button and F10 both close the game. The windowed resolution is restored by a fixed 30-second timer (the game has read Options.ini by then even on a cold start). After closing an already-running game every flow waits 5 seconds before relaunching so RotWK does not report «game already running». Calibration now deploys the same files as the coordinate test (mod BIGs + the location MapCache) before launching the game, so the calibrated map is the one actually loaded; the deployment plan comes from a shared planner used by both flows, and calibration requires an uploaded MapCache. 0.46.7 fixes three compile errors introduced by that change (unused Mutex import, a closure double-mutable-borrow of the resolution restore, and a missing `mut` on the deployment error list).
-
-Campaign saves are compatible only with the same application version, save version, and mod ID. A new application version intentionally starts a new campaign: old saves are reported as incompatible instead of being migrated.
-
-0.45.9 rebalanced the economy and recruitment parameters for all 186 locations after the geography revision. Economic types now match the location context, per-location income and recruitment limits follow their type, specialization tags remain empty, and major capitals contribute to the global army limit. This balance revision is intentionally incompatible with previous campaign saves.
-
-0.45.27 applies the latest location update from _tools/edit_world.json. Economic types were reviewed against structural types, all per-location economy and recruitment values were recalculated from those types, and specialization tags remain empty. This data revision is intentionally incompatible with previous campaign saves.
-
-0.45.27 prevents opposing armies from passing through each other on a head-on route swap: movement endpoints are retained and direct cross-movements are consolidated into a conflict before scanning hot spots. The latest location update from `_tools/edit_world.json` is also applied. This revision is intentionally incompatible with previous campaign saves.
-
-0.45.27 recalculates location and economic-type reserve capacity as CommandPoints rather than legacy unit counts: from zero at wilderness/landmarks to 1200 at capitals. The reserve UI and recruitment flow now use the sum of unit and hero CommandPoints.
-
-
-
-## Development
-
-```powershell
-cd C:\Projects\wotr
-npm ci
-npm run dev
-```
-
-`npm run dev` runs the global strategy and editor in a browser. A browser cannot launch a local BFME executable.
-
-For real RTS integration:
-
-```powershell
-npm run tauri:dev
-```
-
-Portable Windows build:
-
-```powershell
-npm run desktop:portable
-```
-
-The application is portable-only. User data is stored beside the executable:
-
-```text
-<exe directory>\portable_data\
-```
-
-The application does not use AppData as a fallback for its own data. ROTWK itself still uses its normal AppData profile for `NetworkPref.ini` and `Options.ini`.
-
-## First launch and localization
-
-On first launch the user chooses:
-
-```text
-English
-Russian
-```
-
-English is canonical for all editable game content. Other languages are stored in locale maps:
-
-```json
-{
-  "id": "helms-deep",
-  "name": "Helm's Deep",
-  "nameTranslations": {
-    "ru": "Хельмова Падь"
-  }
-}
-```
-
-Names are never IDs. Factions, map objects (domains/strongholds), units, heroes, captains, armies, and regions keep stable technical IDs separately.
-
-The same architecture supports future locales without new schema fields:
-
-```json
-{
-  "nameTranslations": {
-    "ru": "Хельмова Падь",
-    "fr": "...",
-    "de": "..."
-  }
-}
-```
-
-The editor shows the canonical English name plus only the currently selected interface translation. English users see the canonical field without a translation panel; users of another locale see English and that locale only. A compact language-management control can add another locale code to the mod. Missing translations fall back to the English name instead of a generic placeholder. Mods declare supportedLocales and defaultLocale in mod.json; English is always included.
-
-Content translations are stored next to their stable IDs in world.json and roster.json (for example, nameTranslations and descriptionTranslations), while the built-in interface dictionary is in src/i18n.tsx. A user-added locale is therefore portable with the mod data: share the mod.json/world.json/roster.json files or the complete mod folder, and the recipient can select the locale from the language screen. The data model accepts arbitrary locale codes such as tr, es, or it; English remains the canonical source and is never stored as a translation.
-
-## Mods
-
-Each mod is isolated under:
-
-```text
-portable_data\mods\<mod-id>\
-```
-
-A mod contains:
-
-```text
-mod.json
-world.json
-roster.json
-saves\autosave.json
-rts\
-```
-
-The built-in `Vanilla 2.01` mod contains world and roster data only. **No MapCache, module BIG, or maps BIG files are bundled.** Mod authors must supply current RTS assets themselves. The elevated deployment helper also removes obsolete `__wotr_ini.big`, `__wotr_maps.big`, and `__wotr_maps_cache.big` copies from the external game folder unless the active mod explicitly supplies a file with the same target name.
-
-## World model
-
-### Hierarchy: Region → Domain / Stronghold
-
-The map uses a two-level territorial model. There is no separate “continent” entity — Middle-earth is implied by the map image.
-
-```text
-Region (Eriador)
- ├── Domain (Shire)        — multi-hex holding, auto-generated inside the region
- ├── Domain (Bree)
- ├── Stronghold (Weathertop) — single hex inside the region, never part of a domain
- └── ...
-```
-
-Glossary (English ID → Russian UI):
-
-| ID | UI | Meaning |
+| Слой | Где живёт | Что делает |
 | --- | --- | --- |
-| `region` | Регион | Named set of land hexes, authored by the modder |
-| `domain` | Владение | Anchor hex + auto-generated hexes inside one region |
-| `stronghold` | Оплот | Single-hex object inside a region |
-| `hex` | Гекс | Map grid cell |
-| map object | Объект карты | Domain or stronghold together |
+| Стратегия | TypeScript (React + Zustand) | Карта, ходы, армии, экономика, герои, ИИ, автобой |
+| Мост | Rust (`src-tauri/`) | Запуск игры, раскладка BIG-файлов, генерация составов, кликание по меню, чтение результата с экрана |
+| Бой | BFME2:RotWK | Всё, что связано с тактикой: юниты, герои, укрепления, победа |
 
-Rules:
+Связь между слоями односторонняя и намеренно грубая: стратегия собирает **JSON-конфигурацию боя** (карта, слоты, цвета, фракции, гандикапы, стартовые точки, составы армий с уровнями и апгрейдами, бонусы сторон), Rust превращает её в `.ini` внутри сгенерированного BIG-архива, запускает игру и водит по ней мышкой. Обратно приходит только одно: **кто победил**. Потери по юнитам из RTS не читаются — после боя применяются правила отступления и гарнизона.
 
-- every land hex belongs to exactly one region; water hexes may be outside regions;
-- a domain’s hexes are generated automatically and never cross region borders;
-- a stronghold occupies one hex, belongs to a region, and is excluded from every domain;
-- a region with no domains is allowed (wild land, no income);
-- full regional control is derived when every domain and stronghold inside the region belongs to the same faction (bonuses may use this later).
+Второе важное решение: **мир — это данные, а не код**. Локации, фракции, юниты, герои, экономика и правила лежат в `world.json` / `roster.json` внутри папки мода и редактируются встроенным редактором. Встроенный мод `Vanilla 2.01` — это просто набор данных по игре 2.01, а не «основная кампания».
 
-### Structural types
+---
 
-Every map object has one structural type:
+## Как устроен ход
+
+Фазы цикла (`CampaignPhase` в `src/types.ts`):
 
 ```text
-domain      — multi-hex holding inside a region
-stronghold  — single-hex holding inside a region
+planning_good → planning_evil → movement_first → movement_second → conflicts → aftermath
 ```
 
-Example domain:
+Игрок видит один связный ход: вербует, управляет резервами, призывает героев, формирует армии и раздаёт приказы движения — в любом порядке. Приказ **отложенный**: армия стоит на месте, пока не нажата «Конец хода». Движение происходит в две фазы (`movement_first` / `movement_second`), чтобы стороны могли перехватывать друг друга, после чего сканируются гексы конфликтов.
 
-```json
-{
-  "id": "shire",
-  "structuralType": "domain",
-  "economicType": "farm",
-  "hex": "5:14",
-  "regionId": "region-eriador",
-  "hexes": ["4:13", "5:13", "5:14", "6:14"]
-}
-```
+Дальше каждый конфликт решается одним из двух способов:
 
-Example stronghold:
+- **RTS-бой** — если у локации есть карта BFME, MapCache и калиброванные координаты, и сторона укладывается в ограничения BFME (не более 4 фракций на сторону). Игрок дерётся сам.
+- **Автобой** — расчёт сил (`src/game/conflicts.ts`) с учётом уровня юнитов, героев, укреплений, местности, Кольца, снабжения и палантира. Используется для боёв ИИ и как запасной вариант.
 
-```json
-{
-  "id": "helms-deep",
-  "structuralType": "stronghold",
-  "economicType": "fortress",
-  "hex": "7:25",
-  "regionId": "region-rohan"
-}
-```
+После разрешения применяются отступления, захваты, потери, ранения героев, экономика и проверка победы.
 
-Capturing a domain transfers its hexes and income. Capturing a stronghold transfers only its hex. There is no separate “capture region” action — regional control changes through its objects.
+---
 
-### Hex positioning
+## Модель мира
 
-Objects store a stable axial hex ID for the anchor:
-
-```json
-"hex": "12:28"
-```
-
-The rendered pixel position is derived from the center of that hex.
-
-Editor rules:
-
-- every new object snaps to the nearest hex center inside a region;
-- dragging always snaps to a hex;
-- one map object per hex;
-- occupied targets are shown in red and rejected;
-- free targets are shown in green;
-- moving an object updates `regionId` and regenerates domain hexes;
-- stronghold hexes are carved out of surrounding domains.
-
-### Economic types and icons
-
-Structural behavior and economic behavior are independent. `economicType` selects a row from the editable `economicTypes` table in `world.json` (editor tab **Economy**). That table controls default income/slots, domain vision radius, auto-battle defense bonus, battle type (settlement/siege), captain hiring, and whether the type is offered for domains or strongholds. Per-object income can still override the defaults.
-
-Domain-oriented types:
+Иерархия территорий двухуровневая:
 
 ```text
-capital, city, fortress, village, mine, farm, port,
-wilderness, swamp, forest, mountains
+Регион (Эриадор)
+ ├── Владение (Шир)      — многогексовое владение, гексы генерируются автоматически
+ ├── Оплот (Амон Сул)    — один гекс, никогда не входит во владение
+ └── …
 ```
 
-Stronghold-oriented types:
+Каждый объект карты — это `domain` или `stronghold` с **экономическим типом** (`capital`, `fortress`, `farm`, `pass`, `camp`, …). Тип задаёт доход, слоты вербовки, радиус обзора, бонус обороны и тип боя, но не меняет структуру: захват владения передаёт все его гексы, захват оплота — один. Полный контроль региона выводится, когда все его объекты принадлежат одной фракции.
+
+Встроенный мод `Vanilla 2.01`:
+
+| Параметр мира | Значение |
+| --- | --- |
+| Локаций | 186 (125 владений + 61 оплот) |
+| Регионов | 24 |
+| Фракций | 8 (7 играбельных + `civilian`) |
+| Экономических типов | 18 |
+| Стартовых армий | 13 |
+| Типов юнитов / героев / капитанов | 68 / 35 / 7 |
+| Локаций с поддержкой RTS | 51 (карта + MapCache + координаты) |
+
+Гексы — осевая сетка (`"q:r"`), точка привязки объекта стабильна, пиксельная позиция выводится из центра гекса. Один объект на гекс.
+
+---
+
+## Мост в BFME: как это работает
+
+Самая необычная часть проекта. BFME не имеет интерфейса автоматизации, поэтому всё делается «снаружи» — через Win32:
+
+1. **Подготовка.** Один elevated-помощник (UAC) проверяет и раскладывает в папку игры BIG-архивы мода, устанавливает MapCache места боя, генерирует `__wotr_generated_presets.big` с `zzz_spawn.ini` (составы армий: юниты кольцами, герои у ворот, уровни и ауры), пишет `NetworkPref.ini` в настоящий профиль пользователя и запускает `lotrbfme2ep1.exe`.
+2. **Готовность меню.** Фиксированной задержки нет: раз в секунду снимается область экрана и сравнивается с встроенным эталоном главного меню (`menu_marker.npy`), порог 85 %.
+3. **Комната.** Rust кликает по меню: «Сеть» → «Лок. сеть» → создание игры, сложность, слоты, цвета, альянсы, стартовые точки. Первый слот не кликается — его уже задаёт `NetworkPref.ini`.
+4. **Защита ввода.** На время автоматизации низкоуровневые хуки блокируют физическую клавиатуру и мышь, пропуская только собственные `SendInput`-события приложения. Пока блокировка держится, одиночный `Ctrl` — аварийный выход: игра завершается, бой помечается `ABORTED`.
+5. **Чтение результата.** Фоновый монитор (0.5 с, таймаут 90 минут) ждёт экран счёта, распознаёт его по шаблону (NCC, шаблоны масштабируются под разрешение), проводит линию графика до «монеты победы» или «пламени поражения», пишет результат в `temp/rts_battle_result_<conflict>.json` и закрывает игру. Интерфейс подхватывает файл и применяет победителя к конфликту.
+
+Пороги распознавания: крепость 0.85, иконки 0.72, маркер счёта 0.50. Разрешение игры **не меняется** — детектор масштабирует шаблоны, а не картинку игрока.
+
+Встроенный мод работает автономно: два BIG-архива 2.01 и все MapCache вшиты в исполняемый файл (`include_bytes!`) и распаковываются при первом запуске.
+
+---
+
+## Данные, моды и сохранения
+
+Мод полностью изолирован:
 
 ```text
-fortress, ruins, crossroads, ford, pass, signal_tower, camp
+portable_data/mods/<mod-id>/
+├── mod.json            метаданные, настройки RTS-интеграции, локали
+├── world.json          локации, регионы, фракции, экономика, стартовые армии, правила
+├── roster.json         юниты, герои, капитаны
+├── saves/autosave.json сохранение кампании
+└── rts/                BIG-архивы модулей, карт и MapCache по локациям
 ```
 
-A fortress icon therefore may represent either a domain-fortress or a stronghold-fortress. Their capture footprint remains different.
+Всё, что связано с путём к игре, — настройка машины и в мод не экспортируется. Редактор мира правит `world.json` / `roster.json` через интерфейс: регионы, владения и оплоты, экономические типы, ландшафт, фракции, юниты и BFME Object ID, герои, капитаны, стартовые армии, снабжение, палантир, ковка Кольца, RTS-файлы.
 
-## Regions
+**Локализация.** Английский — канонический: он хранится в `name`, переводы — в `nameTranslations` / `descriptionTranslations` рядом со стабильным техническим ID. Имена не используются как идентификаторы. Новый язык добавляется без изменения схемы. Словарь интерфейса — `src/i18n.tsx`, переводы контента — в данных мода.
 
-Regions are a first-class authored array in `world.json`:
+Интерфейс пишется по-русски, а английский вариант подставляет локализатор DOM по точному совпадению строки. Поэтому **каждая новая русская строка интерфейса обязана получить запись в `UI_EN`**, иначе в английском интерфейсе она останется русской. За этим следит `node verify/i18n.mjs`.
 
-```json
-{
-  "id": "region-eriador",
-  "name": "Eriador",
-  "nameTranslations": { "ru": "Эриадор" },
-  "hexes": ["3:5", "3:6", "4:5"],
-  "color": "#6B8E6B"
-}
-```
+Тема интерфейса тёмная, а браузерные контролы светлые: кнопка или поле, до которых не дошло ни одно CSS-правило, выглядят белой заплаткой. Поэтому у каждого контрола должно быть своё правило, а у галочек и радио, кроме того, есть глобальные `accent-color` и фиксированный размер — иначе правило соседнего текстового поля (`width:100%; height:30px`) растянет чекбокс в пустой белый квадрат. За обоим следит `node verify/styles.mjs`: он рендерит настоящие экраны в jsdom и сравнивает вычисленные стили с «голым» контролом.
 
-Vanilla 2.01 ships twenty-four regions: Lindon, Eriador, Angmar, Forodwaith, Misty Mountains, Enedwaith, Dunland, Rohan, Gondor, Mordor, Rhovanion, Mirkwood, Harad, Rhûn, Anduin, Lone-lands, The Shire, Lonely Mountain, Iron hills, Harondor, Ithilien, Dagorlad, Eregion, Ered Luin, and Dorwinion.
+**Сохранения несовместимы между версиями.** Сохранение читается только той же версией приложения, формата сохранения и того же мода; старые помечаются несовместимыми и не мигрируются. Это сознательное решение: схема активно меняется.
 
-The editor provides a **Regions** tab to create regions, edit names/colors/descriptions, paint hex membership (via hex selection on the map), and delete empty regions. Uncovered land hexes are invalid for a finished map.
+---
 
-Visualization layers when the region overlay is on:
-
-1. map image
-2. hex grid (optional)
-3. region fill (~15%) and thick region borders
-4. domain fill (~30% owner color) and thin domain borders
-5. stronghold hex fill
-6. object icons, armies, order arrows
-
-Region names are drawn large and translucent near the region centroid and hide at high zoom.
-
-Ownership, fog of war, income, recruitment, and battle context all use domains and strongholds. A region only aggregates them for full-control checks and labels.
-
-## Campaign turn
-
-The player sees a single coherent turn instead of separate planning and movement screens.
-
-During **Your Turn**, the player may in any order:
-
-- recruit units;
-- manage reserves;
-- summon heroes;
-- form or disband armies;
-- assign movement orders.
-
-The main action is:
+## Карта репозитория
 
 ```text
-End Turn
+src/
+├── types.ts                вся схема данных (единый источник правды)
+├── dataService.ts          чтение/запись мода, нормализация world/roster/save, вызовы Rust
+├── store/useMapStore.ts    единственный Zustand-стор: ~75 действий, весь игровой цикл
+├── game/                   чистая игровая логика без React
+│   ├── conflicts.ts        поиск конфликтов, предпросмотр, автобой
+│   ├── ai.ts               планирование и движение ИИ
+│   ├── supply.ts           снабжение армий
+│   ├── battleModifiers.ts  бонусы владельца: экономика, регион, постройки, Кольцо, палантир
+│   └── …                   герои, вербовка, туман войны, гандикапы, журнал сессии
+├── hex/hexGrid.ts          осевая сетка: соседи, расстояние, путь, стоимость движения
+├── components/             React: карта, инспекторы, модалка конфликта, редактор мира
+├── i18n.tsx                словарь интерфейса и переключение языка
+└── rts.ts                  настройки RTS: цвета, сложности, сетевые правила
+
+src-tauri/src/
+├── lib.rs                  32 Tauri-команды: файлы мода, ресурсы, диагностика, запуск
+├── bfme_automation.rs      мост: окно, ввод, меню, комната, монитор результата
+├── rts_spawn.rs            генерация zzz_spawn.ini и BIG-архива составов
+├── match_detector.rs       шаблонное распознавание экрана (NCC)
+└── assets_gen/templates.rs эталоны для распознавания (генерируются)
+
+public/mods/default/        данные встроенного мода (вшиваются в exe)
+verify/                     harness на jsdom: 31 проверка игровой логики
+scripts/check-version.mjs   синхронность версий, часть npm run build
+_test_integration-bfme/     Python-прототип моста — читаемая спецификация
 ```
 
-After it is pressed, the engine automatically:
+Подробный разбор модулей, потоков данных и «что править, если нужно изменить X» — в **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
-1. executes player movement orders;
-2. runs AI planning and movement;
-3. scans conflict hexes;
-4. resolves AI-only battles;
-5. opens player battles;
-6. applies retreats, captures, occupation, casualties, injuries, economy, and victory checks;
-7. displays a turn summary;
-8. starts the next player turn after Continue.
+---
 
-## Deferred movement orders
+## Сборка и запуск
 
-Clicking a destination creates or replaces a pending order. The army stays on its current hex until **End Turn**.
-
-Orders are stored in `savegame.json`:
-
-```json
-{
-  "pendingOrders": [
-    {
-      "armyId": "army-id",
-      "destinationHexId": "12:28",
-      "path": ["10:27", "11:27", "12:28"],
-      "cost": 5,
-      "locationId": "helms-deep"
-    }
-  ]
-}
+```powershell
+npm ci
+npm run dev          # стратегия и редактор в браузере (BFME не запускается)
+npm run tauri:dev    # то же в настольном окне, с настоящим мостом в BFME
+npm run build        # check-version → tsc → vite
+npm run desktop:portable   # портативный .exe (см. PORTABLE_BUILD.md)
 ```
 
-Behavior:
+Для Windows-сборки нужны Node 20+, Rust (stable-msvc) и Visual Studio Build Tools с C++ и Windows SDK.
 
-- the order is rendered as a solid faction-colored arrow with an arrowhead, drawn above the fog-of-war overlay so orders into unexplored hexes stay visible;
-- after an order is placed the map returns from the tactical view to the cinematic view while the arrow remains on screen;
-- assigning another destination replaces the previous order;
-- right-clicking the arrow or army cancels it;
-- canceling costs no movement points;
-- paths longer than the current movement allowance stop at the furthest reachable intermediate hex;
-- the player may continue the route on the next turn;
-- orders are validated again when executed.
+### Проверка
 
-Allied AI armies pre-compute their marches at the start of the planning phase. During planning these plans are rendered as muted dashed arrows with arrowheads:
+Тест-раннера в зависимостях нет. Вместо него — собственный harness: esbuild собирает **настоящие** исходники, jsdom их исполняет, проверяются стор, журнал, правила кликов и снабжение.
 
-- only plans that start from a hex visible to the player are shown, so the fog of war is not leaked;
-- allied arrows are view-only; hovering shows the faction, commander, destination, and distance;
-- plans are executed during the movement phase and discarded afterwards; a plan that becomes invalid (blocked path, intercepted hex) falls back to fresh AI targeting, and the preview refreshes on the next round.
+```powershell
+npm install --no-save jsdom
+node verify/run.mjs      # 31 проверка игровой логики
+node verify/i18n.mjs     # ни одна строка интерфейса не осталась без перевода
+node verify/styles.mjs   # ни один контрол не остался без стиля
+```
 
-After **End Turn**, the turn summary lists the movements of every faction — the player, allies, and enemies — regardless of fog: `Faction: commander — march/siege/retreat/stay (distance)`.
+Harness не входит в `npm run build` и в `tsconfig`. Rust-код в песочнице без доступа к crates.io не собирается, поэтому правки в `src-tauri/` проверяются только чтением диффа.
 
-Economic settlement pins use dedicated silhouette SVG icons (village, city, capital, port, mine, farm, wilderness, swamp, forest, mountains, ruins, crossroads, ford, pass, signal tower, camp) styled like the army banner and the fortress keep.
+### Версии
 
-## Heroes
+Версия приложения обязана совпадать в пяти местах: `package.json`, `src/version.ts`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`. `scripts/check-version.mjs` запускается в `npm run build` и роняет сборку при расхождении. Каждая версия — отдельный коммит вида `War of the Ring Remaster: <версия> — <кратко>` и запись в `CHANGELOG.md`.
 
-Hero campaign states include:
+---
+
+## Диагностика
+
+Каждая кампания ведёт сессию в `portable_data/diagnostics/<session>/`:
 
 ```text
-locked, available, active, wounded, dead
+campaign.log                      журнал действий стора с аргументами, раундом и фазой
+campaign-start.json               снимок, с которого кампания началась
+battles/r<раунд>-<конфликт>-<время>/
+├── battle.json                   полная конфигурация боя: карта, слоты, цвета, гандикапы, составы
+├── automation.log                каждый шаг моста, клик за кликом
+├── environment.json              разрешение экрана и окружение
+├── room-before-start-<W>x<H>.png комната перед нажатием «Начать игру»
+└── score-screen-…png, score-chart-…png   экран счёта и кадр, который анализировал детектор
 ```
 
-Wounded heroes are removed from combat armies but remain visible in the **Wounded Heroes** panel. It shows:
+Каждый бой — отдельная папка, поэтому несколько сражений за партию не перетирают друг друга.
 
-- hero name and portrait;
-- turns remaining;
-- recovery location.
+Скриншоты пишутся собственным PNG-энкодером без внешних крейтов; в имени файла всегда зашиты реальные размеры кадра, чтобы по папке можно было восстановить, что произошло. Папка создаётся при старте кампании (`campaign-…`) и открывается заново при её продолжении (`continue-…`); **начало новой кампании удаляет диагностику всех предыдущих партий** (`wipe_other_sessions`), продолжение — ничего не трогает. Кнопка «Журнал» в верхней панели открывает папку (в браузере — скачивает журнал из памяти).
 
-When recovery reaches zero, the hero returns to the appropriate reserve.
+---
 
-## BFME / ROTWK integration
+## Известные ограничения
 
-### User-side executable
+- Потери по юнитам из RTS не импортируются: из боя возвращается только сторона-победитель, дальше действуют правила отступления и гарнизона.
+- В RTS можно воевать только там, где у локации есть карта, MapCache и координаты: 51 из 186 локаций. Остальные решаются автобоем.
+- Ограничение BFME: не более 4 фракций на сторону; иначе бой отклоняется с указанием причины.
+- На стороне RTS (не этого приложения): кап прокачки героев, `fortressDefenseIndex` задан не для всех оплотов, нет восстановления после экрана статистики, ложная капитуляция может отдать победу не той стороне.
+- Мост работает только в Windows и требует `lotrbfme2ep1.exe` 2.01; путь к игре задаётся пользователем.
 
-The ROTWK executable path is a local machine setting and is never exported with a mod.
+---
 
-The application can discover common installations and Windows registry paths or ask the user to select:
+## Документы
 
-```text
-lotrbfme2ep1.exe
-```
-
-### Required mod assets
-
-The default mod is preinstalled: its two BIG archives and all default MapCaches are embedded into the executable with `include_bytes!` and extracted to `portable_data/mods/default/rts/` on the first launch (and restored automatically whenever they are missing). A custom mod author provides:
-
-- zero or more module BIG files;
-- one shared BIG containing all supported maps;
-- one MapCache BIG for each domain or stronghold that supports RTS battles.
-
-Each map object stores exactly one MapCache. The same cache is used on the object’s anchor hex and as the battle map when a fight is resolved on that object (or on one of its domain hexes). Regions themselves do not store MapCaches.
-
-### Elevated deployment
-
-Windows protects installations under `Program Files`. Before an RTS battle, WOTR starts one elevated helper through UAC. That helper:
-
-1. validates source assets;
-2. copies/replaces BIG files in the game directory;
-3. installs the selected active MapCache;
-4. generates and installs `__wotr_generated_presets.big`;
-5. writes `NetworkPref.ini` in the real user profile;
-6. launches ROTWK;
-7. configures the room and starts the match.
-
-### NetworkPref.ini
-
-The current default rules are:
-
-```text
-0 0 0 400 1000 -1 -1 -1 -1 -1
-```
-
-The bridge writes:
-
-```text
-Rts:Rules
-Rts:PlayerTemplate
-Rts:Color
-```
-
-The real pre-elevation AppData path is passed to the elevated helper. Registry `UserDataLeafName`, known folder names, and profile scanning are used as fallbacks.
-
-The player faction and color are not clicked again in the room because `NetworkPref.ini` already controls the first slot. This avoids duplicate first-slot clicks.
-
-### Visual menu readiness
-
-The bridge does not use a fixed main-menu delay. It embeds:
-
-```text
-src-tauri/assets/menu_marker.npy
-src-tauri/assets/menu_marker.json
-```
-
-After the real `game.dat` window appears, Rust captures the target screen region through Win32 GDI once per second.
-
-Parameters:
-
-```text
-required pixel match: 85%
-per-channel tolerance: 30
-poll interval: 1 second
-timeout: 60 seconds
-```
-
-If the marker does not appear, automation stops instead of clicking an unready screen.
-
-### Input protection
-
-During automation, low-level Windows keyboard and mouse hooks block physical input while allowing WOTR-generated `SendInput` events identified by a private marker. `Ctrl+Alt+Del` remains available as an emergency escape.
-
-### Start positions
-
-Each map object can store eight calibrated minimap points: the first four belong to defenders, the second four to attackers. Positions are always assigned randomly (there is no sequential/random prompt from the Python prototype). The only exception is a stronghold: its owner always takes the first (main) defense point, which is selected in the room by clicking the point once per slot number; every other slot then takes a single click per point.
-
-### Winner detection and auto-close
-
-After a battle starts, a background monitor polls the game window (0.5 s interval, 90-minute default timeout). When the score screen appears (detected by the fortress legend icon and the score header marker), automation:
-
-1. presses «Пропустить» and opens the «Счёт» tab;
-2. selects each rating row for slots 2–8;
-3. traces the highlighted player line to the victory coin or defeat flame;
-4. writes the outcome JSON (`COMPLETED`/`SURRENDER`/`UNKNOWN`) to `portable_data/temp/rts_battle_result_<conflict>.json`;
-5. closes every `game.dat` process.
-
-The UI polls that file and applies the winner to the campaign conflict automatically.
-
-### Coordinate calibration (editor)
-
-The location inspector includes «Калибровать координаты»: the game launches windowed at 1280×720, the WOTR window stays on top, and eight points are captured with F9 (F10 exits). The first four points are defense (the first one is the «main» defense position for strongholds), the next four are attack. The captured fractions are stored in `rtsPositions` on the location.
-
-### Coordinate test (editor)
-
-«Тест координат» requires an uploaded MapCache for the location. The game launches windowed at 1280×720, the bridge navigates to Local Network, creates a game with 8 players on «Новобранец» difficulty, assigns the calibrated points, and stops right after the placement — the game stays open for inspection.
-
-### Generated RTS deployment
-
-`__wotr_generated_presets.big` is built per battle and contains:
-
-```text
-data\ini\object\zzz_wotr\system\zzz_spawn.ini
-```
-
-Strategic units are arranged in concentric rings. Heroes are arranged near the configured gate direction. Unit levels and aura upgrades are supported by the generated format; current strategic slots use level 1 until persistent level/upgrade data is added to the campaign model.
-
-## Editor
-
-The editor manages:
-
-- top-level regions (hex painting, colors, names);
-- domains and strongholds inside regions;
-- economic types;
-- hex terrain and infrastructure;
-- factions: a free global-map color (picker plus palette; the color must stay unique per faction — a taken shade is auto-adjusted to the nearest free one) separately from the fixed BFME RTS color, which may repeat;
-- units and BFME Object IDs;
-- heroes, titles, unlock rules, and summoning;
-- captains and localized name pools;
-- starting armies;
-- mod RTS files and per-object MapCaches.
-
-Technical IDs remain automatic and stable. BFME Object IDs remain editable only where required for integration.
-
-## Current limitations
-
-- RTS winner detection resolves the winning side and closes BFME automatically, but detailed per-unit RTS losses are not imported: the aftermath applies the standard retreat/garrison rules for the losing side.
-- Strategic unit levels and upgrades are not yet persistent; generated RTS units currently use level 1.
-- Only map objects with a MapCache and the shared maps BIG can launch RTS battles (the default mod ships both).
-- The strategic AI difficulty setting is stored but strategic behavior is currently shared between difficulty levels.
-- 17 of the 68 prototype map caches are not integrated: 4 are duplicates of already assigned maps (mp amon sul fortress, wor ang amon sul, mp harlindon, mp tournament gundabad), 3 are tournament maps with no world location (fall back 4p, the heubris, tournament mp1), and 10 are region-wide caches without an unambiguous location (arnor, buckland, celduin, harad, ithilien, lostriand, mirkwood, mordor, rhun, rohan). «map wor gondor» has calibrated coordinates but no cache file in the prototype build. Belfalas has a cache but no calibrated coordinates yet (use the calibration tool).
-
-0.45.27 keeps long location names readable in the hover tooltip by expanding its available width, wrapping names safely, and repositioning it away from the map edge. Existing English and Russian names were preserved. This interface revision is intentionally incompatible with previous campaign saves.
+| Файл | Содержание |
+| --- | --- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура, модули, потоки данных, инварианты, подводные камни |
+| [CHANGELOG.md](CHANGELOG.md) | Полная история версий |
+| [PORTABLE_BUILD.md](PORTABLE_BUILD.md) | Пошаговая сборка портативного `.exe` под Windows |
+| [_test_integration-bfme/README.md](_test_integration-bfme/README.md) | Python-прототип моста — спецификация поведения BFME |

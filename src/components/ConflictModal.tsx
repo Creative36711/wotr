@@ -152,10 +152,16 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     const ringState=campaign.ringState
     const carrierHere=ringState.forged&&ringState.ownerFactionId===factionId&&factionArmies.some((army)=>army.id===ringState.carrierArmyId)
     const ringHero=carrierHere?ringHeroObjectId(factions.find((faction)=>faction.id===factionId)):null
-    // Контекстные бонусы владельца локации: ресурсы, КО, палантир, сигнальный огонь (§2).
+    // Контекстные бонусы стороны: защитник берёт их у локации (ресурсы, КО,
+    // палантир, сигнальный огонь), атакующий — у снабжения, которое привёз из
+    // точки отправления. Механизм выдачи в BFME один и тот же: rts_spawn.rs
+    // читает bonuses у каждого участника, поэтому менять мост не нужно.
+    const compositionSide=factions.find((faction)=>faction.id===factionId)?.alignment??null
     const ownerBonuses=location?.side===factionId
       ?collectOwnerModifiers({location,region:regions.find((item)=>item.id===conflict.regionId)??null,factionId,campaign,buildingTypes,economicTypes,ringForging,palantirSettings})
-      :{}
+      :compositionSide&&compositionSide===conflict.attackerSide
+        ?preview.attackerModifiers??{}
+        :{}
     return {
       units:unitEntries,
       heroes:[...new Map(heroEntries.map((entry)=>[entry.objectId,entry])).values()].map((entry)=>({objectId:entry.objectId,level:campaign.heroLevels[entry.entityId]??1})),

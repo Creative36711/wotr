@@ -7,6 +7,17 @@ import { useMapStore } from '../src/store/useMapStore'
 import { createNewSaveGame } from '../src/game/saveGame'
 import { translateText } from '../src/i18n'
 import {
+  attackerSupplyModifiers,
+  createSupplyPool,
+  currentSupplyAmount,
+  DEFAULT_SUPPLY_SETTINGS,
+  mergeSupplyPools,
+  supplyAutoBattleWeight,
+  supplyDecayFactor,
+  travelAlongPath,
+} from '../src/game/supply'
+import type { SupplyPool, SupplyWorld } from '../src/types'
+import {
   currentSessionFolder,
   currentSessionKey,
   describe,
@@ -124,6 +135,47 @@ const pointer = (target: Element, altKey: boolean) =>
       } as EventInit),
     )
   })
+
+console.log('\n— снабжение армии —')
+// Синтетический мир: своя локация с бонусами экономического типа.
+// Фракция берётся из запущенной кампании: в разных мирах идентификаторы свои.
+const supplyFaction = useMapStore.getState().campaign.playerFactionId
+const supplyLocation = world.locations.find((location) => location.side === supplyFaction) ?? world.locations[0]
+const supplyWorld: SupplyWorld = {
+  campaign: useMapStore.getState().campaign,
+  buildingTypes: useMapStore.getState().buildingTypes ?? [],
+  economicTypes: useMapStore.getState().economicTypes,
+  locationsByHex: new Map([[supplyLocation.hex, supplyLocation]]),
+  locationById: new Map([[supplyLocation.id, supplyLocation]]),
+  settings: DEFAULT_SUPPLY_SETTINGS,
+}
+const pool = createSupplyPool(supplyLocation, supplyFaction, 1, supplyWorld)!
+check('снабжение выдаётся при формировании', Boolean(pool) && (pool.initialAmount.startingResources ?? 0) > 0, JSON.stringify(pool?.initialAmount ?? null))
+check('свежее снабжение не деградировано', supplyDecayFactor(pool, DEFAULT_SUPPLY_SETTINGS) === 1, String(supplyDecayFactor(pool, DEFAULT_SUPPLY_SETTINGS)))
+
+// 4 гекса и 2 хода: 1 − 4×0.05 − 2×0.15 = 0.50, затем перевозка ×0.5.
+const worn: SupplyPool = { ...pool, initialAmount: { ...pool.initialAmount }, hexesTravelled: 4, turnsElapsed: 2 }
+check('деградация по гексам и ходам', Math.abs(supplyDecayFactor(worn, DEFAULT_SUPPLY_SETTINGS) - 0.5) < 1e-9, String(supplyDecayFactor(worn, DEFAULT_SUPPLY_SETTINGS)))
+check('перевозка теряет половину', currentSupplyAmount(worn, DEFAULT_SUPPLY_SETTINGS).startingResources === Math.floor((pool.initialAmount.startingResources ?? 0) * 0.25), String(currentSupplyAmount(worn, DEFAULT_SUPPLY_SETTINGS).startingResources))
+
+// Долгий поход исчерпывает припасы полностью — эксплойт закрыт.
+const exhausted = travelAlongPath(pool, Array.from({ length: 21 }, (_, index) => `hex-${index}`), supplyFaction, 1, supplyWorld)
+check('дальний поход обнуляет снабжение', exhausted.pool === null && exhausted.depleted, JSON.stringify({ pool: exhausted.pool, depleted: exhausted.depleted }))
+
+// Пополнение на транзите через свою локацию обнуляет счётчики.
+const refilled = travelAlongPath(worn, [supplyLocation.hex, 'x', 'y'], supplyFaction, 5, supplyWorld)
+check('транзит через свою локацию пополняет', refilled.refilledAt === supplyLocation.id && refilled.pool?.hexesTravelled === 2 && refilled.pool?.sourceRound === 5, JSON.stringify({ at: refilled.refilledAt, hexes: refilled.pool?.hexesTravelled }))
+
+// Бонус атакующего — остаток снабжения; локационных бонусов у него нет.
+const attackerModifiers = attackerSupplyModifiers(worn, supplyLocation, supplyFaction, supplyWorld, useMapStore.getState().palantirSettings)
+check('бонус атакующего считается от снабжения', (attackerModifiers.startingResources ?? 0) === Math.floor((pool.initialAmount.startingResources ?? 0) * 0.25), String(attackerModifiers.startingResources))
+check('у атакующего нет сигнального огня и обороны', attackerModifiers.signalFire === undefined && attackerModifiers.defenseBonus === undefined, JSON.stringify(attackerModifiers))
+const sampleWeight = supplyAutoBattleWeight({ startingResources: 100, commandPointBonus: 50, palantirStartingPoints: 5, palantirIncomePerInterval: 1 })
+check('вес снабжения в автобое', Math.abs(sampleWeight - 0.1) < 1e-9, String(sampleWeight))
+
+// Слияние: припасы у более свежей армии, счётчики — худшие из двух.
+const merged = mergeSupplyPools(worn, pool, DEFAULT_SUPPLY_SETTINGS)!
+check('слияние берёт свежие припасы и худший путь', merged.sourceRound === pool.sourceRound && merged.hexesTravelled === 4 && merged.turnsElapsed === 2, JSON.stringify(merged))
 
 const ordersOf = (armyId: string) => useMapStore.getState().campaign.pendingOrders.filter((order) => order.armyId === armyId)
 

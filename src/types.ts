@@ -105,6 +105,12 @@ export interface BuildingTypeDefinition {
   effects: {
     armyUpgrades: ArmyUpgradeId[]
     battleModifiers: BattleModifierSet
+    /**
+     * Фиксированный бонус армии, выступающей из этой локации. В отличие от
+     * обычного снабжения не умножается на деградацию и supplyRatio: это
+     * специально подготовленный к походу запас (осадный лагерь, разведпост).
+     */
+    attackSupplyModifiers: OwnerBattleModifiers
     /** Recruits at this location start this many levels higher. */
     recruitLevelBonus: number
     /** Free Ring-forging progress per turn. */
@@ -378,6 +384,71 @@ export interface ArmySlot {
   bannerUpgrade: boolean
 }
 
+/**
+ * Экономическая часть бонусов локации, которую армия уносит с собой в поход.
+ * Локационные бонусы (сигнальный огонь, оборона стен, засада) сюда не входят —
+ * их нельзя «принести» на чужой гекс.
+ */
+export interface SupplyAmount {
+  startingResources?: number
+  commandPointBonus?: number
+  palantirStartingPoints?: number
+  palantirIncomePerInterval?: number
+}
+
+/**
+ * Снабжение армии: что она взяла в точке отправления и сколько с тех пор
+ * прошла и простояла. Текущее значение не хранится — вычисляется по трекерам,
+ * поэтому ничего не нужно пересчитывать и сохранять каждый ход.
+ */
+export interface SupplyPool {
+  sourceLocationId: string
+  sourceRound: number
+  initialAmount: SupplyAmount
+  /** Пройдено гексов с момента последнего пополнения. */
+  hexesTravelled: number
+  /** Ходов прошло с момента последнего пополнения, включая ходы стоянки. */
+  turnsElapsed: number
+}
+
+/** Настройки снабжения; хранятся в world.json и настраиваются моддером. */
+export interface SupplySettings {
+  enabled: boolean
+  /** Доля снабжения, теряемая за каждый пройденный гекс. */
+  decayPerHex: number
+  /** Доля снабжения, теряемая за каждый прошедший ход. */
+  decayPerTurn: number
+  /** Минимальная доля снабжения после деградации. */
+  minRatio: number
+  /** Коэффициент «перевозка теряет часть» при конвертации в бонус битвы. */
+  supplyRatio: number
+  /** Требовать принадлежности точки отправления фракции армии. */
+  requiresOwnedOrigin: boolean
+  /** Считать ли захваченную в этом же ходу локацию своей для пополнения. */
+  captureCountsAsOwned: boolean
+  /** Пополнять ли снабжение при транзите через свою локацию. */
+  refillOnTransit: boolean
+  /** Пополнять ли снабжение в начале хода на своей локации. */
+  refillOnTurnStart: boolean
+  /** Инициализировать ли снабжение при формировании армии. */
+  refillOnFormation: boolean
+}
+
+/** Что осталось от снабжения к моменту битвы — для журнала и диагностики. */
+export interface AttackerSupplyContext {
+  sourceLocationId: string | null
+  sourceRound: number | null
+  battleRound: number
+  hexesTravelled: number
+  turnsElapsed: number
+  decayFactor: number
+  supplyRatio: number
+  initialAmount: SupplyAmount
+  afterDecayAndRatio: SupplyAmount
+  fixedFromBuildings: SupplyAmount
+  finalAttackerModifiers: OwnerBattleModifiers
+}
+
 export interface Army {
   id: string
   name: string
@@ -399,6 +470,8 @@ export interface Army {
   movedInPhase: MovementPhase | null
   /** Retreating after a defeat skips movement through this round. */
   exhaustedUntilRound: number | null
+  /** Припасы, взятые в точке отправления; null — армия без снабжения. */
+  supplyPool: SupplyPool | null
 }
 
 /**
@@ -755,7 +828,7 @@ export interface RosterData {
 }
 
 export interface WorldData {
-  version: 44
+  version: 45
   grid: HexGridData
   locations: MapLocation[]
   factions: FactionDefinition[]
@@ -768,12 +841,13 @@ export interface WorldData {
   buildingTypes: BuildingTypeDefinition[]
   palantirSettings: PalantirSettings
   ringForging: RingForgingSettings
+  supplySettings: SupplySettings
   campaign: CampaignState
   battles: AutoBattleReport[]
 }
 
 export interface SaveGameData {
-  version: 61
+  version: 62
   gameVersion: string
   modId: string
   name: string

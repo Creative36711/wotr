@@ -180,6 +180,9 @@ export function runAiPlanning(
         movedRound: null,
         movedInPhase: null,
         exhaustedUntilRound: null,
+        // Снабжение армия ИИ получит в начале своего хода, стоя на своей
+        // локации (refillOnTurnStart): здесь нет контекста построек и мира.
+        supplyPool: null,
       }
       army.name = generateArmyName(army, nextArmies, factions, locations, heroes, grid.config)
       nextArmies.push(army)
@@ -339,6 +342,8 @@ export function runAiMovement(
   excludedFactionId: string | null = campaign.playerFactionId,
   heroes: Hero[] = [],
   plans: AlliedMovementPlan[] = [],
+  /** Учёт снабжения: вызывается с исполненным путём каждой двинувшейся армии. */
+  onArmyTravel?: (army: Army, path: string[]) => void,
 ) {
   const nextArmies = armies.map((army) => ({ ...army, commander: army.commander ? { ...army.commander } : null, unitSlots: army.unitSlots.map((slot) => ({ ...slot })), heroSlots: army.heroSlots.map((slot) => ({ ...slot })) }))
   const logicalGrid = resolveGrid(grid, locations, regions)
@@ -405,6 +410,7 @@ export function runAiMovement(
       army.engaged = true
       for (const candidate of nextArmies) if (candidate.hexId === destinationId && areFactionsHostile(factions, candidate.factionId, army.factionId)) candidate.engaged = true
     }
+    onArmyTravel?.(army, path.slice(0, destinationIndex + 1))
     recordTurnMovement(campaign, army, heroes, hostileArmy || hostileLocation ? 'besieged' : 'moved', movementTargetLabel(destinationId, locations, regions, logicalGrid), destinationIndex, originHexId, destinationId)
   }
   return nextArmies

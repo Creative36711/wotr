@@ -9,6 +9,7 @@ const cloneArmies = (armies: Army[]) => armies.map((army) => ({
   commander: army.commander ? { ...army.commander } : null,
   unitSlots: army.unitSlots.map((slot) => ({ ...slot })),
   heroSlots: army.heroSlots.map((slot) => ({ ...slot })),
+  supplyPool: army.supplyPool ? { ...army.supplyPool, initialAmount: { ...army.supplyPool.initialAmount } } : null,
 }))
 const cloneCampaign = (campaign: WorldData['campaign']) => ({
   ...campaign,

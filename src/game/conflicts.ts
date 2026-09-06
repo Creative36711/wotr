@@ -2,12 +2,17 @@ import { areFactionsHostile, getFaction } from '../constants'
 import { commanderDefinition } from './army'
 import { getEconomicType } from './economicTypes'
 import { collectOwnerModifiers, palantirAutoBattleWeight, regionAutoBattleBonus } from './battleModifiers'
+import { attackerSupplyContext, attackerSupplyModifiers, bestAttackerPool, DEFAULT_SUPPLY_SETTINGS, supplyAutoBattleWeight } from './supply'
+import type { SupplyWorld } from './supply'
 import { heroPowerMultiplier, slotPowerMultiplier } from './progression'
 import { ringAutoBattleMultiplier } from './ring'
 import { factionSide, oppositeSide } from './campaign'
 import { findPath, hexDistance, locationHexId, pathMovementCost, resolveGrid } from '../hex/hexGrid'
 import type {
   Army,
+  AttackerSupplyContext,
+  OwnerBattleModifiers,
+  SupplySettings,
   ArmySlot,
   AutoBattleReport,
   BattleSlotResult,
@@ -40,6 +45,7 @@ export interface ConflictModifierContext {
   economicTypes?: EconomicTypeDefinition[]
   ringForging: RingForgingSettings
   palantirSettings: PalantirSettings
+  supplySettings?: SupplySettings
 }
 
 
@@ -61,6 +67,12 @@ export interface ConflictPreview {
   defenseBonus: number
   attackerUnits: number
   defenderUnits: number
+  /** Бонусы защитника — от локации боя. */
+  defenderModifiers?: OwnerBattleModifiers
+  /** Бонусы атакующего — от снабжения, привезённого из точки отправления. */
+  attackerModifiers?: OwnerBattleModifiers
+  /** Как получился бонус атакующего: источник, путь, деградация, итого. */
+  attackerSupply?: AttackerSupplyContext | null
 }
 
 export interface ConflictBattleOutcome extends ConflictPreview {
@@ -186,6 +198,24 @@ export function previewConflict(
   let ownerModifiers = {} as ReturnType<typeof collectOwnerModifiers>
   let attackerContextMultiplier = 1
   let defenderContextMultiplier = 1
+  // Снабжение атакующего: бонусы он привозит с собой из точки отправления,
+  // а не берёт у локации, на которую напал.
+  const supplySettings = context?.supplySettings ?? DEFAULT_SUPPLY_SETTINGS
+  const supplyWorld: SupplyWorld | null = context ? {
+    campaign: context.campaign,
+    buildingTypes: context.buildingTypes,
+    economicTypes: context.economicTypes,
+    locationsByHex: new Map(locations.map((candidate) => [candidate.hex, candidate])),
+    locationById: new Map(locations.map((candidate) => [candidate.id, candidate])),
+    settings: supplySettings,
+  } : null
+  const supplyArmy = supplyWorld ? bestAttackerPool(attackerArmies, supplySettings) : null
+  const attackerModifiers = supplyWorld && context
+    ? attackerSupplyModifiers(supplyArmy?.supplyPool ?? null, supplyArmy ? supplyWorld.locationById.get(supplyArmy.supplyPool?.sourceLocationId ?? '') ?? null : null, supplyArmy?.factionId ?? '', supplyWorld, context.palantirSettings)
+    : {}
+  const attackerSupply = supplyWorld && context
+    ? attackerSupplyContext(attackerArmies, conflict.round, supplyWorld, context.palantirSettings)
+    : null
   if (context) {
     const region = conflict.regionId ? context.regions.find((candidate) => candidate.id === conflict.regionId) ?? null : null
     ownerModifiers = collectOwnerModifiers({
@@ -205,6 +235,9 @@ export function previewConflict(
     defenderContextMultiplier *= debuff
     attackerContextMultiplier *= ringAutoBattleMultiplier(context.campaign, context.ringForging, attackerFactionId ? [attackerFactionId] : [])
     defenderContextMultiplier *= ringAutoBattleMultiplier(context.campaign, context.ringForging, defenderFactionId ? [defenderFactionId] : [])
+    // Привезённое снабжение: каждые 100 ресурсов +3 %, 50 командных очков +2 %,
+    // 5 очков палантира +2 %, пункт прироста палантира +3 %.
+    attackerContextMultiplier *= 1 + supplyAutoBattleWeight(attackerModifiers)
   }
   attackerBasePower *= attackerContextMultiplier
   defenderBasePower *= defenderContextMultiplier
@@ -220,6 +253,9 @@ export function previewConflict(
     defenseBonus,
     attackerUnits: attackerMembers.filter((member) => member.kind === 'unit').length,
     defenderUnits: defenderMembers.filter((member) => member.kind === 'unit').length,
+    defenderModifiers: ownerModifiers,
+    attackerModifiers,
+    attackerSupply,
   }
 }
 

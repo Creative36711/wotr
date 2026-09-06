@@ -18,7 +18,7 @@ const ROSTER_TEMPLATE: &str = include_str!("../../public/templates/roster_templa
 // а SAVE_VERSION обязан совпадать с SAVEGAME_DATA_VERSION из src/version.ts —
 // за этим тоже следит check-version.
 const GAME_VERSION: &str = env!("CARGO_PKG_VERSION");
-const SAVE_VERSION: u64 = 61;
+const SAVE_VERSION: u64 = 62;
 
 // Bundled RTS assets for the default «Vanilla 2.01» mod (Requirement: the mod
 // ships out of the box — no manual downloads). The two BIG archives plus every

@@ -744,7 +744,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
    она выглядит белой заплаткой. Правило глобальное, чтобы новая галочка нигде
    не осталась неокрашенной; более частные правила (например, у переключателей
    найма) этот цвет переопределяют. */
-input[type='checkbox'], input[type='radio'] { accent-color: #6d8f5a; cursor: pointer; }
+input[type='checkbox'], input[type='radio'] { width: 13px; height: 13px; flex: none; accent-color: #6d8f5a; cursor: pointer; }
 /* Переключатель настроек снабжения в редакторе мира (0.51.x). */
 .database-toggle { display: flex; align-items: center; gap: 6px; margin: 5px 0; color: #788489; font-size: 11px; cursor: pointer; }
 .database-toggle input { width: 13px; height: 13px; accent-color: #6d8f5a; cursor: pointer; }
@@ -1136,8 +1136,10 @@ input[type='checkbox'], input[type='radio'] { accent-color: #6d8f5a; cursor: poi
 .economy-type-card > header > button:disabled { opacity: .45; cursor: not-allowed; }
 .economy-type-card > label > span,
 .economy-type-grid label > span { display: block; margin-bottom: 3px; color: #66747a; font-size: 10px; }
-.economy-type-card > label input,
-.economy-type-grid input,
+/* Галочки и радио исключены: это правило задаёт вид текстового поля, а чекбокс
+   шириной 100% и высотой 30px превращается в пустой белый квадрат. */
+.economy-type-card > label input:not([type='checkbox']):not([type='radio']),
+.economy-type-grid input:not([type='checkbox']):not([type='radio']),
 .economy-type-grid select { width: 100%; height: 30px; padding: 0 7px; border: 1px solid #303c42; border-radius: 4px; background: #090f13; color: #b7bcb8; font-size: 12px; }
 .economy-type-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
 .economy-type-flags { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 10px; }

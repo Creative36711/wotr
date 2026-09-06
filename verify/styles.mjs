@@ -142,8 +142,11 @@ const scan = (screen: string) => {
     // них браузерные всегда, поэтому для них критерий только один. jsdom отдаёт
     // rgba(0, 0, 0, 0) там, где accent-color не задан вовсе.
     const isToggle = el.tagName === 'INPUT' && (el.getAttribute('type') === 'checkbox' || el.getAttribute('type') === 'radio')
+    // Галочка, растянутая правилом для текстовых полей (width:100%, height:30px),
+    // выглядит пустым белым квадратом: браузерный чекбокс так не рисуется.
+    const stretched = isToggle && (parseFloat(style.width) > 20 || parseFloat(style.height) > 20)
     const broken = isToggle
-      ? style.accentColor === 'auto' || style.accentColor === 'rgba(0, 0, 0, 0)'
+      ? style.accentColor === 'auto' || style.accentColor === 'rgba(0, 0, 0, 0)' || stretched
       : style.backgroundColor === base.backgroundColor
         && style.color === base.color
         && style.borderTopColor === base.borderTopColor

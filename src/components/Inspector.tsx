@@ -5,8 +5,10 @@ import { armyCommandPointLimit, armyCommandPoints, armyMovementBreakdown, armyMo
 import { canFactionPlan, isFactionActive, isMovementPhase } from '../game/campaign'
 import { armyIntelLabel, calculateVisibleHexes, garrisonIntelCategory, garrisonIntelLabel } from '../game/fogOfWar'
 import { recruitableUnitsAtLocation } from '../game/recruitment'
-import { attackerSupplyModifiers, supplyDecayFactor } from '../game/supply'
+import { attackerSupplyModifiers, fixedSupplyAt, scaleSupply, supplyAmountAt, supplyDecayFactor } from '../game/supply'
 import type { SupplyWorld } from '../game/supply'
+import { collectOwnerModifiers, mergeOwnerModifiers } from '../game/battleModifiers'
+import type { OwnerBattleModifiers } from '../types'
 import { locationHexId, resolveGrid } from '../hex/hexGrid'
 import { useMapStore } from '../store/useMapStore'
 import { slotPowerMultiplier } from '../game/progression'
@@ -554,6 +556,10 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
   const startBuilding = useMapStore((state) => state.startBuilding)
   const demolishBuilding = useMapStore((state) => state.demolishBuilding)
   const buildingTypesList = useMapStore((state) => state.buildingTypes)
+  const locationEconomicTypes = useMapStore((state) => state.economicTypes)
+  const locationPalantirSettings = useMapStore((state) => state.palantirSettings)
+  const locationRingForging = useMapStore((state) => state.ringForging)
+  const locationSupplySettings = useMapStore((state) => state.supplySettings)
   const transferReserveToArmy = useMapStore((state) => state.transferReserveToArmy)
   const formArmy = useMapStore((state) => state.formArmy)
   const duplicateLocation = useMapStore((state) => state.duplicateLocation)
@@ -619,6 +625,40 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
     )
   }
 
+  // Бонусы локации для обеих сторон: защитник берёт их у места, атакующий —
+  // увозит с собой как снабжение (экономическая часть × supplyRatio) плюс
+  // фиксированный бонус построек-плацдармов.
+  const locationSupplyWorld: SupplyWorld = {
+    campaign,
+    buildingTypes: buildingTypesList ?? [],
+    economicTypes: locationEconomicTypes,
+    locationsByHex: new Map(locations.map((item) => [item.hex, item])),
+    locationById: new Map(locations.map((item) => [item.id, item])),
+    settings: locationSupplySettings,
+  }
+  const defenseBonuses = collectOwnerModifiers({
+    location,
+    region: regions.find((item) => item.id === location.regionId) ?? null,
+    factionId: location.side,
+    campaign,
+    buildingTypes: buildingTypesList ?? [],
+    economicTypes: locationEconomicTypes,
+    ringForging: locationRingForging,
+    palantirSettings: locationPalantirSettings,
+  })
+  const carriedSupply = scaleSupply(supplyAmountAt(location, location.side, locationSupplyWorld), locationSupplySettings.supplyRatio)
+  const attackBonuses = mergeOwnerModifiers(carriedSupply, fixedSupplyAt(location, location.side, locationSupplyWorld))
+  const bonusLines = (amount: OwnerBattleModifiers) => [
+    amount.startingResources ? `+${amount.startingResources} ресурсов` : '',
+    amount.commandPointBonus ? `+${amount.commandPointBonus} КО` : '',
+    amount.palantirStartingPoints ? `+${amount.palantirStartingPoints} палантир` : '',
+    amount.palantirIncomePerInterval ? `+${amount.palantirIncomePerInterval}/такт палантир` : '',
+    amount.signalFire ? 'Сигнальный огонь' : '',
+    amount.defenseBonus ? `+${Math.round(amount.defenseBonus * 100)}% к обороне` : '',
+    amount.ambushBonus ? `+${Math.round(amount.ambushBonus * 100)}% засада` : '',
+  ].filter(Boolean)
+  const defenseLines = bonusLines(defenseBonuses)
+  const attackLines = bonusLines(attackBonuses)
   const faction = getFaction(factions, location.side)
   const locationRegion = regions.find((region) => region.id === location.regionId) ?? null
   const regionOwner = locationRegion?.ownerFactionId ? getFaction(factions, locationRegion.ownerFactionId) : null
@@ -704,6 +744,21 @@ export default function Inspector({ activeModId, activeMod, onModChange, appSett
           <details className="recruitment-overrides"><summary>Уникальные разрешения и запреты</summary><p>Базовый список рассчитывается автоматически. Override всегда действует только для юнитов текущего владельца.</p><div>{previewFactionUnits.map((unit) => <article key={unit.id}><b>{unit.name}</b><label><input type="checkbox" checked={location.extraRecruitables.includes(unit.id)} onChange={(event) => updateLocation(location.id, { extraRecruitables: event.target.checked ? [...location.extraRecruitables, unit.id] : location.extraRecruitables.filter((id) => id !== unit.id) })} />Разрешить дополнительно</label><label><input type="checkbox" checked={location.blockedRecruitables.includes(unit.id)} onChange={(event) => updateLocation(location.id, { blockedRecruitables: event.target.checked ? [...location.blockedRecruitables, unit.id] : location.blockedRecruitables.filter((id) => id !== unit.id) })} />Запретить</label></article>)}</div></details>
         </section> : <section className="location-economy-panel">
           <header><div><small>{economicTypeLabel(location.economicType, language)}</small><b>Экономика объекта</b></div><span>+{location.income.gold} зол. · +{location.income.materials} мат.</span></header>
+          <section className="location-battle-bonuses">
+            <h4>Бонусы в битве BFME</h4>
+            <div className="bonus-columns">
+              <div className="bonus-column defense">
+                <b>При обороне</b>
+                {defenseLines.length ? defenseLines.map((line) => <span key={line}>{line}</span>) : <span className="bonus-empty">Нет бонусов</span>}
+                <small>Экономический тип, постройки, полный контроль региона.</small>
+              </div>
+              <div className="bonus-column attack">
+                <b>При атаке отсюда</b>
+                {attackLines.length ? attackLines.map((line) => <span key={line}>{line}</span>) : <span className="bonus-empty">Нет бонусов</span>}
+                <small>Снабжение ×{locationSupplySettings.supplyRatio} в дороге тратится; плацдармы дают полный бонус.</small>
+              </div>
+            </div>
+          </section>
           {canFactionPlan(campaign, factions, location.side) ? <>
             <div className="location-treasury"><span>Казна: <b>{treasury?.gold ?? 0}</b></span><span>Материалы: <b>{treasury?.materials ?? 0}</b></span></div>
             {locationState.occupationTurnsLeft > 0 && <div className="occupation-warning"><b>Объект оккупирован</b><span>Полноценный найм и призыв героев будут доступны через {locationState.occupationTurnsLeft} ход{locationState.occupationTurnsLeft === 1 ? '' : 'а'} фракции. Сейчас доступны только отряды с разрешением на найм во время оккупации.</span></div>}

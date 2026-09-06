@@ -79,7 +79,8 @@ function isEmpty(amount: SupplyAmount) {
   return !amount.startingResources && !amount.commandPointBonus && !amount.palantirStartingPoints && !amount.palantirIncomePerInterval
 }
 
-function scale(amount: SupplyAmount, factor: number): SupplyAmount {
+/** Припасы, умноженные на коэффициент (перевозка, пополнение у союзников). */
+export function scaleSupply(amount: SupplyAmount, factor: number): SupplyAmount {
   const result: SupplyAmount = {}
   if (amount.startingResources) result.startingResources = Math.floor(amount.startingResources * factor)
   if (amount.commandPointBonus) result.commandPointBonus = Math.floor(amount.commandPointBonus * factor)
@@ -149,7 +150,7 @@ export function supplyDecayFactor(pool: SupplyPool, settings: SupplySettings) {
 
 /** Что осталось к текущему моменту, уже с учётом потерь при перевозке. */
 export function currentSupplyAmount(pool: SupplyPool, settings: SupplySettings): SupplyAmount {
-  return scale(pool.initialAmount, supplyDecayFactor(pool, settings) * settings.supplyRatio)
+  return scaleSupply(pool.initialAmount, supplyDecayFactor(pool, settings) * settings.supplyRatio)
 }
 
 function clonePool(pool: SupplyPool): SupplyPool {

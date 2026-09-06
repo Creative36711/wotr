@@ -16,3 +16,10 @@
 .pin { z-index:2; }
 .pin:hover,.pin.selected { z-index:30; }
 @media (prefers-reduced-motion:reduce){.army-marker{transition:none}}
+
+/* Индикатор снабжения на маркере армии (0.51.x): полоска слева от знамени. */
+.army-supply-dot { position: absolute; left: -5px; top: 6px; width: 4px; height: 14px; border-radius: 2px; background: #8aa05a; box-shadow: 0 0 0 1px #0d0c09; }
+.army-supply-dot.full { background: #8aa05a; }
+.army-supply-dot.mid { background: #c9a94a; }
+.army-supply-dot.low { background: #cf8245; }
+.army-supply-dot.empty { background: #5c544c; }

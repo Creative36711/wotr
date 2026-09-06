@@ -4,6 +4,7 @@ import { areFactionsHostile, getFaction, TERRAIN_BY_ID, WORLD_HEIGHT, WORLD_WIDT
 import { armyCommandPointLimit, armyCommandPoints, armyMovementCap, armyUnitSlotCap, commanderDefinition } from '../game/army'
 import { movementTargetLabel } from '../game/ai'
 import { canPlayerMoveArmy, factionSide } from '../game/campaign'
+import { supplyDecayFactor } from '../game/supply'
 import { armyIntelLabel, calculateVisibleHexes } from '../game/fogOfWar'
 import {
   findPath,
@@ -177,6 +178,7 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
   const heroes = useMapStore((state) => state.heroes)
   const captains = useMapStore((state) => state.captains)
   const campaign = useMapStore((state) => state.campaign)
+  const supplySettings = useMapStore((state) => state.supplySettings)
   const selectedId = useMapStore((state) => state.selectedId)
   const selectedArmyId = useMapStore((state) => state.selectedArmyId)
   const selectedHexId = useMapStore((state) => state.selectedHexId)
@@ -927,6 +929,13 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
               '--army-scale': pinScale,
               '--army-color': faction.color,
             } as CSSProperties
+            // Индикатор снабжения: одним взглядом видно, какие армии на полном
+            // снабжении, какие истощены, а какие вышли без припасов.
+            const supplyFactor = army.supplyPool ? supplyDecayFactor(army.supplyPool, supplySettings) : 0
+            const supplyLevel = !army.supplyPool ? 'empty' : supplyFactor >= .75 ? 'full' : supplyFactor >= .25 ? 'mid' : 'low'
+            const supplyLabel = army.supplyPool
+              ? `Снабжение ${Math.round(supplyFactor * 100)}% из «${locations.find((candidate) => candidate.id === army.supplyPool?.sourceLocationId)?.name ?? army.supplyPool?.sourceLocationId}»`
+              : 'Без снабжения'
             return (
               <button
                 type="button"
@@ -942,8 +951,9 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
                   } else selectArmy(army.id)
                 }}
                 onContextMenu={(event)=>{if(campaign.pendingOrders.some((order)=>order.armyId===army.id)){event.preventDefault();event.stopPropagation();cancelArmyOrder(army.id)}}}
-                title={enemyToPlayer ? `${displayArmyName} · ${displayCommander}${army.movedRound === campaign.round ? ' · двигалась в этом раунде' : ''}` : `${army.name} · ${armyCommandTotal}/${armyCommandLimit} ОК · ${army.movementRemaining}/${movementCap} ОД · ${leaderName ?? 'Нет командира'}`}
+                title={enemyToPlayer ? `${displayArmyName} · ${displayCommander}${army.movedRound === campaign.round ? ' · двигалась в этом раунде' : ''}` : `${army.name} · ${armyCommandTotal}/${armyCommandLimit} ОК · ${army.movementRemaining}/${movementCap} ОД · ${leaderName ?? 'Нет командира'} · ${supplyLabel}`}
               >
+                {mode === 'game' && army.factionId === campaign.playerFactionId && <span className={`army-supply-dot ${supplyLevel}`} aria-label={supplyLabel} />}
                 <span className="army-banner"><i>⚔</i></span>
                 <b>{enemyToPlayer ? '?' : occupiedSlots}</b>
                 <span className="army-label"><strong>{displayArmyName}</strong><small>{enemyToPlayer ? `${displayCommander}${army.movedRound === campaign.round ? ' · перемещалась' : ''}` : `${army.status === 'retreating' ? 'Деморализована · сила −20%' : displayCommander} · ${army.movementRemaining}/${movementCap} ОД`}</small></span>

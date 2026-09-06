@@ -890,13 +890,15 @@ export const saveGame = (save: SaveGameData, modId: string) => writeModJson(modI
 // ---------------------------------------------------------------------------
 
 /**
- * Создаёт папку диагностики `portable_data/diagnostics/<session>` и чистит
- * старые сессии (мост оставляет три последние и удаляет всё старше двух недель).
+ * Создаёт папку диагностики `portable_data/diagnostics/<session>`.
+ *
+ * `wipe = true` (старт новой кампании) удаляет все остальные папки диагностики:
+ * одна кампания — одна папка, и в ней копится всё, что произошло за партию.
  * Возвращает путь к папке или пустую строку в браузерном режиме.
  */
-export async function beginDiagnosticsSession(session: string): Promise<string> {
+export async function beginDiagnosticsSession(session: string, wipe = false): Promise<string> {
   if (!isTauriRuntime()) return ''
-  return invoke<string>('begin_diagnostics_session', { session })
+  return invoke<string>('begin_diagnostics_session', { session, wipe })
 }
 
 /** Пишет или дописывает текстовый файл внутри папки диагностики сессии. */

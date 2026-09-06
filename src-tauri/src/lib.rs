@@ -306,17 +306,17 @@ fn chrono_like_now()->String{use std::time::{SystemTime,UNIX_EPOCH};let secs=Sys
 // ---------------------------------------------------------------------------
 // Диагностика партии: журнал действий и скриншоты RTS-боя
 // ---------------------------------------------------------------------------
-// Всё пишется в `portable_data/diagnostics/<сессия>/`: `campaign.log` (журнал
-// действий игрока и игры), `campaign-start.json` (снимок старта — из него партию
-// можно повторить), `battle-<конфликт>.json` (конфигурация RTS-боя),
-// `automation.log` (лог автоматизации BFME) и скриншоты комнаты перед стартом и
-// экрана статистики. Старые сессии удаляются автоматически, поэтому папка не
-// разрастается: остаются три последние, всё старше двух недель стирается.
-
-/// Сколько последних сессий диагностики хранить (текущая и две предыдущие).
-const DIAGNOSTICS_KEEP_SESSIONS: usize = 3;
-/// Сессии старше этого возраста удаляются при старте новой кампании.
-const DIAGNOSTICS_MAX_AGE_SECS: u64 = 14 * 24 * 60 * 60;
+// Одна кампания — одна папка `portable_data/diagnostics/campaign-<дата>-<фракция>`,
+// имя строится от `createdAt` сохранения, поэтому «Продолжить» пишет в ту же
+// папку. Внутри: `campaign.log` (журнал действий игрока и игры),
+// `campaign-start.json` (снимок старта — из него партию можно повторить) и
+// `battles/<раунд>-<конфликт>-<время>/` на каждый бой — конфигурация боя,
+// `automation.log` и скриншоты. Подпапки уникальны, поэтому несколько боёв за
+// партию ничего не перезаписывают.
+//
+// Хранение: пока играется кампания, накапливается всё; старт новой кампании
+// (wipe=true) удаляет папки предыдущих партий, так что диагностика не растёт
+// бесконечно.
 
 fn diagnostics_root(app:&AppHandle)->Result<PathBuf,String>{
     let root=data_root(app)?.join("diagnostics");
@@ -332,40 +332,50 @@ fn sanitize_session(session:&str)->Result<String,String>{
     Ok(clean)
 }
 
+/// Имя файла внутри папки диагностики. Может содержать подпапки
+/// (`battles/<ключ>/battle.json`), поэтому проверяется каждый сегмент пути.
 fn sanitize_diagnostics_name(name:&str)->Result<String,String>{
-    let clean:String=name.chars().filter(|character|character.is_ascii_alphanumeric()||matches!(character,'-'|'_'|'.'|'('|')')).take(96).collect();
-    if clean.is_empty()||clean.starts_with('.'){return Err("Некорректное имя файла диагностики".into())}
+    let mut clean=String::new();
+    for (index,segment) in name.split('/').enumerate(){
+        let part:String=segment.chars().filter(|character|character.is_ascii_alphanumeric()||matches!(character,'-'|'_'|'.'|'('|')')).take(96).collect();
+        if part.is_empty()||part.starts_with('.')||part=="."||part==".."{return Err("Некорректное имя файла диагностики".into())}
+        if index>0{clean.push('/')}
+        clean.push_str(&part);
+    }
+    if clean.is_empty()||clean.split('/').count()>3{return Err("Некорректное имя файла диагностики".into())}
     Ok(clean)
 }
 
-/// Чистка старых сессий диагностики: три последние остаются, остальное удаляется.
-fn prune_diagnostics(root:&Path){
+/// Старт новой кампании: удалить диагностику предыдущих партий, оставив только
+/// текущую папку. Внутри партии не удаляется ничего.
+fn wipe_other_sessions(root:&Path,keep:&str){
     let Ok(entries)=fs::read_dir(root) else {return};
-    let now=unix_timestamp();
-    let mut sessions:Vec<(u64,PathBuf)>=Vec::new();
     for entry in entries.flatten(){
         let path=entry.path();
         if !path.is_dir(){continue}
-        let modified=fs::metadata(&path).ok()
-            .and_then(|metadata|metadata.modified().ok())
-            .and_then(|time|time.duration_since(UNIX_EPOCH).ok())
-            .map(|duration|duration.as_secs())
-            .unwrap_or(0);
-        sessions.push((modified,path));
-    }
-    sessions.sort_by(|left,right|right.0.cmp(&left.0));
-    for (index,(modified,path)) in sessions.iter().enumerate(){
-        if index>=DIAGNOSTICS_KEEP_SESSIONS||now.saturating_sub(*modified)>DIAGNOSTICS_MAX_AGE_SECS{
-            let _=fs::remove_dir_all(path);
+        let is_current=path.file_name().and_then(|name|name.to_str())==Some(keep);
+        if !is_current{
+            let _=fs::remove_dir_all(&path);
         }
     }
 }
 
-/// Интерфейс знает только имя сессии; абсолютный путь к папке диагностики
+/// Интерфейс знает только имена кампании и боя; абсолютный путь к папке боя
 /// добавляется в battle_config здесь, чтобы его получила и elevated-копия.
+/// Скриншоты и лог автоматизации пишутся в папку боя — так несколько боёв за
+/// партию не перетирают друг друга.
 fn inject_diagnostics_folder(app:&AppHandle,battle_config:&mut Value){
     let session=battle_config.get("diagnostics").and_then(|value|value.get("session")).and_then(Value::as_str).unwrap_or("").to_string();
-    let folder=diagnostics_root(app).ok().and_then(|root|sanitize_session(&session).ok().map(|name|root.join(name)));
+    let battle=battle_config.get("diagnostics").and_then(|value|value.get("battle")).and_then(Value::as_str).unwrap_or("").to_string();
+    let folder=diagnostics_root(app).ok().and_then(|root|{
+        sanitize_session(&session).ok().map(|name|{
+            let campaign=root.join(&name);
+            match sanitize_diagnostics_name(&battle){
+                Ok(battle) if battle!=name=>campaign.join("battles").join(battle),
+                _=>campaign,
+            }
+        })
+    });
     let Some(object)=battle_config.as_object_mut() else {return};
     let Some(diagnostics)=object.entry("diagnostics").or_insert_with(||json!({})).as_object_mut() else {return};
     match folder{
@@ -374,11 +384,12 @@ fn inject_diagnostics_folder(app:&AppHandle,battle_config:&mut Value){
     }
 }
 
-#[tauri::command] fn begin_diagnostics_session(app:AppHandle,session:String)->Result<String,String>{
+#[tauri::command] fn begin_diagnostics_session(app:AppHandle,session:String,wipe:Option<bool>)->Result<String,String>{
     let root=diagnostics_root(&app)?;
-    let folder=root.join(sanitize_session(&session)?);
+    let name=sanitize_session(&session)?;
+    let folder=root.join(&name);
     fs::create_dir_all(&folder).map_err(|error|error.to_string())?;
-    prune_diagnostics(&root);
+    if wipe.unwrap_or(false){wipe_other_sessions(&root,&name);}
     Ok(folder.to_string_lossy().to_string())
 }
 
@@ -388,7 +399,10 @@ fn inject_diagnostics_folder(app:&AppHandle,battle_config:&mut Value){
     let mut options=OpenOptions::new();
     options.create(true).write(true);
     if append.unwrap_or(false){options.append(true);}else{options.truncate(true);}
-    let mut file=options.open(folder.join(sanitize_diagnostics_name(&name)?)).map_err(|error|error.to_string())?;
+    let path=folder.join(sanitize_diagnostics_name(&name)?);
+    // Имя может содержать подпапки (battles/<бой>/battle.json) — создаём их.
+    if let Some(parent)=path.parent(){let _=fs::create_dir_all(parent);}
+    let mut file=options.open(&path).map_err(|error|error.to_string())?;
     file.write_all(contents.as_bytes()).map_err(|error|error.to_string())
 }
 

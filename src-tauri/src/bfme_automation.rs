@@ -7,7 +7,7 @@ use std::{
     process::Command,
     ptr::{null, null_mut},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         mpsc, OnceLock,
     },
     thread,
@@ -217,6 +217,7 @@ extern "system" {
     fn TranslateMessage(message: *const Message) -> i32;
     fn DispatchMessageW(message: *const Message) -> isize;
     fn GetCursorPos(point: *mut Point) -> i32;
+    fn GetAsyncKeyState(v_key: i32) -> i16;
     fn RegisterHotKey(window: Hwnd, id: i32, modifiers: u32, vk_code: u32) -> i32;
     fn UnregisterHotKey(window: Hwnd, id: i32) -> i32;
     fn PeekMessageW(message: *mut Message, window: Hwnd, min: u32, max: u32, remove: u32) -> i32;
@@ -316,6 +317,10 @@ const INJECT_MAGIC: usize = 0x57415231;
 const TH32CS_SNAPPROCESS: u32 = 0x0000_0002;
 #[cfg(target_os = "windows")]
 const VK_CONTROL: u32 = 0x11;
+#[cfg(target_os = "windows")]
+const VK_LCONTROL: u32 = 0xA2;
+#[cfg(target_os = "windows")]
+const VK_RCONTROL: u32 = 0xA3;
 #[cfg(target_os = "windows")]
 const WM_KEYDOWN: usize = 0x0100;
 #[cfg(target_os = "windows")]
@@ -554,15 +559,71 @@ fn encode_png(width: usize, height: usize, rgb: &[u8]) -> Option<Vec<u8>> {
     Some(out)
 }
 
+/// Половинное уменьшение кадра усреднением квадратов 2×2.
 #[cfg(target_os = "windows")]
-fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame) -> Option<PathBuf> {
-    let bytes = encode_png(frame.width, frame.height, &frame.data)?;
+fn halve_frame(frame: &RgbFrame) -> RgbFrame {
+    let width = (frame.width / 2).max(1);
+    let height = (frame.height / 2).max(1);
+    let row = frame.width * 3;
+    let mut data = vec![0u8; width * height * 3];
+    for y in 0..height {
+        for x in 0..width {
+            let source = (y * 2) * row + (x * 2) * 3;
+            for channel in 0..3 {
+                let a = u32::from(frame.data[source + channel]);
+                let b = u32::from(frame.data[source + 3 + channel]);
+                let c = u32::from(frame.data[source + row + channel]);
+                let d = u32::from(frame.data[source + row + 3 + channel]);
+                data[(y * width + x) * 3 + channel] = ((a + b + c + d) / 4) as u8;
+            }
+        }
+    }
+    RgbFrame { width, height, data }
+}
+
+/// Скриншоты диагностики уменьшаются, пока кадр крупнее 1280×720 (не больше двух
+/// раз): текст интерфейса остаётся читаемым, а папка кампании не разрастается —
+/// PNG без сжатия занимает 5.9 МБ на кадр 1920×1080 и 1.5 МБ на 960×540.
+#[cfg(target_os = "windows")]
+fn shrink_for_diagnostics(frame: &RgbFrame) -> RgbFrame {
+    if frame.width <= 1280 || frame.height <= 720 {
+        return frame.clone();
+    }
+    let mut current = halve_frame(frame);
+    if current.width > 1280 && current.height > 720 {
+        current = halve_frame(&current);
+    }
+    current
+}
+
+#[cfg(target_os = "windows")]
+fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationLog) -> Option<PathBuf> {
+    let shrunk = shrink_for_diagnostics(frame);
+    let bytes = encode_png(shrunk.width, shrunk.height, &shrunk.data)?;
     if std::fs::create_dir_all(folder).is_err() {
         return None;
     }
     let path = folder.join(name);
-    std::fs::write(&path, bytes).ok()?;
+    std::fs::write(&path, &bytes).ok()?;
+    log.write(format!(
+        "[diag] скриншот {}×{} ({} КБ) сохранён: {}",
+        shrunk.width,
+        shrunk.height,
+        bytes.len() / 1024,
+        path.display()
+    ));
     Some(path)
+}
+
+/// Снимок экрана в момент, когда детектор принимает решение о победителе:
+/// виден подсвеченный слот рейтинга и линия, по которой сделан вывод.
+#[cfg(target_os = "windows")]
+fn save_decision_screenshot(diagnostics: Option<&Path>, fallback: &RgbFrame, log: &AutomationLog) {
+    let Some(folder) = diagnostics else { return };
+    let frame = capture_game_frame().unwrap_or_else(|| fallback.clone());
+    if save_frame_png(folder, "score-chart.png", &frame, log).is_none() {
+        log.write("[diag] кадр решения сохранить не удалось");
+    }
 }
 
 /// Снимок текущего окна игры в папку диагностики.
@@ -581,15 +642,11 @@ fn save_screenshot(folder: Option<&Path>, name: &str, log: &AutomationLog) {
         return;
     };
     match capture_viewport(view) {
-        Ok(frame) => match save_frame_png(folder, name, &frame) {
-            Some(path) => log.write(format!(
-                "[diag] скриншот {}×{} сохранён: {}",
-                frame.width,
-                frame.height,
-                path.display()
-            )),
-            None => log.write(format!("[diag] {name}: не удалось закодировать PNG")),
-        },
+        Ok(frame) => {
+            if save_frame_png(folder, name, &frame, log).is_none() {
+                log.write(format!("[diag] {name}: не удалось закодировать PNG"));
+            }
+        }
         Err(error) => log.write(format!("[diag] {name}: захват экрана не удался: {error}")),
     }
 }
@@ -802,10 +859,19 @@ pub fn stop_game() -> bool {
 }
 
 #[cfg(target_os = "windows")]
-/// Запрошен ли аварийный выход. Взводится хуком клавиатуры, пока ввод
-/// заблокирован, и сбрасывается при следующей блокировке.
+/// Запрошен ли аварийный выход. Взводится хуком клавиатуры или сторожевым
+/// потоком, пока ввод заблокирован, и сбрасывается при следующей блокировке.
 #[cfg(target_os = "windows")]
 static EMERGENCY_EXIT: AtomicBool = AtomicBool::new(false);
+
+/// Поколение блокировки ввода: сторожевой поток выходит, когда оно меняется.
+#[cfg(target_os = "windows")]
+static INPUT_LOCK_GENERATION: AtomicU64 = AtomicU64::new(0);
+
+/// Сколько клавиш записать в журнал диагностики (одна на блокировку): по коду
+/// видно, что именно приходит в хук, если аварийный выход снова не сработает.
+#[cfg(target_os = "windows")]
+static KEY_LOG_REMAINING: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg(target_os = "windows")]
 pub fn emergency_exit_requested() -> bool {
@@ -842,20 +908,53 @@ fn run_emergency_exit() {
 unsafe extern "system" fn keyboard_hook(code: i32, w_param: usize, l_param: isize) -> isize {
     if code >= 0 && INPUT_BLOCKING.load(Ordering::Relaxed) {
         let data = &*(l_param as *const KeyboardHookData);
+        // Низкоуровневый хук (WH_KEYBOARD_LL) отдаёт не общий VK_CONTROL, а код
+        // конкретной клавиши — VK_LCONTROL/VK_RCONTROL. Сравнение только с 0x11
+        // поэтому никогда не срабатывало: проверяем все три варианта.
+        let is_ctrl = data.vk_code == VK_CONTROL
+            || data.vk_code == VK_LCONTROL
+            || data.vk_code == VK_RCONTROL;
+        let pressed = w_param == WM_KEYDOWN || w_param == WM_SYSKEYDOWN;
+        if KEY_LOG_REMAINING.load(Ordering::Relaxed) > 0 {
+            KEY_LOG_REMAINING.fetch_sub(1, Ordering::Relaxed);
+            append_diagnostics_line(&format!(
+                "[exit] при заблокированном вводе получена клавиша vk={:#04x}",
+                data.vk_code
+            ));
+        }
         // Аварийный выход. Работает только в этой ветке, то есть ровно тогда,
         // когда ввод заблокирован автоматизацией и пользователь иначе не может
         // ничего сделать: одиночный Ctrl закрывает игру и возвращает управление.
-        if data.vk_code == VK_CONTROL
-            && (w_param == WM_KEYDOWN || w_param == WM_SYSKEYDOWN)
-            && !EMERGENCY_EXIT.swap(true, Ordering::SeqCst)
-        {
+        if is_ctrl && pressed && !EMERGENCY_EXIT.swap(true, Ordering::SeqCst) {
             run_emergency_exit();
+        }
+        // Ctrl пропускаем дальше, а не проглатываем: состояние клавиши обновится,
+        // и сторожевой поток продублирует выход, если хук чем-то не сработал.
+        if is_ctrl {
+            return CallNextHookEx(null_mut(), code, w_param, l_param);
         }
         if data.extra_info != INJECT_MAGIC {
             return 1;
         }
     }
     CallNextHookEx(null_mut(), code, w_param, l_param)
+}
+
+/// Второй, независимый от хука путь аварийного выхода: пока ввод заблокирован,
+/// поток опрашивает физическое состояние Ctrl.
+#[cfg(target_os = "windows")]
+fn input_watchdog(generation: u64) {
+    while INPUT_LOCK_GENERATION.load(Ordering::SeqCst) == generation
+        && INPUT_BLOCKING.load(Ordering::Relaxed)
+    {
+        if unsafe { GetAsyncKeyState(VK_CONTROL as i32) } < 0
+            && !EMERGENCY_EXIT.swap(true, Ordering::SeqCst)
+        {
+            run_emergency_exit();
+            return;
+        }
+        thread::sleep(Duration::from_millis(80));
+    }
 }
 
 #[cfg(target_os = "windows")]
@@ -931,6 +1030,11 @@ impl InputLockGuard {
         }
         // Прошлый аварийный выход не должен мгновенно закрыть следующий бой.
         EMERGENCY_EXIT.store(false, Ordering::SeqCst);
+        KEY_LOG_REMAINING.store(1, Ordering::SeqCst);
+        let generation = INPUT_LOCK_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+        let _ = thread::Builder::new()
+            .name("bfme-input-watchdog".into())
+            .spawn(move || input_watchdog(generation));
         let message = "[BFME] Физический ввод заблокирован; Ctrl — аварийный выход (закроет BFME и вернёт управление), Ctrl+Alt+Del тоже доступен.";
         println!("{message}");
         append_diagnostics_line(message);
@@ -942,6 +1046,8 @@ impl InputLockGuard {
 impl Drop for InputLockGuard {
     fn drop(&mut self) {
         INPUT_BLOCKING.store(false, Ordering::SeqCst);
+        // Сторожевой поток видит новое поколение и завершается сам.
+        INPUT_LOCK_GENERATION.fetch_add(1, Ordering::SeqCst);
         println!("[BFME] Физический ввод разблокирован.");
     }
 }
@@ -2170,9 +2276,6 @@ fn monitor_battle(config: &Value, log: &AutomationLog) -> Value {
         if let Some(frame) = capture_game_frame() {
             if !frame.is_black() && is_score_screen(&frame, &fortress, &marker) {
                 log.write("[match] экран статистики найден — анализирую победителя");
-                // Снимок в момент появления статистики: вторая точка, по которой
-                // разбирается исход боя (первая — комната перед стартом).
-                save_screenshot(diagnostics_folder_from(config).as_deref(), "score-screen.png", log);
                 let mut result = analyse_score_screen(&players, log, diagnostics_folder_from(config).as_deref());
                 if let Some(object) = result.as_object_mut() {
                     object.insert("elapsedSec".into(), json!(started.elapsed().as_secs()));
@@ -2224,14 +2327,6 @@ fn analyse_score_screen(
     let Some(frame) = frame else {
         return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no valid chart frame"});
     };
-    // Кадр, который детектор действительно разобрал: если итог определён
-    // неверно, сравнивать нужно именно с этим изображением.
-    if let Some(folder) = diagnostics {
-        match save_frame_png(folder, "score-chart.png", &frame) {
-            Some(path) => log.write(format!("[diag] кадр статистики сохранён: {}", path.display())),
-            None => log.write("[diag] кадр статистики сохранить не удалось"),
-        }
-    }
     let icons = detect_icons(&frame);
     if icons.is_empty() {
         return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"victory/defeat icons not found"});
@@ -2280,6 +2375,9 @@ fn analyse_score_screen(
         match candidates.first() {
             Some(icon) if icon.kind == "victory" => {
                 log.write(format!("[match] слот {slot} ({}): линия дошла до монеты победы", player.color));
+                // Кадр ровно в момент вывода о победителе: подсвечен слот {slot},
+                // линия доведена до монеты — спорный исход разбирается по нему.
+                save_decision_screenshot(diagnostics, &frame, log);
                 return json!({
                     "status":"COMPLETED",
                     "winningTeam":player.side,
@@ -2299,6 +2397,9 @@ fn analyse_score_screen(
     if let Some(slot) = surrendered_slot {
         if let Some(player) = players.iter().find(|item| item.slot == slot) {
             let winner = players.iter().find(|item| item.side != player.side);
+            // Решение о сдаче тоже фиксируем кадром: на нём видно слот, у которого
+            // не нашлось яркой линии.
+            save_decision_screenshot(diagnostics, &frame, log);
             return json!({
                 "status":"SURRENDER",
                 "winningTeam":winner.map(|item| item.side.clone()),
@@ -2307,6 +2408,9 @@ fn analyse_score_screen(
             });
         }
     }
+    // Исход не определён — кадр тем более нужен: по нему видно, что именно
+    // детектор не смог разобрать.
+    save_decision_screenshot(diagnostics, &frame, log);
     json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no conclusive victory icon"})
 }
 

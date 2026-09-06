@@ -35,13 +35,21 @@ export function isDesktopRuntime() {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 }
 
-/** Короткое ASCII-имя сессии: оно же имя папки диагностики. */
-function makeSessionKey(prefix: string, factionId: string) {
-  const now = new Date()
-  const pad = (value: number) => String(value).padStart(2, '0')
-  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+/** ISO-дата сохранения кампании -> `YYYYMMDD-HHMMSS`. */
+function compactStamp(iso: string | undefined) {
+  const digits = (iso ?? '').replace(/[^0-9]/g, '')
+  return digits.length >= 14 ? `${digits.slice(0, 8)}-${digits.slice(8, 14)}` : null
+}
+
+/**
+ * Имя папки диагностики. Оно строится от `createdAt` сохранения, а не от
+ * текущего времени, поэтому «Продолжить» открывает ту же папку: журнал, снимки
+ * старта и все бои одной кампании лежат вместе и ничего не перезаписывают.
+ */
+function makeSessionKey(createdAt: string | undefined, factionId: string) {
+  const stamp = compactStamp(createdAt) ?? compactStamp(new Date().toISOString()) ?? 'unknown'
   const faction = factionId.replace(/[^a-z0-9-]/gi, '').slice(0, 24) || 'campaign'
-  return `${prefix}-${stamp}-${faction}`
+  return `campaign-${stamp}-${faction}`
 }
 
 function formatLine(entry: SessionLogEntry) {
@@ -71,23 +79,25 @@ export async function flushNow() {
 }
 
 /**
- * Начало новой сессии журнала. Старые сессии чистит Rust-мост: он оставляет
- * три последние папки диагностики и удаляет всё старше двух недель.
+ * Начало журнала партии.
+ *
+ * @param createdAt  `createdAt` сохранения — по нему определяется папка кампании.
+ * @param wipe       `true` для новой кампании: удалить диагностику прошлых партий.
  */
-export async function startSessionLog(prefix: 'campaign' | 'continue', meta: Record<string, unknown>, snapshot?: unknown) {
-  sessionKey = makeSessionKey(prefix, String(meta.playerFactionId ?? 'campaign'))
+export async function startSessionLog(createdAt: string | undefined, meta: Record<string, unknown>, snapshot?: unknown, wipe = false) {
+  sessionKey = makeSessionKey(createdAt, String(meta.playerFactionId ?? 'campaign'))
   snapshotWritten = false
   entries.length = 0
   pending.length = 0
   if (isDesktopRuntime()) {
     try {
-      sessionFolder = await beginDiagnosticsSession(sessionKey)
+      sessionFolder = await beginDiagnosticsSession(sessionKey, wipe)
     } catch (error) {
       sessionFolder = ''
       console.warn('Не удалось создать папку диагностики', error)
     }
   }
-  logEvent('session', `новая сессия ${sessionKey}`, meta)
+  logEvent('session', wipe ? `новая кампания ${sessionKey}` : `продолжение кампании ${sessionKey}`, meta)
   if (snapshot !== undefined) await writeCampaignSnapshot(snapshot)
   await flushNow()
 }
@@ -96,6 +106,8 @@ export async function startSessionLog(prefix: 'campaign' | 'continue', meta: Rec
 export async function writeCampaignSnapshot(snapshot: unknown) {
   if (!isDesktopRuntime() || !sessionKey || snapshotWritten) return
   snapshotWritten = true
+  // Файл один на кампанию и не перезаписывается: если он уже есть, снимок
+  // старта был сделан при первом запуске партии.
   try {
     await writeDiagnosticsFile(sessionKey, 'campaign-start.json', `${JSON.stringify(snapshot, null, 1)}\n`, false)
   } catch (error) {

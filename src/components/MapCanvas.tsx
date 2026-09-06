@@ -608,11 +608,11 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
   const handlePinPointerDown = (event: ReactPointerEvent<HTMLButtonElement>, location: MapLocation) => {
     event.stopPropagation()
     if (hexEdit) return // Маркеры не сбрасывают массовое выделение гексов.
-    // Свои объекты всегда выделяются: приказ на свой гекс отдаётся только с Alt
-    // (или кликом по самому гексу в тактическом режиме), иначе выделенная армия
-    // перехватывала бы каждый клик по собственному городу.
-    const ownLocation=location.side===campaign.playerFactionId
-    if (mode === 'game' && selectedArmy && canPlayerMoveArmy(campaign, factions, selectedArmy.factionId) && !selectedArmy.engaged && (event.altKey || !ownLocation)) {
+    // Пока выделена армия, клик по карте — всегда приказ движения: и по пустому
+    // гексу, и по локации, своей или чужой. Иначе клик по собственному городу
+    // переключал инспектор на город вместо того, чтобы вести армию дальше.
+    // Выделение снимается клавишей Esc или автоматически после приказа.
+    if (mode === 'game' && selectedArmy && canPlayerMoveArmy(campaign, factions, selectedArmy.factionId) && !selectedArmy.engaged) {
       const order=affordableOrder(selectedArmy,location.hex)
       const destination=order?logicalGrid.byId.get(order.destinationId):null
       if(order&&destination){placeArmyOrder(selectedArmy,order,order.destinationId===location.hex?location.id:null);return}

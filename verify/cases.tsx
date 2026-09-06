@@ -37,10 +37,18 @@ const world = normalizeWorld(
 )
 
 console.log('\n— журнал партии —')
-await startSessionLog('campaign', { playerFactionId: 'gondor', appVersion: '0.49.0', modId: 'default' })
-check('ключ сессии = campaign-<дата>-<время>-<фракция>', /^campaign-\d{8}-\d{6}-gondor$/.test(currentSessionKey()), currentSessionKey())
+const CAMPAIGN_STARTED_AT = '2026-09-04T17:14:36.706Z'
+const CAMPAIGN_META = { playerFactionId: 'gondor', appVersion: '0.49.0', modId: 'default' }
+const CAMPAIGN_SESSION = 'campaign-20260904-171436-gondor'
+
+await startSessionLog(CAMPAIGN_STARTED_AT, CAMPAIGN_META, undefined, true)
+check('папка кампании строится от даты создания сохранения', currentSessionKey() === CAMPAIGN_SESSION, currentSessionKey())
 check('в браузерном режиме папки диагностики нет', currentSessionFolder() === '')
-check('первая запись — начало сессии', (sessionLogEntries()[0]?.message ?? '').startsWith('новая сессия campaign-'), sessionLogEntries()[0]?.message ?? '<нет>')
+check('первая запись — начало кампании', (sessionLogEntries()[0]?.message ?? '').startsWith('новая кампания campaign-'), sessionLogEntries()[0]?.message ?? '<нет>')
+// «Продолжить» открывает ту же папку: партия определяется кампанией, а не
+// запуском, поэтому бои и журнал разных сессий не перетирают друг друга.
+await startSessionLog(CAMPAIGN_STARTED_AT, CAMPAIGN_META)
+check('продолжение кампании открывает ту же папку', currentSessionKey() === CAMPAIGN_SESSION, currentSessionKey())
 
 console.log('\n— инструментирование стора —')
 useMapStore.getState().initialize(world, createNewSaveGame(world, 'default'))
@@ -113,29 +121,40 @@ const pointer = (target: Element, altKey: boolean) =>
 
 const ordersOf = (armyId: string) => useMapStore.getState().campaign.pendingOrders.filter((order) => order.armyId === armyId)
 
-// Обычный клик по своему объекту всегда выделяет и никогда не отдаёт приказ.
+// Пока армия выделена, обычный клик по своему объекту — приказ движения, а не
+// выбор локации: игрок ведёт армию дальше и не переключает инспектор на город.
+let orderedPlain = false
 for (const pin of ownPins) {
   await selectArmyNow(playerArmies[0].id)
   await pointer(pin, false)
+  if (ordersOf(playerArmies[0].id).length > 0) {
+    orderedPlain = true
+    break
+  }
 }
-check('клик по своему объекту без Alt не отдаёт приказ', ordersOf(playerArmies[0].id).length === 0, `приказов ${ordersOf(playerArmies[0].id).length}`)
-check('клик по своему объекту выделяет его', Boolean(useMapStore.getState().selectedId), 'selectedId пуст')
+check('клик по своему объекту при выделенной армии отдаёт приказ', orderedPlain, 'ни один свой объект не принял приказ')
+check('после приказа выделение армии снято', useMapStore.getState().selectedArmyId === null, `selectedArmyId=${useMapStore.getState().selectedArmyId}`)
+check('приказ записан в журнал', sessionLogEntries().some((entry) => entry.message.startsWith('moveArmy')), 'записи moveArmy нет')
 
-// Alt+клик по своему гексу приказ отдаёт, и после приказа выделение снимается.
-await selectArmyNow(playerArmies[0].id)
-let ordered = false
+// Alt продолжает работать так же — регрессионная проверка на случай, если
+// условие выбора и приказа снова разъедется.
+let orderedAlt = false
 for (const pin of ownPins) {
   await selectArmyNow(playerArmies[0].id)
   await pointer(pin, true)
   if (ordersOf(playerArmies[0].id).length > 0) {
-    ordered = true
+    orderedAlt = true
     break
   }
 }
-check('Alt+клик по своему объекту отдаёт приказ', ordered, 'ни один свой объект не принял приказ')
-check('после приказа выделение армии снято', useMapStore.getState().selectedArmyId === null, `selectedArmyId=${useMapStore.getState().selectedArmyId}`)
-check('приказ записан в журнал', sessionLogEntries().some((entry) => entry.message.startsWith('moveArmy')), 'записи moveArmy нет')
+check('Alt+клик по своему объекту тоже отдаёт приказ', orderedAlt, 'ни один свой объект не принял приказ')
 
+// Без выделенной армии тот же клик просто выделяет локацию.
+await act(async () => {
+  useMapStore.setState({ selectedArmyId: null, selectedId: null })
+})
+await pointer(ownPins[0], false)
+check('без выделенной армии клик выделяет локацию', Boolean(useMapStore.getState().selectedId), 'selectedId пуст')
 await act(async () => {
   root.unmount()
 })

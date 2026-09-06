@@ -6,7 +6,6 @@ export type AppLanguage = string
 
 const UI_EN: Record<string, string> = {
   'Война за Кольцо': 'War of the Ring',
-  'Война за Кольцо — редактор карты': 'War of the Ring — Map Editor',
   'Глобальная стратегическая кампания': 'Global strategic campaign',
   'Ремастер режима для «Битва за Средиземье II»': 'A remaster of the mode for The Battle for Middle-earth II',
   'Новая кампания': 'New Campaign',
@@ -1127,7 +1126,8 @@ function DocumentLocalizer({ language }: { language: AppLanguage }) {
     document.documentElement.lang = language
     // Window title follows the selected UI language (both the HTML title and,
     // on desktop, the native Tauri window caption next to the icon).
-    const title = translateText('Война за Кольцо — редактор карты', language)
+    // Заголовок не зависит от режима — просто название игры.
+    const title = translateText('Война за Кольцо', language)
     document.title = title
     if ('__TAURI_INTERNALS__' in window) {
       void import('@tauri-apps/api/window')

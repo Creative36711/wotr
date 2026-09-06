@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import MapCanvas from '../src/components/MapCanvas'
 import { useMapStore } from '../src/store/useMapStore'
 import { createNewSaveGame } from '../src/game/saveGame'
+import { translateText } from '../src/i18n'
 import {
   currentSessionFolder,
   currentSessionKey,
@@ -50,6 +51,10 @@ check('в журнале записано разрешение экрана', /"
 // запуском, поэтому бои и журнал разных сессий не перетирают друг друга.
 await startSessionLog(CAMPAIGN_STARTED_AT, CAMPAIGN_META)
 check('продолжение кампании открывает ту же папку', currentSessionKey() === CAMPAIGN_SESSION, currentSessionKey())
+// Заголовок окна не зависит от режима — во всех языках только название игры.
+const titleRu = translateText('Война за Кольцо', 'ru')
+const titleEn = translateText('Война за Кольцо', 'en')
+check('заголовок окна — название игры без режима', titleRu === 'Война за Кольцо' && titleEn === 'War of the Ring', `${titleRu} / ${titleEn}`)
 
 console.log('\n— инструментирование стора —')
 useMapStore.getState().initialize(world, createNewSaveGame(world, 'default'))

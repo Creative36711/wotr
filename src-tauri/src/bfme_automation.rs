@@ -628,8 +628,27 @@ fn screenshot_name(name: &str, frame: &RgbFrame) -> String {
 
 #[cfg(target_os = "windows")]
 fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationLog) -> Option<PathBuf> {
-    let shrunk = shrink_for_diagnostics(frame);
-    let bytes = encode_png(shrunk.width, shrunk.height, &shrunk.data)?;
+    save_frame_named(folder, name, frame, log, true)
+}
+
+/// Полноразмерный снимок. Уменьшение экономит место, но для разбора спорного
+/// исхода нужен кадр ровно в том разрешении, в котором работал детектор, —
+/// поэтому в сомнительных случаях пишется и такой файл.
+#[cfg(target_os = "windows")]
+fn save_frame_png_full(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationLog) -> Option<PathBuf> {
+    save_frame_named(folder, name, frame, log, false)
+}
+
+#[cfg(target_os = "windows")]
+fn save_frame_named(
+    folder: &Path,
+    name: &str,
+    frame: &RgbFrame,
+    log: &AutomationLog,
+    shrink: bool,
+) -> Option<PathBuf> {
+    let stored = if shrink { shrink_for_diagnostics(frame) } else { frame.clone() };
+    let bytes = encode_png(stored.width, stored.height, &stored.data)?;
     if std::fs::create_dir_all(folder).is_err() {
         return None;
     }
@@ -642,21 +661,147 @@ fn save_frame_png(folder: &Path, name: &str, frame: &RgbFrame, log: &AutomationL
         frame.width,
         frame.height,
         if monitor.is_empty() { "?" } else { monitor.as_str() },
-        shrunk.width,
-        shrunk.height,
+        stored.width,
+        stored.height,
         bytes.len() / 1024
     ));
     Some(path)
 }
 
+/// Обстановка игрока в момент боя: разрешения экранов, геометрия окна игры,
+/// версия приложения и путь к BFME. Проблемы с кликами и распознаванием почти
+/// всегда привязаны к этим числам, поэтому они пишутся отдельным файлом, даже
+/// если снимков по какой-то причине не осталось.
+#[cfg(target_os = "windows")]
+fn write_environment_report(
+    diagnostics: Option<&Path>,
+    executable: &Path,
+    config: &Value,
+    log: &AutomationLog,
+) {
+    let Some(folder) = diagnostics else { return };
+    let metric = |index: i32| unsafe { GetSystemMetrics(index) };
+    let view = find_game_window().and_then(|(window, _)| viewport(window).ok());
+    let report = json!({
+        "screen": monitor_resolution_label(),
+        "primaryScreen": { "width": metric(0), "height": metric(1) },
+        "virtualScreen": {
+            "x": metric(76), "y": metric(77), "width": metric(78), "height": metric(79),
+            "monitors": metric(80)
+        },
+        "gameWindow": match view {
+            Some((x, y, w, h)) => json!({ "x": x, "y": y, "width": w, "height": h }),
+            None => Value::Null,
+        },
+        "appVersion": env!("CARGO_PKG_VERSION"),
+        "saveVersion": config.get("version").cloned().unwrap_or(Value::Null),
+        "executable": executable.to_string_lossy(),
+        "conflictId": config.get("conflictId").cloned().unwrap_or(Value::Null),
+        "modId": config.get("modId").cloned().unwrap_or(Value::Null),
+        "language": config.get("language").cloned().unwrap_or(Value::Null),
+        "windowed": config.get("launch").and_then(|value| value.get("windowed")).cloned().unwrap_or(Value::Null),
+        "writtenAtUnix": std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|elapsed| elapsed.as_secs())
+            .unwrap_or(0),
+    });
+    let path = folder.join("environment.json");
+    match std::fs::write(&path, format!("{}\n", serde_json::to_string_pretty(&report).unwrap_or_default())) {
+        Ok(()) => log.write(format!("[diag] обстановка записана: {}", path.display())),
+        Err(error) => log.write(format!("[diag] обстановку записать не удалось: {error}")),
+    }
+}
+
+/// Почему экран статистики подтверждён или нет: лучшие совпадения шаблонов и их
+/// оценка против порога. Это главный ключ к разбору случая «программа встала в
+/// ступор» — видно, чего именно не хватило детектору на разрешении игрока.
+#[cfg(target_os = "windows")]
+fn score_screen_report(frame: &RgbFrame, fortress: &match_detector::Template, marker: &match_detector::Template) -> String {
+    let scale = match_detector::scale_for(frame.width, frame.height);
+    let best = |template: &match_detector::Template, roi: (f64, f64, f64, f64), nms: f64| -> (f64, f64, f64) {
+        let hits = match_detector::find_template(
+            frame,
+            &template.scaled(scale),
+            match_detector::roi_pixels(roi, frame.width, frame.height),
+            0.05,
+            nms,
+        );
+        hits.iter().fold((0.0f64, -1.0f64, -1.0f64), |best, hit| {
+            if hit.score > best.0 { (hit.score, hit.x, hit.y) } else { best }
+        })
+    };
+    let (fortress_score, fortress_x, fortress_y) = best(fortress, match_detector::FORTRESS_ROI, 20.0);
+    let (marker_score, marker_x, marker_y) = best(marker, match_detector::SCORE_MARKER_ROI, 100.0);
+    format!(
+        "кадр {}×{}, масштаб {:.3}: крепость лучшая {:.3} @ ({:.0},{:.0}) при пороге {:.2}; маркер лучший {:.3} @ ({:.0},{:.0}) при пороге {:.2}",
+        frame.width,
+        frame.height,
+        scale,
+        fortress_score,
+        fortress_x,
+        fortress_y,
+        match_detector::FORTRESS_THRESHOLD,
+        marker_score,
+        marker_x,
+        marker_y,
+        match_detector::SCORE_MARKER_THRESHOLD
+    )
+}
+
 /// Снимок экрана в момент, когда детектор принимает решение о победителе:
 /// виден подсвеченный слот рейтинга и линия, по которой сделан вывод.
+///
+/// `full = true` добавляет кадр в исходном разрешении — так сохраняется при
+/// сдаче и при неопределённом исходе, когда итог и нужно разбирать по снимку.
 #[cfg(target_os = "windows")]
-fn save_decision_screenshot(diagnostics: Option<&Path>, fallback: &RgbFrame, log: &AutomationLog) {
+fn save_decision_screenshot(diagnostics: Option<&Path>, fallback: &RgbFrame, log: &AutomationLog, full: bool) {
     let Some(folder) = diagnostics else { return };
     let frame = capture_game_frame().unwrap_or_else(|| fallback.clone());
     if save_frame_png(folder, "score-chart.png", &frame, log).is_none() {
         log.write("[diag] кадр решения сохранить не удалось");
+    }
+    if full && save_frame_png_full(folder, "score-chart-full.png", &frame, log).is_none() {
+        log.write("[diag] полноразмерный кадр решения сохранить не удалось");
+    }
+}
+
+/// `analysis.json` — что именно увидел детектор: размер кадра, масштаб, все
+/// найденные иконки с координатами и оценками, состав слотов. Без этого разбор
+/// неверного исхода превращается в гадание.
+#[cfg(target_os = "windows")]
+fn write_analysis_report(
+    diagnostics: Option<&Path>,
+    frame: &RgbFrame,
+    players: &[PlayerInfo],
+    icons: &[match_detector::DetectedIcon],
+    log: &AutomationLog,
+) {
+    let Some(folder) = diagnostics else { return };
+    let report = json!({
+        "frame": { "width": frame.width, "height": frame.height },
+        "scale": match_detector::scale_for(frame.width, frame.height),
+        "screen": monitor_resolution_label(),
+        "thresholds": {
+            "fortress": match_detector::FORTRESS_THRESHOLD,
+            "scoreMarker": match_detector::SCORE_MARKER_THRESHOLD,
+            "icon": match_detector::ICON_THRESHOLD,
+        },
+        "players": players.iter().map(|player| json!({
+            "slot": player.slot,
+            "color": player.color,
+            "side": player.side,
+        })).collect::<Vec<Value>>(),
+        "icons": icons.iter().map(|icon| json!({
+            "kind": icon.kind,
+            "x": icon.x,
+            "y": icon.y,
+            "score": icon.score,
+        })).collect::<Vec<Value>>(),
+    });
+    let path = folder.join("analysis.json");
+    match std::fs::write(&path, format!("{}\n", serde_json::to_string_pretty(&report).unwrap_or_default())) {
+        Ok(()) => log.write(format!("[diag] разбор детектора записан: {}", path.display())),
+        Err(error) => log.write(format!("[diag] разбор детектора записать не удалось: {error}")),
     }
 }
 
@@ -2061,6 +2206,7 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         Some(folder) => log.write(format!("[diag] папка диагностики: {}", folder.display())),
         None => log.write("[diag] папка диагностики не задана — журнал и скриншоты не пишутся"),
     }
+    write_environment_report(diagnostics.as_deref(), executable, config, log);
     let language = config
         .get("language")
         .and_then(Value::as_str)
@@ -2227,6 +2373,15 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
 
         // Скриншот комнаты перед стартом: карта, слоты, цвета, гандикапы и
         // позиции. Без него «странный» бой не воспроизвести.
+        log.write(format!(
+            "[diag] окно игры: x={} y={} {}×{}, экран {}",
+            view.0,
+            view.1,
+            view.2,
+            view.3,
+            monitor_resolution_label()
+        ));
+        write_environment_report(diagnostics.as_deref(), executable, config, log);
         save_screenshot(diagnostics.as_deref(), "room-before-start.png", log);
         log.write("[room] clicking Start Game");
         click_fraction(view, 0.8836, 0.9542)?;
@@ -2359,13 +2514,37 @@ fn analyse_score_screen(
         thread::sleep(RETRY_DELAY);
     }
     let Some(frame) = frame else {
-        return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no valid chart frame"});
+        // Раньше здесь был тихий выход: игрок видел полминуты заблокированного
+        // ввода и пустую папку диагностики. Теперь пишем, чего не хватило
+        // детектору, и сохраняем кадр в полном разрешении.
+        let report = match capture_game_frame() {
+            Some(last) => {
+                let report = score_screen_report(&last, &fortress, &marker);
+                if let Some(folder) = diagnostics {
+                    save_frame_png_full(folder, "score-chart-timeout.png", &last, log);
+                }
+                report
+            }
+            None => "кадр захватить не удалось".to_string(),
+        };
+        log.write(format!(
+            "[match] экран статистики не подтверждён за {:?} — {}",
+            ANALYSIS_TIMEOUT, report
+        ));
+        return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":format!("no valid chart frame; {report}")});
     };
+    log.write(format!("[match] экран статистики подтверждён: {}", score_screen_report(&frame, &fortress, &marker)));
     let icons = detect_icons(&frame);
     if icons.is_empty() {
+        // Иконок нет — значит, разбирать нечего: сохраняем кадр целиком, по нему
+        // видно, что именно не так с масштабом или порогом.
+        if let Some(folder) = diagnostics {
+            save_frame_png_full(folder, "score-chart-no-icons.png", &frame, log);
+        }
         return json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"victory/defeat icons not found"});
     }
     log.write(format!("[match] найдено иконок: {}", icons.len()));
+    write_analysis_report(diagnostics, &frame, players, &icons, log);
 
     // Допуски в эталонных пикселях 1920×1080 — масштабируем под реальный кадр.
     let scale = match_detector::scale_for(frame.width, frame.height);
@@ -2382,6 +2561,17 @@ fn analyse_score_screen(
             if let Some(view) = view {
                 if slot >= 2 && (slot as usize) <= RATING_SLOT_FRAC.len() + 1 {
                     let (fx, fy) = RATING_SLOT_FRAC[(slot - 2) as usize];
+                    // Координаты клика — в журнал: «вместо цвета нажалась фора»
+                    // разбирается именно по этим числам и геометрии окна.
+                    log.write(format!(
+                        "[match] слот {slot}: клик по рейтингу в ({:.0},{:.0}), доля окна ({:.4},{:.4}), окно {}×{}",
+                        view.0 as f64 + fx * view.2 as f64,
+                        view.1 as f64 + fy * view.3 as f64,
+                        fx,
+                        fy,
+                        view.2,
+                        view.3
+                    ));
                     if click_fraction(view, fx, fy).is_err() {
                         log.write(format!("[match] не удалось кликнуть слот {slot} рейтинга"));
                     }
@@ -2391,10 +2581,17 @@ fn analyse_score_screen(
         }
         let current = capture_game_frame().unwrap_or_else(|| frame.clone());
         let Some((x_end, y_end)) = line_endpoint(&current, &player.color, &icons, true) else {
-            log.write(format!("[match] слот {slot} ({}): яркая линия не найдена — сдача", player.color));
+            log.write(format!(
+                "[match] слот {slot} ({}): яркая линия не найдена — сдача (кадр {}×{})",
+                player.color, current.width, current.height
+            ));
             surrendered_slot = Some(slot);
             break;
         };
+        log.write(format!(
+            "[match] слот {slot} ({}): конец линии ({:.0},{:.0})",
+            player.color, x_end, y_end
+        ));
         let mut candidates: Vec<&match_detector::DetectedIcon> = icons
             .iter()
             .filter(|icon| {
@@ -2406,12 +2603,22 @@ fn analyse_score_screen(
             let dr = (right.x - x_end).hypot(right.y - y_end);
             dl.partial_cmp(&dr).unwrap_or(std::cmp::Ordering::Equal)
         });
+        for (rank, icon) in candidates.iter().take(3).enumerate() {
+            log.write(format!(
+                "[match] слот {slot}: кандидат {} — {} @ ({:.0},{:.0}) оценка {:.3}",
+                rank + 1,
+                icon.kind,
+                icon.x,
+                icon.y,
+                icon.score
+            ));
+        }
         match candidates.first() {
             Some(icon) if icon.kind == "victory" => {
                 log.write(format!("[match] слот {slot} ({}): линия дошла до монеты победы", player.color));
                 // Кадр ровно в момент вывода о победителе: подсвечен слот {slot},
                 // линия доведена до монеты — спорный исход разбирается по нему.
-                save_decision_screenshot(diagnostics, &frame, log);
+                save_decision_screenshot(diagnostics, &frame, log, false);
                 return json!({
                     "status":"COMPLETED",
                     "winningTeam":player.side,
@@ -2431,9 +2638,9 @@ fn analyse_score_screen(
     if let Some(slot) = surrendered_slot {
         if let Some(player) = players.iter().find(|item| item.slot == slot) {
             let winner = players.iter().find(|item| item.side != player.side);
-            // Решение о сдаче тоже фиксируем кадром: на нём видно слот, у которого
-            // не нашлось яркой линии.
-            save_decision_screenshot(diagnostics, &frame, log);
+            // Решение о сдаче тоже фиксируем кадром — и сразу в полном
+            // разрешении: на нём видно слот, у которого не нашлось яркой линии.
+            save_decision_screenshot(diagnostics, &frame, log, true);
             return json!({
                 "status":"SURRENDER",
                 "winningTeam":winner.map(|item| item.side.clone()),
@@ -2442,9 +2649,9 @@ fn analyse_score_screen(
             });
         }
     }
-    // Исход не определён — кадр тем более нужен: по нему видно, что именно
-    // детектор не смог разобрать.
-    save_decision_screenshot(diagnostics, &frame, log);
+    // Исход не определён — кадр тем более нужен, и в полном разрешении:
+    // по нему видно, что именно детектор не смог разобрать.
+    save_decision_screenshot(diagnostics, &frame, log, true);
     json!({"status":"UNKNOWN","winningTeam":null,"winningSlot":null,"detail":"no conclusive victory icon"})
 }
 

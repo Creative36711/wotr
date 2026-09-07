@@ -1,0 +1,238 @@
+{
+ "version": 1,
+ "diagnostics": {
+  "session": "campaign-20260907-072258-men-of-the-west",
+  "battle": "r6-conflict-r6-14_27-072316"
+ },
+ "language": "ru",
+ "modId": "default",
+ "conflictId": "conflict-r6-14_27",
+ "playerFactionId": "men-of-the-west",
+ "networkRules": "0 0 0 400 1000 -1 -1 -1 -1 -1",
+ "palantirSettings": {
+  "maxStartingPointsFromModifiers": 10,
+  "maxIncomePerIntervalFromModifiers": 3
+ },
+ "ringState": {
+  "forged": false,
+  "ownerFactionId": null,
+  "carrierArmyId": null,
+  "forgedOnTurn": null,
+  "factionProgress": {
+   "elves": 6,
+   "mordor": 2
+  }
+ },
+ "modifiers": {
+  "defender": {
+   "startingResources": 1500,
+   "commandPointBonus": 300,
+   "palantirStartingPoints": 3,
+   "palantirIncomePerInterval": 1,
+   "signalFire": true
+  },
+  "attacker": {
+   "startingResources": 237
+  },
+  "attackerSupply": {
+   "sourceLocationId": "pelennor",
+   "sourceRound": 6,
+   "battleRound": 6,
+   "hexesTravelled": 1,
+   "turnsElapsed": 0,
+   "decayFactor": 0.95,
+   "supplyRatio": 0.5,
+   "initialAmount": {
+    "startingResources": 500
+   },
+   "afterDecayAndRatio": {
+    "startingResources": 237
+   },
+   "fixedFromBuildings": {},
+   "finalAttackerModifiers": {
+    "startingResources": 237
+   }
+  }
+ },
+ "map": {
+  "source": "location",
+  "entityId": "minas-tirith",
+  "mapPath": "maps\\map wor minas tirith\\map wor minas tirith.map",
+  "expectedSize": 1018,
+  "defenderStartPosition": null,
+  "defenderSlot": 1,
+  "startPositions": {
+   "1": {
+    "x": 0.4961,
+    "y": 0.3194
+   },
+   "2": {
+    "x": 0.5,
+    "y": 0.4306
+   }
+  },
+  "fortressOwnerSlot": null
+ },
+ "launch": {
+  "windowed": false
+ },
+ "monitor": {
+  "enabled": true,
+  "timeoutSec": 5400
+ },
+ "difficulty": {
+  "id": "warrior",
+  "label": "Warrior",
+  "bfmeIndex": 1
+ },
+ "factionOrder": [
+  "men-of-the-west",
+  "elves",
+  "dwarves",
+  "isengard",
+  "mordor",
+  "goblins",
+  "angmar"
+ ],
+ "participants": [
+  {
+   "slot": 1,
+   "factionId": "men-of-the-west",
+   "listIndex": 0,
+   "color": "blue",
+   "side": "good",
+   "gateAngleDeg": 45,
+   "handicapPercent": 0,
+   "handicapReasons": [],
+   "units": [
+    {
+     "objectId": "GondorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "GondorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "GondorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "GondorArcherHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "GondorArcherHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "GondorKnightHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "GondorRangerHorde",
+     "level": 1,
+     "upgrades": []
+    }
+   ],
+   "heroes": [
+    {
+     "objectId": "GondorAragornMP",
+     "level": 1
+    },
+    {
+     "objectId": "GondorBoromir",
+     "level": 1
+    }
+   ],
+   "ringHeroObjectId": null,
+   "bonuses": {
+    "startingResources": 1500,
+    "commandPointBonus": 300,
+    "palantirStartingPoints": 3,
+    "palantirIncomePerInterval": 1,
+    "signalFire": true
+   }
+  },
+  {
+   "slot": 2,
+   "factionId": "mordor",
+   "listIndex": 4,
+   "color": "red",
+   "side": "evil",
+   "gateAngleDeg": 45,
+   "handicapPercent": 0,
+   "handicapReasons": [],
+   "units": [
+    {
+     "objectId": "MordorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorFighterHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorBlackOrcHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorBlackOrcHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorArcherHorde",
+     "level": 1,
+     "upgrades": []
+    },
+    {
+     "objectId": "MordorArcherHorde",
+     "level": 1,
+     "upgrades": []
+    }
+   ],
+   "heroes": [],
+   "ringHeroObjectId": null,
+   "bonuses": {
+    "startingResources": 237,
+    "commandPointBonus": 0,
+    "palantirStartingPoints": 0,
+    "palantirIncomePerInterval": 0,
+    "signalFire": false
+   }
+  }
+ ],
+ "attackerArmyIds": [
+  "mordor-barad-dur-host"
+ ],
+ "defenderArmyIds": [
+  "men-minas-host"
+ ],
+ "attackerReinforcementArmyIds": [],
+ "defenderReinforcementArmyIds": []
+}

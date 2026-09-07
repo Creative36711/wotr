@@ -1,0 +1,39 @@
+{
+  "frame": {
+    "height": 720,
+    "width": 1280
+  },
+  "icons": [
+    {
+      "kind": "defeat",
+      "score": 0.9855782065911312,
+      "x": 819.5,
+      "y": 316.0
+    },
+    {
+      "kind": "victory",
+      "score": 0.9350792868405955,
+      "x": 835.0,
+      "y": 183.5
+    }
+  ],
+  "players": [
+    {
+      "color": "blue",
+      "side": "good",
+      "slot": 1
+    },
+    {
+      "color": "red",
+      "side": "evil",
+      "slot": 2
+    }
+  ],
+  "scale": 0.6666666666666666,
+  "screen": "1280x720",
+  "thresholds": {
+    "fortress": 0.85,
+    "icon": 0.72,
+    "scoreMarker": 0.5
+  }
+}

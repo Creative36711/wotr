@@ -1,1 +1,4716 @@
-{}
+{
+  "version": 62,
+  "gameVersion": "0.52.4",
+  "modId": "default",
+  "name": "Main Campaign",
+  "createdAt": "2026-09-07T11:43:31.807Z",
+  "updatedAt": "2026-09-07T11:44:11.369Z",
+  "locationOwners": {
+    "mithlond": "elves",
+    "rivendell": "elves",
+    "annuminas": "civilian",
+    "fornost": "civilian",
+    "amon-sul": "civilian",
+    "michel-delving": "civilian",
+    "hobbiton": "civilian",
+    "bree": "civilian",
+    "carn-dum": "angmar",
+    "gundabad": "goblins",
+    "cape-forochel": "civilian",
+    "moria": "goblins",
+    "goblin-town": "goblins",
+    "isengard": "isengard",
+    "tharbad": "civilian",
+    "lond-daer": "civilian",
+    "edoras": "men-of-the-west",
+    "helms-deep": "men-of-the-west",
+    "dunharrow": "men-of-the-west",
+    "aldburg": "men-of-the-west",
+    "fords-of-isen": "men-of-the-west",
+    "minas-tirith": "men-of-the-west",
+    "osgiliath": "men-of-the-west",
+    "dol-amroth": "men-of-the-west",
+    "pelargir": "men-of-the-west",
+    "cair-andros": "men-of-the-west",
+    "henneth-annun": "men-of-the-west",
+    "barad-dur": "mordor",
+    "minas-morgul": "mordor",
+    "morannon": "mordor",
+    "cirith-ungol": "mordor",
+    "orodruin": "mordor",
+    "erebor": "dwarves",
+    "dale": "dwarves",
+    "esgaroth": "civilian",
+    "argonath": "men-of-the-west",
+    "amon-hen": "men-of-the-west",
+    "caras-galadhon": "elves",
+    "thranduil-halls": "elves",
+    "dol-guldur": "goblins",
+    "umbar": "mordor",
+    "forlindon": "elves",
+    "harlindon": "elves",
+    "tower-hills": "elves",
+    "gulf-of-lhun": "elves",
+    "ered-luin": "dwarves",
+    "arthedain": "civilian",
+    "shire": "civilian",
+    "bree-land": "civilian",
+    "barrow-downs": "civilian",
+    "hills-of-evendim": "civilian",
+    "weather-hills": "civilian",
+    "lone-lands": "civilian",
+    "trollshaws": "civilian",
+    "ettenmoors": "civilian",
+    "eregion": "elves",
+    "minhiriath": "civilian",
+    "angmar-foothills": "angmar",
+    "northern-waste": "civilian",
+    "icebay-forochel": "angmar",
+    "high-pass": "goblins",
+    "redhorn-pass": "goblins",
+    "dimrill-dale": "goblins",
+    "gap-of-rohan": "men-of-the-west",
+    "nan-curunir": "goblins",
+    "enedwaith-plains": "isengard",
+    "dunland-highlands": "isengard",
+    "druwaith-iaur": "men-of-the-west",
+    "westfold": "men-of-the-west",
+    "eastfold": "men-of-the-west",
+    "westemnet": "men-of-the-west",
+    "eastemnet": "men-of-the-west",
+    "fangorn": "civilian",
+    "anorien": "men-of-the-west",
+    "north-ithilien": "men-of-the-west",
+    "lebennin": "men-of-the-west",
+    "lossarnach": "men-of-the-west",
+    "belfalas": "men-of-the-west",
+    "anfalas": "men-of-the-west",
+    "pinnath-gelin": "men-of-the-west",
+    "andrast": "men-of-the-west",
+    "tolfalas": "men-of-the-west",
+    "harondor": "mordor",
+    "udun": "mordor",
+    "gorgoroth": "mordor",
+    "lithlad": "mordor",
+    "nurn": "mordor",
+    "anduin-vales": "civilian",
+    "brown-lands": "mordor",
+    "dagorlad": "mordor",
+    "dead-marshes": "mordor",
+    "emyn-muil": "men-of-the-west",
+    "dorwinion": "civilian",
+    "withered-heath": "dwarves",
+    "ered-mithrin": "dwarves",
+    "iron-hills": "dwarves",
+    "north-mirkwood": "elves",
+    "south-mirkwood": "elves",
+    "near-harad": "mordor",
+    "far-harad": "mordor",
+    "khand": "mordor",
+    "sea-of-rhun": "mordor",
+    "easterling-lands": "mordor",
+    "sarn-ford": "civilian",
+    "erech": "men-of-the-west",
+    "calembel": "men-of-the-west",
+    "linhir": "men-of-the-west",
+    "ethring": "men-of-the-west",
+    "tarnost": "men-of-the-west",
+    "edhellond": "men-of-the-west",
+    "starkhorn": "men-of-the-west",
+    "durthang": "mordor",
+    "seregost": "mordor",
+    "eastern-guard": "mordor",
+    "beorn-house": "civilian",
+    "framsburg": "civilian",
+    "iron-hills-halls": "dwarves",
+    "rhosgobel": "elves",
+    "bywater": "civilian",
+    "far-downs": "civilian",
+    "white-downs": "civilian",
+    "north-downs": "civilian",
+    "south-downs": "civilian",
+    "the-angle": "civilian",
+    "swanfleet": "civilian",
+    "eryn-vorn": "civilian",
+    "peak-caradhras": "goblins",
+    "peak-celebdil": "goblins",
+    "kheled-zaram": "goblins",
+    "fold": "men-of-the-west",
+    "wold": "men-of-the-west",
+    "entwash-mouths": "men-of-the-west",
+    "field-of-celebrant": "men-of-the-west",
+    "paths-of-the-dead": "men-of-the-west",
+    "dimholt": "men-of-the-west",
+    "pelennor": "men-of-the-west",
+    "druadan-forest": "men-of-the-west",
+    "south-ithilien": "men-of-the-west",
+    "lamedon": "men-of-the-west",
+    "dor-en-ernil": "men-of-the-west",
+    "ethir-anduin": "men-of-the-west",
+    "white-mountains-gondor": "men-of-the-west",
+    "beacon-hills": "men-of-the-west",
+    "isenmouthe": "mordor",
+    "sea-of-nurnen": "mordor",
+    "cirith-gorgor": "mordor",
+    "morgai": "mordor",
+    "cirith-ungol-pass": "mordor",
+    "ephel-duath": "mordor",
+    "ered-lithui": "mordor",
+    "oakenshield-grove": "civilian",
+    "nindalf": "civilian",
+    "rauros": "civilian",
+    "dale-lands": "civilian",
+    "long-lake": "civilian",
+    "lothlorien": "elves",
+    "field-celebrant-east": "civilian",
+    "mirkwood-mountains": "elves",
+    "the-narrows": "elves",
+    "east-bight": "elves",
+    "old-forest-road": "elves",
+    "mirkwood-path": "elves",
+    "rhun-shore": "mordor",
+    "map-object-mt9c3y3r": "elves",
+    "map-object-mt9c5oa3": "elves",
+    "map-object-mt9c9vb7": "civilian",
+    "map-object-mt9cljvs": "angmar",
+    "map-object-mt9cmrxz": "civilian",
+    "map-object-mt9czp1t": "elves",
+    "map-object-mt9d4mxm": "civilian",
+    "map-object-mt9d7brv": "civilian",
+    "map-object-mt9d8h5b": "civilian",
+    "map-object-mt9d9plq": "civilian",
+    "map-object-mt9dex7o": "civilian",
+    "map-object-mt9dwn6z": "men-of-the-west",
+    "map-object-mt9dzg03": "men-of-the-west",
+    "map-object-mt9e41m0": "civilian",
+    "map-object-mt9e95o3": "civilian",
+    "map-object-mt9eo9q3": "mordor",
+    "map-object-mt9esxrk": "men-of-the-west",
+    "map-object-mt9euzrm": "civilian",
+    "map-object-mt9ewd7x": "men-of-the-west",
+    "map-object-mt9fod10": "civilian",
+    "map-object-mt9fx68s": "civilian",
+    "map-object-mt9gcugk": "civilian",
+    "map-object-mt9gkcpf": "civilian"
+  },
+  "regionOwners": {
+    "region-lindon": "elves",
+    "region-eriador": null,
+    "region-angmar": null,
+    "region-misty-mountains": null,
+    "region-enedwaith": null,
+    "region-dunland": null,
+    "region-rohan": null,
+    "region-gondor": null,
+    "region-mordor": "mordor",
+    "region-rhovanion": null,
+    "region-mirkwood": null,
+    "region-harad": "mordor",
+    "region-rhun": "mordor",
+    "region-new-region": null,
+    "region-new-region-2": null,
+    "region-new-region-3": null,
+    "region-new-region-4": null,
+    "region-new-region-5": "dwarves",
+    "region-new-region-6": null,
+    "region-new-region-7": null,
+    "region-new-region-8": "mordor",
+    "region-new-region-9": null,
+    "region-new-region-10": "dwarves",
+    "region-new-region-11": null
+  },
+  "heroAlive": {
+    "aragorn": true,
+    "boromir": true,
+    "theoden": true,
+    "eomer": true,
+    "gandalf": true,
+    "faramir": true,
+    "eowyn": true,
+    "elrond": true,
+    "glorfindel": true,
+    "thranduil": true,
+    "haldir": true,
+    "arwen": true,
+    "legolas": true,
+    "gimli": true,
+    "gloin": true,
+    "dain": true,
+    "prince-brand": true,
+    "saruman": true,
+    "lurtz": true,
+    "sharku": true,
+    "wormtongue": true,
+    "mordor-witch-king": true,
+    "mouth-of-sauron": true,
+    "gothmog": true,
+    "khamul": true,
+    "mordor-morgomir": true,
+    "gorkil": true,
+    "azog": true,
+    "shelob": true,
+    "drogoth": true,
+    "angmar-witch-king": true,
+    "morgomir": true,
+    "hwaldar": true,
+    "rogash": true,
+    "karsh": true
+  },
+  "armies": [
+    {
+      "id": "men-minas-host",
+      "name": "Host: Aragorn",
+      "factionId": "men-of-the-west",
+      "hexId": "14:27",
+      "movementRemaining": 5,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "aragorn",
+        "objectId": "GondorAragornMP"
+      },
+      "unitSlots": [
+        {
+          "slotId": "men-minas-host-unit-1",
+          "kind": "unit",
+          "entityId": "gondor-soldiers",
+          "objectId": "GondorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-minas-host-unit-2",
+          "kind": "unit",
+          "entityId": "gondor-soldiers",
+          "objectId": "GondorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-minas-host-unit-3",
+          "kind": "unit",
+          "entityId": "gondor-soldiers",
+          "objectId": "GondorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-minas-host-unit-4",
+          "kind": "unit",
+          "entityId": "gondor-archers",
+          "objectId": "GondorArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-minas-host-unit-5",
+          "kind": "unit",
+          "entityId": "gondor-archers",
+          "objectId": "GondorArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-minas-host-unit-6",
+          "kind": "unit",
+          "entityId": "gondor-knights",
+          "objectId": "GondorKnightHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-minas-host-unit-7",
+          "kind": "unit",
+          "entityId": "ithilien-rangers",
+          "objectId": "GondorRangerHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "men-minas-host-hero-1",
+          "kind": "hero",
+          "entityId": "boromir",
+          "objectId": "GondorBoromir",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": {
+        "sourceLocationId": "minas-tirith",
+        "sourceRound": 1,
+        "initialAmount": {
+          "startingResources": 1500,
+          "commandPointBonus": 300,
+          "palantirStartingPoints": 3,
+          "palantirIncomePerInterval": 1
+        },
+        "hexesTravelled": 0,
+        "turnsElapsed": 0
+      }
+    },
+    {
+      "id": "men-rohan-host",
+      "name": "Host: Theoden",
+      "factionId": "men-of-the-west",
+      "hexId": "9:26",
+      "movementRemaining": 5,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "theoden",
+        "objectId": "RohanTheoden"
+      },
+      "unitSlots": [
+        {
+          "slotId": "men-rohan-host-unit-1",
+          "kind": "unit",
+          "entityId": "rohirrim",
+          "objectId": "RohanRohirrimHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-rohan-host-unit-2",
+          "kind": "unit",
+          "entityId": "rohirrim",
+          "objectId": "RohanRohirrimHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-rohan-host-unit-3",
+          "kind": "unit",
+          "entityId": "rohan-spearmen",
+          "objectId": "RohanSpearmenHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-rohan-host-unit-4",
+          "kind": "unit",
+          "entityId": "rohan-spearmen",
+          "objectId": "RohanSpearmenHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "men-rohan-host-unit-5",
+          "kind": "unit",
+          "entityId": "gondor-archers",
+          "objectId": "GondorArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "men-rohan-host-hero-1",
+          "kind": "hero",
+          "entityId": "eomer",
+          "objectId": "RohanEomer",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": {
+        "sourceLocationId": "edoras",
+        "sourceRound": 1,
+        "initialAmount": {
+          "startingResources": 1500,
+          "commandPointBonus": 300,
+          "palantirStartingPoints": 3,
+          "palantirIncomePerInterval": 1
+        },
+        "hexesTravelled": 0,
+        "turnsElapsed": 0
+      }
+    },
+    {
+      "id": "elves-rivendell-host",
+      "name": "Host: Elrond",
+      "factionId": "elves",
+      "hexId": "14:14",
+      "movementRemaining": 5,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "elrond",
+        "objectId": "ElvenElrond"
+      },
+      "unitSlots": [
+        {
+          "slotId": "elves-rivendell-host-unit-1",
+          "kind": "unit",
+          "entityId": "lorien-warriors",
+          "objectId": "ElvenLorienWarriorHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-rivendell-host-unit-2",
+          "kind": "unit",
+          "entityId": "lorien-warriors",
+          "objectId": "ElvenLorienWarriorHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-rivendell-host-unit-3",
+          "kind": "unit",
+          "entityId": "lorien-archers",
+          "objectId": "ElvenLorienArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-rivendell-host-unit-4",
+          "kind": "unit",
+          "entityId": "lorien-archers",
+          "objectId": "ElvenLorienArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-rivendell-host-unit-5",
+          "kind": "unit",
+          "entityId": "rivendell-lancers",
+          "objectId": "ElvenRivendellLancerHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "elves-rivendell-host-hero-1",
+          "kind": "hero",
+          "entityId": "glorfindel",
+          "objectId": "ElvenGlorfindel",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": {
+        "sourceLocationId": "rivendell",
+        "sourceRound": 1,
+        "initialAmount": {
+          "startingResources": 1500,
+          "commandPointBonus": 300,
+          "palantirStartingPoints": 3,
+          "palantirIncomePerInterval": 1
+        },
+        "hexesTravelled": 0,
+        "turnsElapsed": 0
+      }
+    },
+    {
+      "id": "elves-mirkwood-host",
+      "name": "Host: Thranduil",
+      "factionId": "elves",
+      "hexId": "18:16",
+      "movementRemaining": 4,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "thranduil",
+        "objectId": "ElvenThranduil"
+      },
+      "unitSlots": [
+        {
+          "slotId": "elves-mirkwood-host-unit-1",
+          "kind": "unit",
+          "entityId": "mirkwood-archers",
+          "objectId": "ElvenMirkwoodArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-mirkwood-host-unit-2",
+          "kind": "unit",
+          "entityId": "mirkwood-archers",
+          "objectId": "ElvenMirkwoodArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-mirkwood-host-unit-3",
+          "kind": "unit",
+          "entityId": "mirkwood-archers",
+          "objectId": "ElvenMirkwoodArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-mirkwood-host-unit-4",
+          "kind": "unit",
+          "entityId": "lorien-warriors",
+          "objectId": "ElvenLorienWarriorHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "elves-mirkwood-host-unit-5",
+          "kind": "unit",
+          "entityId": "mithlond-sentries",
+          "objectId": "ElvenMithlondSentryHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": {
+        "sourceLocationId": "south-mirkwood",
+        "sourceRound": 1,
+        "initialAmount": {
+          "startingResources": 150
+        },
+        "hexesTravelled": 0,
+        "turnsElapsed": 0
+      }
+    },
+    {
+      "id": "dwarves-erebor-host",
+      "name": "Host: Gimli",
+      "factionId": "dwarves",
+      "hexId": "24:12",
+      "movementRemaining": 4,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "gimli",
+        "objectId": "DwarvenGimli"
+      },
+      "unitSlots": [
+        {
+          "slotId": "dwarves-erebor-host-unit-1",
+          "kind": "unit",
+          "entityId": "dwarven-guardians",
+          "objectId": "DwarvenGuardianHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "dwarves-erebor-host-unit-2",
+          "kind": "unit",
+          "entityId": "dwarven-guardians",
+          "objectId": "DwarvenGuardianHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "dwarves-erebor-host-unit-3",
+          "kind": "unit",
+          "entityId": "dwarven-guardians",
+          "objectId": "DwarvenGuardianHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "dwarves-erebor-host-unit-4",
+          "kind": "unit",
+          "entityId": "dwarven-axe-throwers",
+          "objectId": "DwarvenAxeThrowerHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "dwarves-erebor-host-unit-5",
+          "kind": "unit",
+          "entityId": "dwarven-axe-throwers",
+          "objectId": "DwarvenAxeThrowerHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "dwarves-erebor-host-unit-6",
+          "kind": "unit",
+          "entityId": "men-of-dale",
+          "objectId": "DwarvenMenOfDaleHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "dwarves-erebor-host-hero-1",
+          "kind": "hero",
+          "entityId": "gloin",
+          "objectId": "DwarvenGloin",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": {
+        "sourceLocationId": "erebor",
+        "sourceRound": 1,
+        "initialAmount": {
+          "startingResources": 900,
+          "commandPointBonus": 50
+        },
+        "hexesTravelled": 0,
+        "turnsElapsed": 0
+      }
+    },
+    {
+      "id": "isengard-main-host",
+      "name": "Host: Saruman",
+      "factionId": "isengard",
+      "hexId": "8:22",
+      "movementRemaining": 5,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "saruman",
+        "objectId": "IsengardSaruman"
+      },
+      "unitSlots": [
+        {
+          "slotId": "isengard-main-host-unit-1",
+          "kind": "unit",
+          "entityId": "uruk-fighters",
+          "objectId": "IsengardFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-main-host-unit-2",
+          "kind": "unit",
+          "entityId": "uruk-fighters",
+          "objectId": "IsengardFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-main-host-unit-3",
+          "kind": "unit",
+          "entityId": "uruk-fighters",
+          "objectId": "IsengardFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-main-host-unit-4",
+          "kind": "unit",
+          "entityId": "uruk-pikes",
+          "objectId": "IsengardPikemanHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-main-host-unit-5",
+          "kind": "unit",
+          "entityId": "uruk-pikes",
+          "objectId": "IsengardPikemanHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-main-host-unit-6",
+          "kind": "unit",
+          "entityId": "uruk-crossbows",
+          "objectId": "IsengardUrukCrossbowHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-main-host-unit-7",
+          "kind": "unit",
+          "entityId": "uruk-crossbows",
+          "objectId": "IsengardUrukCrossbowHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-main-host-unit-8",
+          "kind": "unit",
+          "entityId": "warg-riders",
+          "objectId": "IsengardWargRiderHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "isengard-main-host-hero-1",
+          "kind": "hero",
+          "entityId": "lurtz",
+          "objectId": "IsengardLurtz",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    },
+    {
+      "id": "isengard-dunland-raiders",
+      "name": "Host of Captain Ugluk",
+      "factionId": "isengard",
+      "hexId": "8:20",
+      "movementRemaining": 4,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "captain",
+        "entityId": "isengard-captain",
+        "displayName": "Ugluk"
+      },
+      "unitSlots": [
+        {
+          "slotId": "isengard-dunland-raiders-unit-1",
+          "kind": "unit",
+          "entityId": "wildmen-of-dunland",
+          "objectId": "IsengardWildmanHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-dunland-raiders-unit-2",
+          "kind": "unit",
+          "entityId": "wildmen-of-dunland",
+          "objectId": "IsengardWildmanHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-dunland-raiders-unit-3",
+          "kind": "unit",
+          "entityId": "wildmen-of-dunland",
+          "objectId": "IsengardWildmanHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-dunland-raiders-unit-4",
+          "kind": "unit",
+          "entityId": "wildmen-axe-throwers",
+          "objectId": "IsengardWildmanAxeHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-dunland-raiders-unit-5",
+          "kind": "unit",
+          "entityId": "wildmen-axe-throwers",
+          "objectId": "IsengardWildmanAxeHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "isengard-dunland-raiders-unit-6",
+          "kind": "unit",
+          "entityId": "uruk-fighters",
+          "objectId": "IsengardFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    },
+    {
+      "id": "mordor-minas-morgul-host",
+      "name": "Host: Witch-king",
+      "factionId": "mordor",
+      "hexId": "17:27",
+      "movementRemaining": 4,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "mordor-witch-king",
+        "objectId": "MordorWitchKingOnFellBeast"
+      },
+      "unitSlots": [
+        {
+          "slotId": "mordor-minas-morgul-host-unit-1",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-2",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-3",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-4",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-5",
+          "kind": "unit",
+          "entityId": "mordor-archers",
+          "objectId": "MordorArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-6",
+          "kind": "unit",
+          "entityId": "mordor-archers",
+          "objectId": "MordorArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-7",
+          "kind": "unit",
+          "entityId": "easterlings",
+          "objectId": "MordorEasterlingHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-8",
+          "kind": "unit",
+          "entityId": "easterlings",
+          "objectId": "MordorEasterlingHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-minas-morgul-host-unit-9",
+          "kind": "unit",
+          "entityId": "attack-troll",
+          "objectId": "MordorAttackTroll",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "mordor-minas-morgul-host-hero-1",
+          "kind": "hero",
+          "entityId": "mouth-of-sauron",
+          "objectId": "MordorMouthOfSauron",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    },
+    {
+      "id": "mordor-barad-dur-host",
+      "name": "Host of Captain Shagrat",
+      "factionId": "mordor",
+      "hexId": "21:24",
+      "movementRemaining": 4,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "captain",
+        "entityId": "mordor-captain",
+        "displayName": "Shagrat"
+      },
+      "unitSlots": [
+        {
+          "slotId": "mordor-barad-dur-host-unit-1",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-2",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-3",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-4",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-5",
+          "kind": "unit",
+          "entityId": "mordor-orcs",
+          "objectId": "MordorFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-6",
+          "kind": "unit",
+          "entityId": "black-orcs",
+          "objectId": "MordorBlackOrcHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-7",
+          "kind": "unit",
+          "entityId": "black-orcs",
+          "objectId": "MordorBlackOrcHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-8",
+          "kind": "unit",
+          "entityId": "mordor-archers",
+          "objectId": "MordorArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "mordor-barad-dur-host-unit-9",
+          "kind": "unit",
+          "entityId": "mordor-archers",
+          "objectId": "MordorArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    },
+    {
+      "id": "goblins-gundabad-host",
+      "name": "Host: Gorkil",
+      "factionId": "goblins",
+      "hexId": "15:10",
+      "movementRemaining": 3,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "gorkil",
+        "objectId": "WildGoblinKing"
+      },
+      "unitSlots": [
+        {
+          "slotId": "goblins-gundabad-host-unit-1",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-2",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-3",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-4",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-5",
+          "kind": "unit",
+          "entityId": "goblin-archers",
+          "objectId": "GoblinArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-6",
+          "kind": "unit",
+          "entityId": "goblin-archers",
+          "objectId": "GoblinArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-7",
+          "kind": "unit",
+          "entityId": "goblin-archers",
+          "objectId": "GoblinArcherHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-8",
+          "kind": "unit",
+          "entityId": "spider-riders",
+          "objectId": "GoblinSpiderRiderHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-gundabad-host-unit-9",
+          "kind": "unit",
+          "entityId": "cave-troll",
+          "objectId": "GoblinCaveTroll",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "goblins-gundabad-host-hero-1",
+          "kind": "hero",
+          "entityId": "azog",
+          "objectId": "WildAzog",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    },
+    {
+      "id": "goblins-moria-host",
+      "name": "Host of Captain Boldur",
+      "factionId": "goblins",
+      "hexId": "12:17",
+      "movementRemaining": 4,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "captain",
+        "entityId": "goblins-captain",
+        "displayName": "Boldur"
+      },
+      "unitSlots": [
+        {
+          "slotId": "goblins-moria-host-unit-1",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-moria-host-unit-2",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-moria-host-unit-3",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-moria-host-unit-4",
+          "kind": "unit",
+          "entityId": "goblin-fighters",
+          "objectId": "GoblinFighterHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-moria-host-unit-5",
+          "kind": "unit",
+          "entityId": "spiderlings",
+          "objectId": "WildSpiderlingHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-moria-host-unit-6",
+          "kind": "unit",
+          "entityId": "spiderlings",
+          "objectId": "WildSpiderlingHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "goblins-moria-host-unit-7",
+          "kind": "unit",
+          "entityId": "half-troll-marauders",
+          "objectId": "WildMarauderHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    },
+    {
+      "id": "angmar-carn-dum-host",
+      "name": "Host: Witch-king",
+      "factionId": "angmar",
+      "hexId": "12:10",
+      "movementRemaining": 5,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "angmar-witch-king",
+        "objectId": "AngmarWitchking"
+      },
+      "unitSlots": [
+        {
+          "slotId": "angmar-carn-dum-host-unit-1",
+          "kind": "unit",
+          "entityId": "black-numenoreans",
+          "objectId": "AngmarDarkDunedainHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-carn-dum-host-unit-2",
+          "kind": "unit",
+          "entityId": "black-numenoreans",
+          "objectId": "AngmarDarkDunedainHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-carn-dum-host-unit-3",
+          "kind": "unit",
+          "entityId": "dark-rangers",
+          "objectId": "AngmarDarkRangerHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-carn-dum-host-unit-4",
+          "kind": "unit",
+          "entityId": "dark-rangers",
+          "objectId": "AngmarDarkRangerHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-carn-dum-host-unit-5",
+          "kind": "unit",
+          "entityId": "snow-trolls",
+          "objectId": "AngmarSnowTrollHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-carn-dum-host-unit-6",
+          "kind": "unit",
+          "entityId": "gundabad-orcs",
+          "objectId": "AngmarOrcWarriors",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [
+        {
+          "slotId": "angmar-carn-dum-host-hero-1",
+          "kind": "hero",
+          "entityId": "morgomir",
+          "objectId": "AngmarMorgramir",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    },
+    {
+      "id": "angmar-rhudaur-host",
+      "name": "Host: Haldar",
+      "factionId": "angmar",
+      "hexId": "11:14",
+      "movementRemaining": 4,
+      "baseUnitSlotLimit": 15,
+      "heroSlotLimit": 2,
+      "commander": {
+        "kind": "hero",
+        "entityId": "hwaldar",
+        "objectId": "AngmarHwaldar"
+      },
+      "unitSlots": [
+        {
+          "slotId": "angmar-rhudaur-host-unit-1",
+          "kind": "unit",
+          "entityId": "thrall-masters",
+          "objectId": "AngmarThrallMaster",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-rhudaur-host-unit-2",
+          "kind": "unit",
+          "entityId": "rhudaur-spearmen",
+          "objectId": "AngmarRhudaurSpearmen",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-rhudaur-host-unit-3",
+          "kind": "unit",
+          "entityId": "rhudaur-spearmen",
+          "objectId": "AngmarRhudaurSpearmen",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-rhudaur-host-unit-4",
+          "kind": "unit",
+          "entityId": "rhudaur-axe-throwers",
+          "objectId": "AngmarRhudaurSlingers",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        },
+        {
+          "slotId": "angmar-rhudaur-host-unit-5",
+          "kind": "unit",
+          "entityId": "dire-wolves",
+          "objectId": "AngmarDireWolfHorde",
+          "level": 1,
+          "weaponUpgrade": false,
+          "armorUpgrade": false,
+          "bannerUpgrade": false
+        }
+      ],
+      "heroSlots": [],
+      "status": "ready",
+      "canInitiateBattle": true,
+      "engaged": false,
+      "movedRound": null,
+      "movedInPhase": null,
+      "exhaustedUntilRound": null,
+      "supplyPool": null
+    }
+  ],
+  "campaign": {
+    "round": 1,
+    "activeFactionId": "men-of-the-west",
+    "turnOrder": [
+      "men-of-the-west",
+      "elves",
+      "dwarves",
+      "isengard",
+      "mordor",
+      "goblins",
+      "angmar"
+    ],
+    "phase": "planning_good",
+    "firstMoverThisRound": "good",
+    "playerFactionId": "men-of-the-west",
+    "playerSide": "good",
+    "aiEnabled": true,
+    "aiDifficulty": {
+      "strategic": "warrior",
+      "rts": "warrior"
+    },
+    "gameStatus": "active",
+    "gameResultDismissed": false,
+    "factionStates": {
+      "men-of-the-west": {
+        "status": "active",
+        "eliminatedOnRound": null,
+        "statistics": {
+          "battlesWon": 0,
+          "battlesLost": 0,
+          "locationsCaptured": 0,
+          "heroesLost": 0
+        }
+      },
+      "elves": {
+        "status": "active",
+        "eliminatedOnRound": null,
+        "statistics": {
+          "battlesWon": 0,
+          "battlesLost": 0,
+          "locationsCaptured": 0,
+          "heroesLost": 0
+        }
+      },
+      "dwarves": {
+        "status": "active",
+        "eliminatedOnRound": null,
+        "statistics": {
+          "battlesWon": 0,
+          "battlesLost": 0,
+          "locationsCaptured": 0,
+          "heroesLost": 0
+        }
+      },
+      "isengard": {
+        "status": "active",
+        "eliminatedOnRound": null,
+        "statistics": {
+          "battlesWon": 0,
+          "battlesLost": 0,
+          "locationsCaptured": 0,
+          "heroesLost": 0
+        }
+      },
+      "mordor": {
+        "status": "active",
+        "eliminatedOnRound": null,
+        "statistics": {
+          "battlesWon": 0,
+          "battlesLost": 0,
+          "locationsCaptured": 0,
+          "heroesLost": 0
+        }
+      },
+      "goblins": {
+        "status": "active",
+        "eliminatedOnRound": null,
+        "statistics": {
+          "battlesWon": 0,
+          "battlesLost": 0,
+          "locationsCaptured": 0,
+          "heroesLost": 0
+        }
+      },
+      "angmar": {
+        "status": "active",
+        "eliminatedOnRound": null,
+        "statistics": {
+          "battlesWon": 0,
+          "battlesLost": 0,
+          "locationsCaptured": 0,
+          "heroesLost": 0
+        }
+      }
+    },
+    "freeCaptains": {
+      "men-of-the-west": [],
+      "elves": [],
+      "dwarves": [],
+      "isengard": [],
+      "mordor": [],
+      "goblins": [],
+      "angmar": [],
+      "civilian": []
+    },
+    "fogOfWar": {
+      "enabled": true,
+      "overlayVisible": true,
+      "lastSeenArmies": [
+        {
+          "armyId": "isengard-main-host",
+          "hexId": "8:22",
+          "factionId": "isengard",
+          "sizeCategory": "medium",
+          "hasHero": true,
+          "wasMoving": false,
+          "lastSeenRound": 1
+        },
+        {
+          "armyId": "mordor-minas-morgul-host",
+          "hexId": "17:27",
+          "factionId": "mordor",
+          "sizeCategory": "large",
+          "hasHero": true,
+          "wasMoving": false,
+          "lastSeenRound": 1
+        }
+      ],
+      "lastSeenLocations": [
+        {
+          "locationId": "mithlond",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "rivendell",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "annuminas",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "fornost",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "amon-sul",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "michel-delving",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "hobbiton",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "bree",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "carn-dum",
+          "lastKnownOwner": "angmar",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "gundabad",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "cape-forochel",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "moria",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "goblin-town",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "isengard",
+          "lastKnownOwner": "isengard",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "tharbad",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "lond-daer",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "edoras",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "helms-deep",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dunharrow",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "aldburg",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "fords-of-isen",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "minas-tirith",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "osgiliath",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dol-amroth",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "pelargir",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "cair-andros",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "henneth-annun",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "barad-dur",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "minas-morgul",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "morannon",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "cirith-ungol",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "orodruin",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "erebor",
+          "lastKnownOwner": "dwarves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dale",
+          "lastKnownOwner": "dwarves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "esgaroth",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "argonath",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "amon-hen",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "caras-galadhon",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "thranduil-halls",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dol-guldur",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "umbar",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "forlindon",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "harlindon",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "tower-hills",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "gulf-of-lhun",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "ered-luin",
+          "lastKnownOwner": "dwarves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "arthedain",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "shire",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "bree-land",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "barrow-downs",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "hills-of-evendim",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "weather-hills",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "lone-lands",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "trollshaws",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "ettenmoors",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "eregion",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "minhiriath",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "angmar-foothills",
+          "lastKnownOwner": "angmar",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "northern-waste",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "icebay-forochel",
+          "lastKnownOwner": "angmar",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "high-pass",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "redhorn-pass",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dimrill-dale",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "gap-of-rohan",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "nan-curunir",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "enedwaith-plains",
+          "lastKnownOwner": "isengard",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dunland-highlands",
+          "lastKnownOwner": "isengard",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "druwaith-iaur",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "westfold",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "eastfold",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "westemnet",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "eastemnet",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "fangorn",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "anorien",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "north-ithilien",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "lebennin",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "lossarnach",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "belfalas",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "anfalas",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "pinnath-gelin",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "andrast",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "tolfalas",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "harondor",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "udun",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "gorgoroth",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "lithlad",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "nurn",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "anduin-vales",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "brown-lands",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dagorlad",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dead-marshes",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "emyn-muil",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dorwinion",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "withered-heath",
+          "lastKnownOwner": "dwarves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "ered-mithrin",
+          "lastKnownOwner": "dwarves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "iron-hills",
+          "lastKnownOwner": "dwarves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "north-mirkwood",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "south-mirkwood",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "near-harad",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "far-harad",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "khand",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "sea-of-rhun",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "easterling-lands",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "sarn-ford",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "erech",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "calembel",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "linhir",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "ethring",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "tarnost",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "edhellond",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "starkhorn",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "durthang",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "seregost",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "eastern-guard",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "beorn-house",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "framsburg",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "iron-hills-halls",
+          "lastKnownOwner": "dwarves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "rhosgobel",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "bywater",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "far-downs",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "white-downs",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "north-downs",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "south-downs",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "the-angle",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "swanfleet",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "eryn-vorn",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "peak-caradhras",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "peak-celebdil",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "kheled-zaram",
+          "lastKnownOwner": "goblins",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "fold",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "wold",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "entwash-mouths",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "field-of-celebrant",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "paths-of-the-dead",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dimholt",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "pelennor",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "druadan-forest",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "south-ithilien",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "lamedon",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dor-en-ernil",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "ethir-anduin",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "white-mountains-gondor",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "beacon-hills",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "isenmouthe",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "sea-of-nurnen",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "cirith-gorgor",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "morgai",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "cirith-ungol-pass",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "ephel-duath",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "ered-lithui",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "oakenshield-grove",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "nindalf",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "rauros",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "dale-lands",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "long-lake",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "lothlorien",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "field-celebrant-east",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "mirkwood-mountains",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "the-narrows",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "east-bight",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "old-forest-road",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "mirkwood-path",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "rhun-shore",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9c3y3r",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9c5oa3",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9c9vb7",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9cljvs",
+          "lastKnownOwner": "angmar",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9cmrxz",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9czp1t",
+          "lastKnownOwner": "elves",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9d4mxm",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9d7brv",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9d8h5b",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9d9plq",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9dex7o",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9dwn6z",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9dzg03",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9e41m0",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9e95o3",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9eo9q3",
+          "lastKnownOwner": "mordor",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9esxrk",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9euzrm",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9ewd7x",
+          "lastKnownOwner": "men-of-the-west",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9fod10",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9fx68s",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9gcugk",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        },
+        {
+          "locationId": "map-object-mt9gkcpf",
+          "lastKnownOwner": "civilian",
+          "hasGarrison": false,
+          "garrisonCategory": "none",
+          "lastSeenRound": 1
+        }
+      ]
+    },
+    "treasuries": {
+      "men-of-the-west": {
+        "gold": 2184,
+        "materials": 580,
+        "lastIncome": {
+          "gold": 1835,
+          "materials": 380
+        },
+        "lastUpkeep": 151
+      },
+      "elves": {
+        "gold": 1209,
+        "materials": 485,
+        "lastIncome": {
+          "gold": 835,
+          "materials": 285
+        },
+        "lastUpkeep": 126
+      },
+      "dwarves": {
+        "gold": 583,
+        "materials": 390,
+        "lastIncome": {
+          "gold": 150,
+          "materials": 190
+        },
+        "lastUpkeep": 67
+      },
+      "isengard": {
+        "gold": 500,
+        "materials": 200,
+        "lastIncome": {
+          "gold": 0,
+          "materials": 0
+        },
+        "lastUpkeep": 0
+      },
+      "mordor": {
+        "gold": 500,
+        "materials": 200,
+        "lastIncome": {
+          "gold": 0,
+          "materials": 0
+        },
+        "lastUpkeep": 0
+      },
+      "goblins": {
+        "gold": 500,
+        "materials": 200,
+        "lastIncome": {
+          "gold": 0,
+          "materials": 0
+        },
+        "lastUpkeep": 0
+      },
+      "angmar": {
+        "gold": 500,
+        "materials": 200,
+        "lastIncome": {
+          "gold": 0,
+          "materials": 0
+        },
+        "lastUpkeep": 0
+      },
+      "civilian": {
+        "gold": 0,
+        "materials": 0,
+        "lastIncome": {
+          "gold": 0,
+          "materials": 0
+        },
+        "lastUpkeep": 0
+      }
+    },
+    "locationStates": {
+      "mithlond": {
+        "locationId": "mithlond",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "rivendell": {
+        "locationId": "rivendell",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "annuminas": {
+        "locationId": "annuminas",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "fornost": {
+        "locationId": "fornost",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "amon-sul": {
+        "locationId": "amon-sul",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "michel-delving": {
+        "locationId": "michel-delving",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "hobbiton": {
+        "locationId": "hobbiton",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "bree": {
+        "locationId": "bree",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "carn-dum": {
+        "locationId": "carn-dum",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "gundabad": {
+        "locationId": "gundabad",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "cape-forochel": {
+        "locationId": "cape-forochel",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "moria": {
+        "locationId": "moria",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "goblin-town": {
+        "locationId": "goblin-town",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "isengard": {
+        "locationId": "isengard",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "tharbad": {
+        "locationId": "tharbad",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "lond-daer": {
+        "locationId": "lond-daer",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "edoras": {
+        "locationId": "edoras",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "helms-deep": {
+        "locationId": "helms-deep",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dunharrow": {
+        "locationId": "dunharrow",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "aldburg": {
+        "locationId": "aldburg",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "fords-of-isen": {
+        "locationId": "fords-of-isen",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "minas-tirith": {
+        "locationId": "minas-tirith",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "osgiliath": {
+        "locationId": "osgiliath",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dol-amroth": {
+        "locationId": "dol-amroth",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "pelargir": {
+        "locationId": "pelargir",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "cair-andros": {
+        "locationId": "cair-andros",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "henneth-annun": {
+        "locationId": "henneth-annun",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "barad-dur": {
+        "locationId": "barad-dur",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "minas-morgul": {
+        "locationId": "minas-morgul",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "morannon": {
+        "locationId": "morannon",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "cirith-ungol": {
+        "locationId": "cirith-ungol",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "orodruin": {
+        "locationId": "orodruin",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "erebor": {
+        "locationId": "erebor",
+        "recruitmentQueue": [],
+        "reserve": [
+          {
+            "slotId": "starting-hero-dain",
+            "kind": "hero",
+            "entityId": "dain",
+            "objectId": "DwarvenDain",
+            "level": 1,
+            "weaponUpgrade": false,
+            "armorUpgrade": false,
+            "bannerUpgrade": false
+          }
+        ],
+        "occupationTurnsLeft": 0
+      },
+      "dale": {
+        "locationId": "dale",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "esgaroth": {
+        "locationId": "esgaroth",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "argonath": {
+        "locationId": "argonath",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "amon-hen": {
+        "locationId": "amon-hen",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "caras-galadhon": {
+        "locationId": "caras-galadhon",
+        "recruitmentQueue": [],
+        "reserve": [
+          {
+            "slotId": "starting-hero-haldir",
+            "kind": "hero",
+            "entityId": "haldir",
+            "objectId": "ElvenHaldir",
+            "level": 1,
+            "weaponUpgrade": false,
+            "armorUpgrade": false,
+            "bannerUpgrade": false
+          }
+        ],
+        "occupationTurnsLeft": 0
+      },
+      "thranduil-halls": {
+        "locationId": "thranduil-halls",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dol-guldur": {
+        "locationId": "dol-guldur",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "umbar": {
+        "locationId": "umbar",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "forlindon": {
+        "locationId": "forlindon",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "harlindon": {
+        "locationId": "harlindon",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "tower-hills": {
+        "locationId": "tower-hills",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "gulf-of-lhun": {
+        "locationId": "gulf-of-lhun",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "ered-luin": {
+        "locationId": "ered-luin",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "arthedain": {
+        "locationId": "arthedain",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "shire": {
+        "locationId": "shire",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "bree-land": {
+        "locationId": "bree-land",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "barrow-downs": {
+        "locationId": "barrow-downs",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "hills-of-evendim": {
+        "locationId": "hills-of-evendim",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "weather-hills": {
+        "locationId": "weather-hills",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "lone-lands": {
+        "locationId": "lone-lands",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "trollshaws": {
+        "locationId": "trollshaws",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "ettenmoors": {
+        "locationId": "ettenmoors",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "eregion": {
+        "locationId": "eregion",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "minhiriath": {
+        "locationId": "minhiriath",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "angmar-foothills": {
+        "locationId": "angmar-foothills",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "northern-waste": {
+        "locationId": "northern-waste",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "icebay-forochel": {
+        "locationId": "icebay-forochel",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "high-pass": {
+        "locationId": "high-pass",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "redhorn-pass": {
+        "locationId": "redhorn-pass",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dimrill-dale": {
+        "locationId": "dimrill-dale",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "gap-of-rohan": {
+        "locationId": "gap-of-rohan",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "nan-curunir": {
+        "locationId": "nan-curunir",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "enedwaith-plains": {
+        "locationId": "enedwaith-plains",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dunland-highlands": {
+        "locationId": "dunland-highlands",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "druwaith-iaur": {
+        "locationId": "druwaith-iaur",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "westfold": {
+        "locationId": "westfold",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "eastfold": {
+        "locationId": "eastfold",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "westemnet": {
+        "locationId": "westemnet",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "eastemnet": {
+        "locationId": "eastemnet",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "fangorn": {
+        "locationId": "fangorn",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "anorien": {
+        "locationId": "anorien",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "north-ithilien": {
+        "locationId": "north-ithilien",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "lebennin": {
+        "locationId": "lebennin",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "lossarnach": {
+        "locationId": "lossarnach",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "belfalas": {
+        "locationId": "belfalas",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "anfalas": {
+        "locationId": "anfalas",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "pinnath-gelin": {
+        "locationId": "pinnath-gelin",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "andrast": {
+        "locationId": "andrast",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "tolfalas": {
+        "locationId": "tolfalas",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "harondor": {
+        "locationId": "harondor",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "udun": {
+        "locationId": "udun",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "gorgoroth": {
+        "locationId": "gorgoroth",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "lithlad": {
+        "locationId": "lithlad",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "nurn": {
+        "locationId": "nurn",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "anduin-vales": {
+        "locationId": "anduin-vales",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "brown-lands": {
+        "locationId": "brown-lands",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dagorlad": {
+        "locationId": "dagorlad",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dead-marshes": {
+        "locationId": "dead-marshes",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "emyn-muil": {
+        "locationId": "emyn-muil",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dorwinion": {
+        "locationId": "dorwinion",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "withered-heath": {
+        "locationId": "withered-heath",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "ered-mithrin": {
+        "locationId": "ered-mithrin",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "iron-hills": {
+        "locationId": "iron-hills",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "north-mirkwood": {
+        "locationId": "north-mirkwood",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "south-mirkwood": {
+        "locationId": "south-mirkwood",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "near-harad": {
+        "locationId": "near-harad",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "far-harad": {
+        "locationId": "far-harad",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "khand": {
+        "locationId": "khand",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "sea-of-rhun": {
+        "locationId": "sea-of-rhun",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "easterling-lands": {
+        "locationId": "easterling-lands",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "sarn-ford": {
+        "locationId": "sarn-ford",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "erech": {
+        "locationId": "erech",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "calembel": {
+        "locationId": "calembel",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "linhir": {
+        "locationId": "linhir",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "ethring": {
+        "locationId": "ethring",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "tarnost": {
+        "locationId": "tarnost",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "edhellond": {
+        "locationId": "edhellond",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "starkhorn": {
+        "locationId": "starkhorn",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "durthang": {
+        "locationId": "durthang",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "seregost": {
+        "locationId": "seregost",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "eastern-guard": {
+        "locationId": "eastern-guard",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "beorn-house": {
+        "locationId": "beorn-house",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "framsburg": {
+        "locationId": "framsburg",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "iron-hills-halls": {
+        "locationId": "iron-hills-halls",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "rhosgobel": {
+        "locationId": "rhosgobel",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "bywater": {
+        "locationId": "bywater",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "far-downs": {
+        "locationId": "far-downs",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "white-downs": {
+        "locationId": "white-downs",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "north-downs": {
+        "locationId": "north-downs",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "south-downs": {
+        "locationId": "south-downs",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "the-angle": {
+        "locationId": "the-angle",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "swanfleet": {
+        "locationId": "swanfleet",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "eryn-vorn": {
+        "locationId": "eryn-vorn",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "peak-caradhras": {
+        "locationId": "peak-caradhras",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "peak-celebdil": {
+        "locationId": "peak-celebdil",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "kheled-zaram": {
+        "locationId": "kheled-zaram",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "fold": {
+        "locationId": "fold",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "wold": {
+        "locationId": "wold",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "entwash-mouths": {
+        "locationId": "entwash-mouths",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "field-of-celebrant": {
+        "locationId": "field-of-celebrant",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "paths-of-the-dead": {
+        "locationId": "paths-of-the-dead",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dimholt": {
+        "locationId": "dimholt",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "pelennor": {
+        "locationId": "pelennor",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "druadan-forest": {
+        "locationId": "druadan-forest",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "south-ithilien": {
+        "locationId": "south-ithilien",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "lamedon": {
+        "locationId": "lamedon",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dor-en-ernil": {
+        "locationId": "dor-en-ernil",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "ethir-anduin": {
+        "locationId": "ethir-anduin",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "white-mountains-gondor": {
+        "locationId": "white-mountains-gondor",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "beacon-hills": {
+        "locationId": "beacon-hills",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "isenmouthe": {
+        "locationId": "isenmouthe",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "sea-of-nurnen": {
+        "locationId": "sea-of-nurnen",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "cirith-gorgor": {
+        "locationId": "cirith-gorgor",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "morgai": {
+        "locationId": "morgai",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "cirith-ungol-pass": {
+        "locationId": "cirith-ungol-pass",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "ephel-duath": {
+        "locationId": "ephel-duath",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "ered-lithui": {
+        "locationId": "ered-lithui",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "oakenshield-grove": {
+        "locationId": "oakenshield-grove",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "nindalf": {
+        "locationId": "nindalf",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "rauros": {
+        "locationId": "rauros",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "dale-lands": {
+        "locationId": "dale-lands",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "long-lake": {
+        "locationId": "long-lake",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "lothlorien": {
+        "locationId": "lothlorien",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "field-celebrant-east": {
+        "locationId": "field-celebrant-east",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "mirkwood-mountains": {
+        "locationId": "mirkwood-mountains",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "the-narrows": {
+        "locationId": "the-narrows",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "east-bight": {
+        "locationId": "east-bight",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "old-forest-road": {
+        "locationId": "old-forest-road",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "mirkwood-path": {
+        "locationId": "mirkwood-path",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "rhun-shore": {
+        "locationId": "rhun-shore",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9c3y3r": {
+        "locationId": "map-object-mt9c3y3r",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9c5oa3": {
+        "locationId": "map-object-mt9c5oa3",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9c9vb7": {
+        "locationId": "map-object-mt9c9vb7",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9cljvs": {
+        "locationId": "map-object-mt9cljvs",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9cmrxz": {
+        "locationId": "map-object-mt9cmrxz",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9czp1t": {
+        "locationId": "map-object-mt9czp1t",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9d4mxm": {
+        "locationId": "map-object-mt9d4mxm",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9d7brv": {
+        "locationId": "map-object-mt9d7brv",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9d8h5b": {
+        "locationId": "map-object-mt9d8h5b",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9d9plq": {
+        "locationId": "map-object-mt9d9plq",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9dex7o": {
+        "locationId": "map-object-mt9dex7o",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9dwn6z": {
+        "locationId": "map-object-mt9dwn6z",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9dzg03": {
+        "locationId": "map-object-mt9dzg03",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9e41m0": {
+        "locationId": "map-object-mt9e41m0",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9e95o3": {
+        "locationId": "map-object-mt9e95o3",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9eo9q3": {
+        "locationId": "map-object-mt9eo9q3",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9esxrk": {
+        "locationId": "map-object-mt9esxrk",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9euzrm": {
+        "locationId": "map-object-mt9euzrm",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9ewd7x": {
+        "locationId": "map-object-mt9ewd7x",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9fod10": {
+        "locationId": "map-object-mt9fod10",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9fx68s": {
+        "locationId": "map-object-mt9fx68s",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9gcugk": {
+        "locationId": "map-object-mt9gcugk",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      },
+      "map-object-mt9gkcpf": {
+        "locationId": "map-object-mt9gkcpf",
+        "recruitmentQueue": [],
+        "reserve": [],
+        "occupationTurnsLeft": 0
+      }
+    },
+    "heroStates": {
+      "aragorn": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "minas-tirith",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "boromir": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "minas-tirith",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "theoden": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "edoras",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "eomer": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "edoras",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "gandalf": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "minas-tirith",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "faramir": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "minas-tirith",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "eowyn": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "edoras",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "elrond": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "rivendell",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "glorfindel": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "rivendell",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "thranduil": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "south-mirkwood",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "haldir": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "caras-galadhon",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "arwen": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "rivendell",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "legolas": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "south-mirkwood",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "gimli": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "erebor",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "gloin": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "erebor",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "dain": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "erebor",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "prince-brand": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "dale",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "saruman": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "isengard",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "lurtz": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "isengard",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "sharku": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "isengard",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "wormtongue": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "isengard",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "mordor-witch-king": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "minas-morgul",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "mouth-of-sauron": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "barad-dur",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "gothmog": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "minas-morgul",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "khamul": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "barad-dur",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "mordor-morgomir": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "barad-dur",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "gorkil": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "gundabad",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "azog": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "gundabad",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "shelob": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "moria",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "drogoth": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "gundabad",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "angmar-witch-king": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "carn-dum",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "morgomir": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "carn-dum",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "hwaldar": {
+        "status": "active",
+        "summoned": true,
+        "availableSinceRound": null,
+        "summonLocationId": "map-object-mt9cljvs",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "rogash": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "carn-dum",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      },
+      "karsh": {
+        "status": "locked",
+        "summoned": false,
+        "availableSinceRound": null,
+        "summonLocationId": "carn-dum",
+        "healTurnsLeft": 0,
+        "recoveryLocationId": null,
+        "diedRound": null,
+        "diedLocationId": null
+      }
+    },
+    "pendingOrders": [
+      {
+        "armyId": "men-rohan-host",
+        "destinationHexId": "7:28",
+        "path": [
+          "9:26",
+          "8:27",
+          "7:28"
+        ],
+        "cost": 4,
+        "locationId": null
+      }
+    ],
+    "alliedPlans": [
+      {
+        "armyId": "elves-rivendell-host",
+        "factionId": "elves",
+        "path": [
+          "14:14",
+          "15:13"
+        ],
+        "destinationHexId": "15:13",
+        "locationId": "high-pass",
+        "cost": 3
+      },
+      {
+        "armyId": "elves-mirkwood-host",
+        "factionId": "elves",
+        "path": [
+          "18:16",
+          "17:17",
+          "16:18"
+        ],
+        "destinationHexId": "16:18",
+        "locationId": "dol-guldur",
+        "cost": 4
+      },
+      {
+        "armyId": "dwarves-erebor-host",
+        "factionId": "dwarves",
+        "path": [
+          "24:12",
+          "24:13",
+          "24:14",
+          "23:15"
+        ],
+        "destinationHexId": "23:15",
+        "locationId": null,
+        "cost": 3
+      }
+    ],
+    "turnMovements": [],
+    "conflicts": [],
+    "currentConflictId": null,
+    "buildings": [],
+    "heroLevels": {
+      "aragorn": 1,
+      "boromir": 1,
+      "theoden": 1,
+      "eomer": 1,
+      "gandalf": 1,
+      "faramir": 1,
+      "eowyn": 1,
+      "elrond": 1,
+      "glorfindel": 1,
+      "thranduil": 1,
+      "haldir": 1,
+      "arwen": 1,
+      "legolas": 1,
+      "gimli": 1,
+      "gloin": 1,
+      "dain": 1,
+      "prince-brand": 1,
+      "saruman": 1,
+      "lurtz": 1,
+      "sharku": 1,
+      "wormtongue": 1,
+      "mordor-witch-king": 1,
+      "mouth-of-sauron": 1,
+      "gothmog": 1,
+      "khamul": 1,
+      "mordor-morgomir": 1,
+      "gorkil": 1,
+      "azog": 1,
+      "shelob": 1,
+      "drogoth": 1,
+      "angmar-witch-king": 1,
+      "morgomir": 1,
+      "hwaldar": 1,
+      "rogash": 1,
+      "karsh": 1
+    },
+    "ringState": {
+      "forged": false,
+      "ownerFactionId": null,
+      "carrierArmyId": null,
+      "forgedOnTurn": null,
+      "factionProgress": {}
+    },
+    "turnEvents": [],
+    "log": [
+      {
+        "id": "log-mtr69mul-ai6ul",
+        "round": 1,
+        "factionId": "dwarves",
+        "phase": "planning_good",
+        "text": "Фракция «Dwarves»: доход 150 золота и 190 материалов, содержание 67 золота.",
+        "kind": "turn"
+      },
+      {
+        "id": "log-mtr69muk-mxj3g",
+        "round": 1,
+        "factionId": "elves",
+        "phase": "planning_good",
+        "text": "Фракция «Elves»: доход 835 золота и 285 материалов, содержание 126 золота.",
+        "kind": "turn"
+      },
+      {
+        "id": "log-mtr69muk-n1h4a",
+        "round": 1,
+        "factionId": "men-of-the-west",
+        "phase": "planning_good",
+        "text": "Фракция «Men of the West»: доход 1835 золота и 380 материалов, содержание 151 золота.",
+        "kind": "turn"
+      },
+      {
+        "id": "log-mtr69mue-ltxax",
+        "round": 1,
+        "factionId": "men-of-the-west",
+        "phase": "planning_good",
+        "text": "Новая кампания началась. Фракция игрока: «Men of the West». Активных фракций: 7.",
+        "kind": "system"
+      }
+    ]
+  },
+  "battles": []
+}

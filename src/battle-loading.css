@@ -1,0 +1,150 @@
+/* Загрузочный экран перед RTS-боем (маска поверх окна игры).
+   Референс — загрузочные иллюстрации локаций оригинальной War of the Ring:
+   тёмная кинематографичная заставка, золотисто-бронзовая гарнитура.
+   Экран чисто информационный: pointer-events: none (не перехватывает клики —
+   они проходят к игре) и cursor: none (курсор автоматизации не виден). */
+
+.battle-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  overflow: hidden;
+  background: #05080b;
+  cursor: none;
+  pointer-events: none;
+  user-select: none;
+  animation: battle-loading-appear .45s ease both;
+}
+
+@keyframes battle-loading-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.battle-loading-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(.92);
+}
+
+/* Затемняющий градиент снизу вверх (~45% высоты), чтобы панель читалась на
+   любом фоне; лёгкая виньетка сверху удерживает взгляд на панели. */
+.battle-loading-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(4, 7, 10, .95) 0%, rgba(4, 7, 10, .78) 16%, rgba(4, 7, 10, .42) 34%, rgba(4, 7, 10, 0) 48%),
+    linear-gradient(to bottom, rgba(4, 7, 10, .55) 0%, rgba(4, 7, 10, 0) 18%),
+    radial-gradient(120% 90% at 50% 42%, rgba(0, 0, 0, 0) 58%, rgba(3, 5, 7, .5) 100%);
+}
+
+.battle-loading-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24px 52px 32px;
+  border-top: 1px solid rgba(194, 164, 104, .3);
+  background: linear-gradient(to top, rgba(6, 9, 12, .88), rgba(6, 9, 12, .6));
+  box-shadow: 0 -18px 46px rgba(0, 0, 0, .55);
+}
+
+.battle-loading-heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 16px;
+}
+
+.battle-loading-glyph {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(194, 164, 104, .55);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 34%, rgba(64, 48, 24, .9), rgba(12, 15, 18, .95));
+  color: #e0c686;
+  font-size: 24px;
+  text-shadow: 0 0 12px rgba(224, 198, 134, .6);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .75);
+}
+
+.battle-loading-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.battle-loading-titles h2 {
+  margin: 0;
+  color: #e8d9ae;
+  font-family: Cinzel, Georgia, serif;
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  line-height: 1.12;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .85), 0 0 26px rgba(194, 164, 104, .28);
+}
+
+.battle-loading-titles p {
+  margin: 6px 0 0;
+  color: #b9a97e;
+  font-size: 14px;
+  letter-spacing: .05em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, .8);
+}
+
+.battle-loading-percent {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  color: #e0c686;
+  font-family: Cinzel, Georgia, serif;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .06em;
+  text-shadow: 0 0 14px rgba(224, 198, 134, .45);
+}
+
+.battle-loading-track {
+  position: relative;
+  height: 13px;
+  border: 1px solid rgba(194, 164, 104, .45);
+  border-radius: 3px;
+  background: rgba(8, 12, 16, .85);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, .7);
+}
+
+.battle-loading-fill {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  bottom: 2px;
+  width: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6d5633, #c2a468 55%, #e9d296);
+  box-shadow: 0 0 14px rgba(224, 198, 134, .4);
+  transition: width .5s ease;
+}
+
+/* Режим результата: полоса неопределённости — бегущая полоска вместо процента. */
+.battle-loading-fill.indeterminate {
+  width: 34%;
+  animation: battle-loading-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes battle-loading-sweep {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(330%); }
+}
+
+@media (max-width: 1024px) {
+  .battle-loading-panel { padding: 18px 26px 22px; }
+  .battle-loading-heading { gap: 12px; }
+  .battle-loading-glyph { width: 44px; height: 44px; font-size: 19px; }
+  .battle-loading-percent { font-size: 18px; }
+}

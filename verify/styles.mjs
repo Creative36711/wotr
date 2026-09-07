@@ -19,7 +19,7 @@ fs.mkdirSync(path.dirname(outFile), { recursive: true })
 const styleFiles = [
   'global.css', 'campaign-cycle.css', 'menu.css', 'language.css', 'captains.css', 'heroes.css',
   'wounded-heroes.css', 'buildings-ring.css', 'map-markers.css', 'pending-orders.css',
-  'fog-of-war.css', 'recruitment.css', 'factions.css', 'mods.css', 'rts.css',
+  'fog-of-war.css', 'recruitment.css', 'factions.css', 'mods.css', 'rts.css', 'battle-loading.css',
 ]
 const styles = styleFiles
   .map((name) => `<style data-file="${name}">${fs.readFileSync(path.join(root, 'src', name), 'utf8')}</style>`)

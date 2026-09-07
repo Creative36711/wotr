@@ -13,6 +13,7 @@ import { collectOwnerModifiers } from '../game/battleModifiers'
 import { calculateRelativeHandicaps } from '../game/handicap'
 import { ringHeroObjectId } from '../game/ring'
 import { availableUpgrades } from '../game/progression'
+import { hideBattleLoading, setBattleLoadingStep, showBattleLoading, showBattleLoadingResult } from '../battleLoading'
 import type { AppSettings, ModDefinition } from '../types'
 
 function shuffle<T>(items: T[]): T[] {
@@ -243,6 +244,9 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       if(result?.finishedAt){
         logEvent('rts',`результат BFME-сражения «${selectedMapAsset?.mapName??conflict.rtsMapId}»`,result)
         if(result.winningTeam==='good'||result.winningTeam==='evil'){
+          // Детектор нашёл экран статистики: маска закрывает игру на время
+          // обработки результата и уходит сама, когда отчёт виден в окне.
+          showBattleLoadingResult()
           const outcomeDetail=result.status==='COMPLETED'&&result.winningSlot?`победил слот ${result.winningSlot}`:result.status==='SURRENDER'?'противник сдался':''
           resolveConflictRts(conflict.id,result.winningTeam,outcomeDetail)
           setRtsMessage(`Бой завершён: победа стороны «${result.winningTeam==='good'?'Свет':'Тьма'}». BFME закрыт автоматически.`)
@@ -256,6 +260,12 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
   }
   const runRts=async()=>{
     if(!activeMod||!appSettings||!cacheEntityId)return
+    // Маска загрузочного экрана: заставка места боя с прогрессом 0 %. Пока
+    // Rust-мост не публикует события прогресса, интерфейс ведёт крупные шаги
+    // сам; точные фазы (ожидание меню, комната, позиции) придут событиями
+    // battle-loading-progress и перекроют их.
+    const loadingLocation=battleLocation??location
+    showBattleLoading({ title: loadingLocation?.name ?? 'Полевое сражение', nameTranslations: loadingLocation?.nameTranslations, image: loadingLocation?.image ?? '' })
     rtsWatchToken.current+=1
     setRtsWatching(false)
     setRtsBusy(true)
@@ -277,13 +287,19 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       // с конфигурацией не должны перезаписывать друг друга.
       const battleStamp=new Date().toISOString().replace(/[^0-9]/g,'').slice(8,14)
       const battleKey=sessionKey?`r${campaign.round}-${conflict.id}-${battleStamp}`:''
+      setBattleLoadingStep('spawn_generation')
       const battleConfig={version:1,diagnostics:{session:sessionKey||null,battle:battleKey||null},language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,modifiers:{defender:preview.defenderModifiers??null,attacker:preview.attackerModifiers??null,attackerSupply:preview.attackerSupply??null},map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
       // Полная конфигурация боя — в папку боя внутри диагностики кампании: по ней
       // сражение воспроизводится один в один, а скриншоты Rust кладёт туда же.
+      setBattleLoadingStep('network_prefs')
       if(sessionKey&&battleKey)await writeDiagnosticsFile(sessionKey,`battles/${battleKey}/battle.json`,`${JSON.stringify(battleConfig,null,1)}\n`,false).catch((error)=>console.warn('Не удалось сохранить конфигурацию боя',error))
       logEvent('rts',`запуск BFME: карта «${selectedMapAsset?.mapName??conflict.rtsMapId}», слоты ${conflict.rtsAttackerSlots}×${conflict.rtsDefenderSlots}, владелец оплота — слот ${fortressOwnerSlot??'не задан'}`,participants.map((participant)=>`${participant.slot}:${participant.factionId}:${participant.color}:${participant.side}:${participant.handicapPercent}%`))
+      setBattleLoadingStep('game_launch')
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)
-      if(!report.ok){setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
+      if(!report.ok){hideBattleLoading();setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
+      // invoke возвращается, когда автоматизация довела бой до старта: «Бой
+      // начинается!» и маска уходит сама через пару секунд.
+      setBattleLoadingStep('ready')
       // Момент старта попытки (секунды, как finishedAt в файле исхода): записи,
       // сделанные раньше, принадлежат прошлым запускам и игнорируются.
       const launchedAt=Math.floor(Date.now()/1000)
@@ -291,7 +307,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       setRtsWatching(true)
       setRtsMessage(`BFME настроен автоматически, запущена карта «${selectedMapAsset?.mapName??conflict.rtsMapId}». Конфигурация: ${report.battleConfigPath}. После боя исход определится автоматически и игра закроется.`)
       void watchBattleResult(token,launchedAt)
-    }catch(error){setRtsMessage(translateText(error instanceof Error?error.message:String(error),appSettings.language??'ru'))}
+    }catch(error){hideBattleLoading();setRtsMessage(translateText(error instanceof Error?error.message:String(error),appSettings.language??'ru'))}
     finally{setRtsBusy(false)}
   }
 

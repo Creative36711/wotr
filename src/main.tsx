@@ -17,6 +17,7 @@ import './recruitment.css'
 import './factions.css'
 import './mods.css'
 import './rts.css'
+import './battle-loading.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

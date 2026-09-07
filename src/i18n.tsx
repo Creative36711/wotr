@@ -1092,6 +1092,19 @@ const UI_EN: Record<string, string> = {
   'Максимум ОК': 'Maximum CP',
   'Стартовые ресурсы': 'Starting resources',
   'Кэши отдельных карт загружаются у владений и оплотов.': 'MapCaches for individual maps are uploaded on domains and strongholds.',
+
+  'Подготовка сражения…': 'Preparing the battle…',
+  'Обработка результата…': 'Processing result…',
+  'Генерация армий…': 'Generating armies…',
+  'Запись настроек…': 'Writing settings…',
+  'Запуск игры…': 'Launching game…',
+  'Ожидание окна игры…': 'Waiting for game window…',
+  'Ожидание главного меню…': 'Waiting for main menu…',
+  'Навигация по меню…': 'Navigating menus…',
+  'Настройка комнаты…': 'Setting up room…',
+  'Назначение позиций…': 'Assigning positions…',
+  'Запуск боя…': 'Starting battle…',
+  'Бой начинается!': 'Battle starting!',
 }
 
 const BASE_TRANSLATIONS = { ...UI_EN, ...BUILTIN_CONTENT_EN }

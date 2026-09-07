@@ -18,16 +18,9 @@ import './factions.css'
 import './mods.css'
 import './rts.css'
 import './battle-loading.css'
-import BattleLoadingScreen from './components/BattleLoadingScreen'
-
-// Окно-маска загрузочного экрана боя загружает тот же фронтенд, но рендерит
-// только заставку (см. create_battle_mask_window в src-tauri/src/lib.rs).
-const isBattleMaskWindow = window.location.hash.includes('battle-mask')
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <I18nProvider>
-      {isBattleMaskWindow ? <BattleLoadingScreen maskWindow /> : <App />}
-    </I18nProvider>
+    <I18nProvider><App /></I18nProvider>
   </React.StrictMode>,
 )

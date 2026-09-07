@@ -3,8 +3,7 @@
   "identifier": "default",
   "description": "Default capability for the main campaign window",
   "windows": [
-    "main",
-    "battle-mask"
+    "main"
   ],
   "permissions": [
     "core:default",

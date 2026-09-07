@@ -260,9 +260,10 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
   }
   const runRts=async()=>{
     if(!activeMod||!appSettings||!cacheEntityId)return
-    // Маска загрузочного экрана: заставка места боя с прогрессом 0 %. Крупные
-    // шаги интерфейс ведёт сам; точные фазы автоматизации (ожидание окна и
-    // меню, навигация, комната, позиции) приходят из файла прогресса моста.
+    // Загрузочный экран: заставка места боя с прогрессом 0 % поверх окна
+    // приложения (не поверх игры!). Крупные шаги интерфейс ведёт сам; точные
+    // фазы автоматизации (ожидание окна и меню, навигация, комната, позиции)
+    // приходят из файла прогресса моста.
     const loadingLocation=battleLocation??location
     showBattleLoading({ title: loadingLocation?.name ?? 'Полевое сражение', nameTranslations: loadingLocation?.nameTranslations, image: loadingLocation?.image ?? '' })
     rtsWatchToken.current+=1
@@ -287,7 +288,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       const battleStamp=new Date().toISOString().replace(/[^0-9]/g,'').slice(8,14)
       const battleKey=sessionKey?`r${campaign.round}-${conflict.id}-${battleStamp}`:''
       setBattleLoadingStep('spawn_generation')
-      const battleConfig={version:1,diagnostics:{session:sessionKey||null,battle:battleKey||null},language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,modifiers:{defender:preview.defenderModifiers??null,attacker:preview.attackerModifiers??null,attackerSupply:preview.attackerSupply??null},map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false,masked:true},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
+      const battleConfig={version:1,diagnostics:{session:sessionKey||null,battle:battleKey||null},language:appSettings.language??'ru',modId:activeMod.id,conflictId:conflict.id,playerFactionId:campaign.playerFactionId,networkRules:activeMod.rts.networkRules,palantirSettings,ringState:campaign.ringState,modifiers:{defender:preview.defenderModifiers??null,attacker:preview.attackerModifiers??null,attackerSupply:preview.attackerSupply??null},map:{source:conflict.rtsMapSource,entityId:cacheEntityId,mapPath:conflict.rtsMapId,expectedSize:selectedMapAsset?.size??0,defenderStartPosition:conflict.rtsDefenderStartPosition,defenderSlot:fortressDefenderSlot||null,startPositions,fortressOwnerSlot},launch:{windowed:false},monitor:{enabled:true,timeoutSec:5400},difficulty:{id:difficulty.id,label:difficulty.label,bfmeIndex:difficulty.bfmeIndex},factionOrder:activeMod.rts.factionOrder,participants,attackerArmyIds:conflict.attackerArmyIds,defenderArmyIds:conflict.defenderArmyIds,attackerReinforcementArmyIds:conflict.attackerReinforcementArmyIds,defenderReinforcementArmyIds:conflict.defenderReinforcementArmyIds}
       // Полная конфигурация боя — в папку боя внутри диагностики кампании: по ней
       // сражение воспроизводится один в один, а скриншоты Rust кладёт туда же.
       setBattleLoadingStep('network_prefs')
@@ -297,7 +298,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)
       if(!report.ok){hideBattleLoading();setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
       // invoke возвращается, когда автоматизация довела бой до старта: «Бой
-      // начинается!» и маска уходит сама через пару секунд.
+      // начинается!» и заставка уходит сама через пару секунд.
       setBattleLoadingStep('ready')
       // Момент старта попытки (секунды, как finishedAt в файле исхода): записи,
       // сделанные раньше, принадлежат прошлым запускам и игнорируются.

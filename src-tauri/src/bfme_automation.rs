@@ -293,10 +293,6 @@ extern "system" {
     fn SetActiveWindow(window: Hwnd) -> Hwnd;
     fn SetFocus(window: Hwnd) -> Hwnd;
     fn PrintWindow(window: Hwnd, dc: Handle, flags: u32) -> i32;
-    fn GetWindowLongPtrW(window: Hwnd, index: i32) -> isize;
-    fn SetWindowLongPtrW(window: Hwnd, index: i32, value: isize) -> isize;
-    fn SetLayeredWindowAttributes(window: Hwnd, key: u32, alpha: u8, flags: u32) -> i32;
-    fn SetWindowPos(window: Hwnd, after: isize, x: i32, y: i32, cx: i32, cy: i32, flags: u32) -> i32;
 }
 
 #[cfg(target_os = "windows")]
@@ -374,8 +370,6 @@ extern "system" {
 #[cfg(target_os = "windows")]
 const INPUT_MOUSE: u32 = 0;
 #[cfg(target_os = "windows")]
-const INPUT_KEYBOARD: u32 = 1;
-#[cfg(target_os = "windows")]
 const MOUSE_MOVE: u32 = 0x0001;
 #[cfg(target_os = "windows")]
 const MOUSE_LEFT_DOWN: u32 = 0x0002;
@@ -410,35 +404,9 @@ const SEE_MASK_FLAG_NO_UI: u32 = 0x0000_0400;
 #[cfg(target_os = "windows")]
 const SW_RESTORE: i32 = 9;
 #[cfg(target_os = "windows")]
-const GWL_EXSTYLE: i32 = -16;
-#[cfg(target_os = "windows")]
-const WS_EX_TRANSPARENT: isize = 0x0000_0020;
-#[cfg(target_os = "windows")]
-const WS_EX_LAYERED: isize = 0x0008_0000;
-#[cfg(target_os = "windows")]
-const WS_EX_NOACTIVATE: isize = 0x0800_0000;
-#[cfg(target_os = "windows")]
-const WS_EX_TOPMOST: isize = 0x0000_0008;
-#[cfg(target_os = "windows")]
-const LWA_ALPHA: u32 = 2;
-#[cfg(target_os = "windows")]
-const HWND_TOPMOST: isize = -1;
-#[cfg(target_os = "windows")]
-const SWP_NOSIZE: u32 = 0x0000_0001;
-#[cfg(target_os = "windows")]
-const SWP_NOMOVE: u32 = 0x0000_0002;
-#[cfg(target_os = "windows")]
-const SWP_NOACTIVATE: u32 = 0x0000_0010;
-#[cfg(target_os = "windows")]
 const PW_CLIENTONLY: u32 = 0x0000_0001;
 #[cfg(target_os = "windows")]
 const PW_RENDERFULLCONTENT: u32 = 0x0000_0002;
-#[cfg(target_os = "windows")]
-const VK_MENU: u32 = 0x12;
-#[cfg(target_os = "windows")]
-const VK_RETURN: u32 = 0x0D;
-#[cfg(target_os = "windows")]
-const KEYEVENTF_KEYUP: u32 = 0x0002;
 #[cfg(target_os = "windows")]
 const KEY_READ: u32 = 0x0002_0019;
 #[cfg(target_os = "windows")]
@@ -958,7 +926,6 @@ fn write_environment_report(
         "modId": config.get("modId").cloned().unwrap_or(Value::Null),
         "language": config.get("language").cloned().unwrap_or(Value::Null),
         "windowed": config.get("launch").and_then(|value| value.get("windowed")).cloned().unwrap_or(Value::Null),
-        "masked": config.get("launch").and_then(|value| value.get("masked")).cloned().unwrap_or(Value::Null),
         "writtenAtUnix": std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|elapsed| elapsed.as_secs())
@@ -1065,8 +1032,9 @@ fn write_analysis_report(
 }
 
 /// Снимок текущего окна игры в папку диагностики. Кадр берётся из окна
-/// (PrintWindow), а не с экрана: маска загрузочного экрана перекрывает
-/// рабочий стол на весь период настройки боя и не должна попадать в снимок.
+/// (PrintWindow), а не с экрана: содержимое окна игры не зависит от того,
+/// что его перекрывает (окно приложения с загрузочным экраном, диалоги и
+/// т.п.), поэтому снимки комнаты всегда чистые.
 #[cfg(target_os = "windows")]
 fn save_screenshot(folder: Option<&Path>, name: &str, log: &AutomationLog) {
     let Some(folder) = folder else {
@@ -1222,56 +1190,6 @@ fn main_menu_visible(window: Hwnd) -> bool {
     menu_marker_match(window, &marker)
         .map(|ratio| ratio >= MENU_MARKER_MATCH)
         .unwrap_or(false)
-}
-
-/// Стили окна-маски загрузочного экрана. Окно визуально непрозрачное
-/// (игрок видит заставку), но: WS_EX_TRANSPARENT + WS_EX_LAYERED — сквозное
-/// для мыши (клики SendInput проходят в окно игры), WS_EX_NOACTIVATE — не
-/// крадёт фокус у игры, WS_EX_TOPMOST — лежит поверх развернувшейся игры.
-/// Вызывается перед каждым показом: фреймворк мог сбросить стили.
-#[cfg(target_os = "windows")]
-pub fn apply_mask_window_styles(hwnd: isize) -> Result<(), String> {
-    let window = hwnd as Handle;
-    unsafe {
-        let style = GetWindowLongPtrW(window, GWL_EXSTYLE);
-        SetWindowLongPtrW(
-            window,
-            GWL_EXSTYLE,
-            style | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
-        );
-        // Слоёное окно без заданных атрибутов не отрисовывается вовсе —
-        // включаем полную непрозрачность содержимого.
-        if SetLayeredWindowAttributes(window, 0, 255, LWA_ALPHA) == 0 {
-            return Err(format!("SetLayeredWindowAttributes failed: {}", last_error()));
-        }
-        if SetWindowPos(window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE) == 0 {
-            return Err(format!("SetWindowPos failed: {}", last_error()));
-        }
-    }
-    Ok(())
-}
-
-/// Поиск окна-маски по уникальному заголовку и применение стилей сквозного
-/// окна. Заголовок — технический идентификатор: локализатор интерфейса его
-/// не переводит.
-#[cfg(target_os = "windows")]
-pub fn apply_mask_window_styles_by_title(title: &str) -> Result<(), String> {
-    let value = wide(title);
-    let window = unsafe { FindWindowW(null(), value.as_ptr()) };
-    if window.is_null() {
-        return Err(format!("Окно маски «{title}» не найдено"));
-    }
-    apply_mask_window_styles(window as isize)
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn apply_mask_window_styles(_hwnd: isize) -> Result<(), String> {
-    Ok(())
-}
-
-#[cfg(not(target_os = "windows"))]
-pub fn apply_mask_window_styles_by_title(_title: &str) -> Result<(), String> {
-    Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -1874,37 +1792,6 @@ fn mouse_input(flags: u32, dx: i32, dy: i32, data: i32) -> Input {
             },
         },
     }
-}
-
-#[cfg(target_os = "windows")]
-fn keyboard_input(virtual_key: u16, scan: u16, flags: u32) -> Input {
-    Input {
-        input_type: INPUT_KEYBOARD,
-        data: InputUnion {
-            keyboard: KeyboardInput {
-                vk: virtual_key,
-                scan,
-                flags,
-                time: 0,
-                extra_info: INJECT_MAGIC,
-            },
-        },
-    }
-}
-
-/// Alt+Enter. Бой стартует в оконном режиме (под маской загрузочного экрана),
-/// поэтому сразу после клика «Начать игру» мост сам переводит игру в полный
-/// экран и возвращает управление игроку.
-#[cfg(target_os = "windows")]
-fn send_alt_enter() -> Result<(), String> {
-    send(keyboard_input(VK_MENU as u16, 0x38, 0))?;
-    thread::sleep(Duration::from_millis(40));
-    send(keyboard_input(VK_RETURN as u16, 0x1C, 0))?;
-    thread::sleep(Duration::from_millis(80));
-    send(keyboard_input(VK_RETURN as u16, 0x1C, KEYEVENTF_KEYUP))?;
-    thread::sleep(Duration::from_millis(40));
-    send(keyboard_input(VK_MENU as u16, 0x38, KEYEVENTF_KEYUP))?;
-    Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -2546,14 +2433,6 @@ fn spawn_game_process(executable: &Path, windowed: bool, temp_directory: &Path, 
     run_elevated_helper(&job_path, &result_path).map(|_| ())
 }
 
-/// Текущее разрешение рабочего стола в формате Options.ini («ШИРИНА ВЫСОТА»).
-/// Вызывается до старта игры, когда режим дисплея гарантированно равен
-/// рабочему столу.
-#[cfg(target_os = "windows")]
-fn desktop_resolution_string() -> String {
-    unsafe { format!("{} {}", GetSystemMetrics(0).max(640), GetSystemMetrics(1).max(480)) }
-}
-
 #[cfg(target_os = "windows")]
 fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, temp_directory: &Path, log: &AutomationLog) -> Result<ResolutionRestore, String> {
     let mut restore = ResolutionRestore::none();
@@ -2654,33 +2533,21 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
             pref_result.paths.len()
         ));
         write_battle_progress(config, temp_directory, "network_prefs", 10);
-        // Маска загрузочного экрана: бой стартует в ОКОННОМ режиме на весь
-        // рабочий стол, чтобы топмостовое окно-маска гарантированно перекрывало
-        // игру всё время автоматизации; в полный экран игру переводит
-        // send_alt_enter сразу после клика «Начать игру». Без маски — как раньше.
-        let masked = config
-            .get("launch")
-            .and_then(|value| value.get("masked"))
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
+        // Запуск боя — только в нативном fullscreen (windowed:false из конфига):
+        // никаких окон и масок поверх игры. Загрузочный экран живёт в окне
+        // приложения и перекрывается игрой естественно, когда она появляется;
+        // прогресс автоматизации при этом продолжает писаться в файл и виден
+        // в панели задач (заголовок окна приложения обновляет интерфейс).
         let windowed = config
             .get("launch")
             .and_then(|value| value.get("windowed"))
             .and_then(Value::as_bool)
-            .unwrap_or(false)
-            || masked;
-        let mut resolution = config
+            .unwrap_or(false);
+        let resolution = config
             .get("launch")
             .and_then(|value| value.get("resolution"))
             .and_then(Value::as_str);
-        let desktop_resolution = desktop_resolution_string();
-        if masked && resolution.is_none() {
-            // Оконный бой разворачивается на весь рабочий стол: под маской это
-            // выглядит как обычный запуск, а геометрия комнаты не меняется —
-            // все клики идут в долях клиентской области.
-            resolution = Some(desktop_resolution.as_str());
-        }
-        log.write(if windowed { "[launch] starting BFME (windowed under loading mask)" } else { "[launch] starting BFME" });
+        log.write(if windowed { "[launch] starting BFME (windowed)" } else { "[launch] starting BFME" });
         write_battle_progress(config, temp_directory, "game_launch", 15);
         let mut restore = launch_game(executable, windowed, resolution, temp_directory, log)?;
 
@@ -2838,14 +2705,6 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         write_battle_progress(config, temp_directory, "starting", 95);
         log.write("[room] clicking Start Game");
         click_fraction(view, 0.8836, 0.9542)?;
-        if masked {
-            // Комната начала отсчёт — время переводить игру в fullscreen: маска
-            // скроется через мгновение, и игрок получит игру на весь экран.
-            thread::sleep(Duration::from_millis(1500));
-            if let Err(error) = send_alt_enter() {
-                log.write(format!("[launch] Alt+Enter не прошёл: {error} — игра остаётся оконной"));
-            }
-        }
         thread::sleep(START_COUNTDOWN);
         write_battle_progress(config, temp_directory, "ready", 100);
         log.write("[done] battle launched");

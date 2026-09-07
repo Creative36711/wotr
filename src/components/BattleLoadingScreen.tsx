@@ -1,87 +1,44 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import {
   applyBattleLoadingProgress,
-  applyExternalBattleLoadingState,
   battleLoadingStore,
 } from '../battleLoading'
 import type { BattleLoadingProgress } from '../battleLoading'
 // dataService и так статически входит в бандл — динамический импорт здесь
 // только плодил предупреждение INEFFECTIVE_DYNAMIC_IMPORT без выгоды.
-import { emitBattleLoadingState, readRtsBattleProgress, setBattleMaskWindow } from '../dataService'
-import { getCurrentLanguage, getDisplayName, translateText, useI18n } from '../i18n'
+import { readRtsBattleProgress } from '../dataService'
+import { getDisplayName, translateText, useI18n } from '../i18n'
 
 // Заглушка места боя — та же, что и в карточках локаций интерфейса.
 const PLACEHOLDER_IMAGE = '/assets/ui/location-placeholder.jpg'
 
-// Имя события Tauri, которым Rust-мост (bfme_automation.rs) публикует шаги
-// автоматизации. Пока мост их не шлёт, крупный прогресс ведёт ConflictModal.
+// Имя события Tauri, которым Rust-мост (bfme_automation.rs) может публиковать
+// шаги автоматизации напрямую; пока мост пишет их в файл, крупный прогресс
+// ведёт ConflictModal, а точные фазы приходят из temp/rts_progress.json.
 const PROGRESS_EVENT = 'battle-loading-progress'
-// Состояние загрузочного экрана, которое основное окно рассылает окну-маске.
-const STATE_EVENT = 'battle-loading-state'
 
 /**
- * Загрузочный экран перед RTS-боем (маска).
+ * Загрузочный экран перед RTS-боем.
  *
- * Рендерится дважды:
- * - в основном окне — как обычный оверлей (и в браузерном режиме);
- * - в отдельном topmost-окне Tauri («battle-mask»), которое Rust показывает на
- *   время автоматизации с Win32-стилями сквозного окна: клики проходят к игре,
- *   фокус не крадётся, окно лежит поверх игры (см. set_battle_mask_window).
+ * Живёт ТОЛЬКО в окне приложения и никогда не рисуется поверх игры: любые
+ * окна и оверлеи над полноэкранным BFME ломают его работу с мышью, поэтому
+ * игра, когда появляется, перекрывает заставку естественно. Экран виден от
+ * нажатия «BFME» до появления окна игры (подготовка файлов, UAC, запуск,
+ * ожидание окна) — с реальным прогрессом из файла моста, — а после старта боя
+ * прогресс продолжает жить в заголовке окна приложения (панель задач).
  *
- * Полноэкранная заставка места боя: фоновая картинка (или заглушка), название
- * локации, текущий шаг и полоса прогресса. Экран не интерактивный и прячет
- * курсор, который иначе бегал бы по заставке от авто-кликов SendInput.
- * Обновляется только по событиям — без анимационных циклов.
+ * Заставка не интерактивна (pointer-events: none) и обновляется только по
+ * событиям и опросу файла — без анимационных циклов.
  */
-export default function BattleLoadingScreen({ maskWindow = false }: { maskWindow?: boolean }) {
+export default function BattleLoadingScreen() {
   const state = useSyncExternalStore(battleLoadingStore.subscribe, battleLoadingStore.getSnapshot)
-  const i18n = useI18n()
+  const { language } = useI18n()
   const desktop = '__TAURI_INTERNALS__' in window
-  // Окно-маска не имеет общего стора с основным окном: язык приходит в снимке.
-  const language = maskWindow ? state.language ?? 'en' : i18n.language
-
-  // Язык окна-маски синхронизируется с языком основного окна, иначе DOM-
-  // локализатор провайдера переведёт заставку на язык по умолчанию (en).
-  useEffect(() => {
-    if (maskWindow && state.language && state.language !== i18n.language) i18n.setLanguage(state.language)
-  }, [maskWindow, state.language, i18n])
-
-  // Окно-маска: зеркалим состояние, которое публикует основное окно.
-  useEffect(() => {
-    if (!maskWindow || !desktop) return
-    let disposed = false
-    let unlisten: (() => void) | null = null
-    void import('@tauri-apps/api/event')
-      .then(({ listen }) => listen(STATE_EVENT, (event) => applyExternalBattleLoadingState(event.payload)))
-      .then((dispose) => {
-        if (disposed) dispose()
-        else unlisten = dispose
-      })
-      .catch(() => { /* API событий недоступен — маску ведёт её собственный стор. */ })
-    return () => {
-      disposed = true
-      unlisten?.()
-    }
-  }, [maskWindow, desktop])
-
-  // Основное окно: каждый снимок состояния уходит окну-маске, а само окно
-  // показывается ровно на время видимости загрузочного экрана.
-  useEffect(() => {
-    if (maskWindow || !desktop) return
-    return battleLoadingStore.subscribe(() => {
-      const snapshot = battleLoadingStore.getSnapshot()
-      if (snapshot.visible) void emitBattleLoadingState({ ...snapshot, language: getCurrentLanguage() })
-      // Отказ окна-маски (не создано и т.п.) не роняет интерфейс:
-      // остаётся оверлей основного окна.
-      setBattleMaskWindow(snapshot.visible).catch(() => {})
-    })
-  }, [maskWindow, desktop])
 
   // Точные фазы автоматизации: мост пишет temp/rts_progress.json на каждом
-  // шаге, основное окно опрашивает его и обновляет общий снимок (окно-маска
-  // получает те же значения вместе с состоянием).
+  // шаге, интерфейс опрашивает его и обновляет общий снимок.
   useEffect(() => {
-    if (maskWindow || !desktop) return
+    if (!desktop) return
     const timer = setInterval(() => {
       if (!battleLoadingStore.getSnapshot().visible) return
       readRtsBattleProgress()
@@ -89,7 +46,7 @@ export default function BattleLoadingScreen({ maskWindow = false }: { maskWindow
         .catch(() => { /* Файла ещё нет — остаётся текущий шаг. */ })
     }, 800)
     return () => clearInterval(timer)
-  }, [maskWindow, desktop])
+  }, [desktop])
 
   // Прогресс событием из Rust-бэкенда (emit со стороны моста). Подписка живёт
   // только в desktop-runtime; в браузере событий не бывает.
@@ -103,12 +60,36 @@ export default function BattleLoadingScreen({ maskWindow = false }: { maskWindow
         if (disposed) dispose()
         else unlisten = dispose
       })
-      .catch(() => { /* API событий недоступен — остаётся фронтовый прогресс. */ })
+      .catch(() => { /* API событий недоступен — остаётся файловый прогресс. */ })
     return () => {
       disposed = true
       unlisten?.()
     }
   }, [desktop])
+
+  // Пока бой готовится, прогресс виден и в панели задач: заголовок окна
+  // приложения показывает шаг и процент, даже когда игру развернуло поверх
+  // заставки. После скрытия заголовок возвращается к названию игры.
+  useEffect(() => {
+    if (!state.visible) return
+    const percent = state.indeterminate ? '' : ` ${Math.max(0, Math.min(100, Math.round(state.percent)))}%`
+    const title = `⚔ ${translateText(state.label)}${percent}`
+    document.title = title
+    if (desktop) {
+      void import('@tauri-apps/api/window')
+        .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
+        .catch(() => { /* Заголовок остаётся прежним, если API недоступен. */ })
+    }
+    return () => {
+      const restored = translateText('Война за Кольцо')
+      document.title = restored
+      if (desktop) {
+        void import('@tauri-apps/api/window')
+          .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(restored))
+          .catch(() => { /* Заголовок остаётся прежним, если API недоступен. */ })
+      }
+    }
+  }, [desktop, state.visible, state.label, state.percent, state.indeterminate])
 
   if (!state.visible) return null
   const title = getDisplayName({ name: state.title, nameTranslations: state.nameTranslations }, language)

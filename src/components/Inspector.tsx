@@ -462,7 +462,7 @@ function ArmyInspector({ army }: { army: Army }) {
         </section>}
 
         <section className={`army-leader-card ${commander ? '' : 'missing'}`}>
-          <span className="leader-portrait" style={{ '--portrait-color': faction.color, ...(commanderPortrait ? { backgroundImage: `url(${commanderPortrait})` } : {}) } as CSSProperties}></span>
+          <span className="leader-portrait" data-kind={army.commander?.kind === 'captain' ? 'captain' : 'hero'} style={{ '--portrait-color': faction.color, ...(commanderPortrait ? { backgroundImage: `url(${commanderPortrait})` } : {}) } as CSSProperties}></span>
           <div><small>{army.commander?.kind === 'captain' ? 'Временный командир · капитан' : 'Командир армии · герой'}</small><b>{commanderName ?? 'Командир не назначен'}</b><p>{commander ? `${army.commander?.kind === 'hero' ? 'Уникальный герой' : 'Административный командир'} · сила ${commander.battlePower} · командование ${commander.command}% · +${commander.movementBonus} ОД` : 'Без командира армия не может двигаться, атаковать или осаждать.'}</p></div>
         </section>
 

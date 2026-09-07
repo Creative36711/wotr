@@ -470,7 +470,7 @@ export function scanHotSpots(
       rtsLocationId:rtsLocation?.id??null,
       rtsMapSource:'location',
       rtsMapId:rtsLocation?.rtsMapCache?.mapPath??'',
-      rtsDefenderStartPosition: location && conflictBattleType(location) === 'siege' && Number.isFinite(location.rtsFortress?.defenderStartPosition?.x) && Number.isFinite(location.rtsFortress?.defenderStartPosition?.y) ? { x: Number(location.rtsFortress!.defenderStartPosition!.x), y: Number(location.rtsFortress!.defenderStartPosition!.y) } : null,
+      rtsDefenderStartPosition: rtsLocation && Number.isFinite(rtsLocation.rtsFortress?.defenderStartPosition?.x) && Number.isFinite(rtsLocation.rtsFortress?.defenderStartPosition?.y) ? { x: Number(rtsLocation.rtsFortress!.defenderStartPosition!.x), y: Number(rtsLocation.rtsFortress!.defenderStartPosition!.y) } : null,
       rtsAttackerSlots: 0,
       rtsDefenderSlots: 0,
       rtsCompatible: false,

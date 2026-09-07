@@ -10126,7 +10126,7 @@
       "nameTranslations": {
         "ru": "Рудаур"
       },
-      "side": "civilian",
+      "side": "angmar",
       "structuralType": "domain",
       "hex": "11:14",
       "regionId": "region-new-region-2",
@@ -20522,7 +20522,7 @@
       "id": "elves-rivendell-host",
       "name": "Host: Elrond",
       "factionId": "elves",
-      "hexId": "13:14",
+      "hexId": "14:14",
       "movementRemaining": 5,
       "baseUnitSlotLimit": 15,
       "heroSlotLimit": 2,
@@ -20923,7 +20923,7 @@
       "id": "mordor-barad-dur-host",
       "name": "Host of Captain Shagrat",
       "factionId": "mordor",
-      "hexId": "22:25",
+      "hexId": "21:24",
       "movementRemaining": 4,
       "baseUnitSlotLimit": 15,
       "heroSlotLimit": 2,
@@ -21151,7 +21151,7 @@
       "id": "angmar-carn-dum-host",
       "name": "Host: Witch-king",
       "factionId": "angmar",
-      "hexId": "9:10",
+      "hexId": "12:10",
       "movementRemaining": 5,
       "baseUnitSlotLimit": 15,
       "heroSlotLimit": 2,
@@ -21217,7 +21217,7 @@
       "id": "angmar-rhudaur-host",
       "name": "Host: Haldar",
       "factionId": "angmar",
-      "hexId": "11:13",
+      "hexId": "11:14",
       "movementRemaining": 4,
       "baseUnitSlotLimit": 15,
       "heroSlotLimit": 2,
@@ -22978,8 +22978,8 @@
         "reserve": [],
         "occupationTurnsLeft": 0
       },
-      "rhudaur": {
-        "locationId": "rhudaur",
+      "map-object-mt9cljvs": {
+        "locationId": "map-object-mt9cljvs",
         "recruitmentQueue": [],
         "reserve": [],
         "occupationTurnsLeft": 0
@@ -24090,7 +24090,7 @@
         "status": "active",
         "summoned": true,
         "availableSinceRound": null,
-        "summonLocationId": "rhudaur",
+        "summonLocationId": "map-object-mt9cljvs",
         "healTurnsLeft": 0,
         "recoveryLocationId": null,
         "diedRound": null,

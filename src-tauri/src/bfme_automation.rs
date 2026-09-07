@@ -191,6 +191,59 @@ struct WindowsSystemTime {
     milliseconds: u16,
 }
 
+/// DEVMODEW для EnumDisplaySettingsW. Раскладка Windows: 32 симв. имени +
+/// 4 WORD + DWORD dmFields + union (dmPosition + ориентация + фикс. вывод,
+/// 16 байт) + 5 SHORT + 32 симв. имени формы + WORD + 9 DWORD. Полный размер
+/// DEVMODEW = 220 байт; dmSize в dm_size обязателен перед вызовом.
+#[cfg(target_os = "windows")]
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+struct DevModeW {
+    dm_device_name: [u16; 32],
+    dm_spec_version: u16,
+    dm_driver_version: u16,
+    dm_size: u16,
+    dm_driver_extra: u16,
+    dm_fields: u32,
+    dm_position_x: i32,
+    dm_position_y: i32,
+    dm_display_orientation: u32,
+    dm_display_fixed_output: u32,
+    dm_color: i16,
+    dm_duplex: i16,
+    dm_y_resolution: i16,
+    dm_tto_option: i16,
+    dm_collate: i16,
+    dm_form_name: [u16; 32],
+    dm_log_pixels: u16,
+    dm_bits_per_pel: u32,
+    dm_pels_width: u32,
+    dm_pels_height: u32,
+    dm_display_flags: u32,
+    dm_display_frequency: u32,
+    dm_icm_method: u32,
+    dm_icm_intent: u32,
+    dm_media_type: u32,
+    dm_dither_type: u32,
+    dm_reserved_1: u32,
+    dm_reserved_2: u32,
+    dm_panning_width: u32,
+    dm_panning_height: u32,
+}
+
+/// DISPLAY_DEVICEW для EnumDisplayDevicesW (cb + имя + строка + флаги + id).
+#[cfg(target_os = "windows")]
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+struct DisplayDeviceW {
+    cb: u32,
+    device_name: [u16; 32],
+    device_string: [u16; 128],
+    state_flags: u32,
+    device_id: [u16; 128],
+    device_key: [u16; 128],
+}
+
 #[cfg(target_os = "windows")]
 #[link(name = "user32")]
 extern "system" {
@@ -200,6 +253,17 @@ extern "system" {
     fn GetClientRect(window: Hwnd, rect: *mut Rect) -> i32;
     fn ClientToScreen(window: Hwnd, point: *mut Point) -> i32;
     fn GetSystemMetrics(index: i32) -> i32;
+    fn EnumDisplaySettingsW(
+        device_name: *const u16,
+        mode_num: u32,
+        dev_mode: *mut DevModeW,
+    ) -> i32;
+    fn EnumDisplayDevicesW(
+        device: *const u16,
+        device_num: u32,
+        display_device: *mut DisplayDeviceW,
+        flags: u32,
+    ) -> i32;
     fn SendInput(count: u32, inputs: *const Input, size: i32) -> u32;
     fn SetForegroundWindow(window: Hwnd) -> i32;
     fn IsWindowVisible(window: Hwnd) -> i32;
@@ -596,17 +660,87 @@ fn shrink_for_diagnostics(frame: &RgbFrame) -> RgbFrame {
     current
 }
 
-/// Разрешение основного экрана. К нему привязаны и клики (абсолютные координаты
-/// мыши нормализуются по нему), и распознавание, поэтому его полезно видеть рядом
-/// с каждым снимком.
+#[cfg(target_os = "windows")]
+const ENUM_CURRENT_SETTINGS: u32 = 0xFFFF_FFFF;
+#[cfg(target_os = "windows")]
+const ENUM_REGISTRY_SETTINGS: u32 = 1;
+#[cfg(target_os = "windows")]
+const DISPLAY_DEVICE_ATTACHED_TO_DESKTOP: u32 = 0x1;
+#[cfg(target_os = "windows")]
+const DISPLAY_DEVICE_PRIMARY_DEVICE: u32 = 0x4;
+
+/// Сохранённый режим рабочего стола дисплея (из реестра) либо, при неудаче,
+/// текущий режим. ENUM_REGISTRY_SETTINGS возвращает разрешение, которое
+/// пользователь видит вне игры: полноэкранный BFME может временно переключить
+/// режим дисплея (например, на 1280×720), и GetSystemMetrics/текущий режим в
+/// этот момент покажут игровое, а не реальное разрешение монитора.
+#[cfg(target_os = "windows")]
+fn desktop_mode(device_name: *const u16) -> Option<(i32, i32)> {
+    for mode_num in [ENUM_REGISTRY_SETTINGS, ENUM_CURRENT_SETTINGS] {
+        let mut mode: DevModeW = unsafe { zeroed() };
+        mode.dm_size = size_of::<DevModeW>() as u16;
+        let ok = unsafe { EnumDisplaySettingsW(device_name, mode_num, &mut mode) } != 0;
+        if ok && mode.dm_pels_width > 0 && mode.dm_pels_height > 0 {
+            return Some((mode.dm_pels_width as i32, mode.dm_pels_height as i32));
+        }
+    }
+    None
+}
+
+/// Позиция и сохранённый размер рабочего стола подключённого дисплея.
+/// Позиция в реестре хранится в dmPosition; размеры других мониторов полно-
+/// экранная игра не меняет, поэтому для них достаточно текущего режима.
+#[cfg(target_os = "windows")]
+fn desktop_monitor_geometry() -> Vec<((i32, i32), (i32, i32))> {
+    let mut result = Vec::new();
+    let mut adapter_index = 0u32;
+    loop {
+        let mut device: DisplayDeviceW = unsafe { zeroed() };
+        device.cb = size_of::<DisplayDeviceW>() as u32;
+        let ok = unsafe { EnumDisplayDevicesW(null(), adapter_index, &mut device, 0) };
+        if ok == 0 {
+            break;
+        }
+        adapter_index += 1;
+        if device.state_flags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP == 0 {
+            continue;
+        }
+        // Для основного дисплея берём реестровый (рабочий стол) режим, для
+        // остальных — текущий: полноэкранная игра переключает только основной.
+        let mode_num = if device.state_flags & DISPLAY_DEVICE_PRIMARY_DEVICE != 0 {
+            ENUM_REGISTRY_SETTINGS
+        } else {
+            ENUM_CURRENT_SETTINGS
+        };
+        let mut mode: DevModeW = unsafe { zeroed() };
+        mode.dm_size = size_of::<DevModeW>() as u16;
+        let ok = unsafe { EnumDisplaySettingsW(device.device_name.as_ptr(), mode_num, &mut mode) } != 0;
+        if ok && mode.dm_pels_width > 0 && mode.dm_pels_height > 0 {
+            result.push((
+                (mode.dm_position_x, mode.dm_position_y),
+                (mode.dm_pels_width as i32, mode.dm_pels_height as i32),
+            ));
+        }
+    }
+    result
+}
+
+/// Разрешение основного экрана (рабочий стол, не игровой режим). К нему
+/// привязаны и клики (абсолютные координаты мыши нормализуются по нему), и
+/// распознавание, поэтому его полезно видеть рядом с каждым снимком.
 #[cfg(target_os = "windows")]
 fn monitor_resolution_label() -> String {
-    let width = unsafe { GetSystemMetrics(0) };
-    let height = unsafe { GetSystemMetrics(1) };
-    if width <= 0 || height <= 0 {
-        return String::new();
-    }
-    format!("{width}x{height}")
+    desktop_mode(null())
+        .map(|(width, height)| format!("{width}x{height}"))
+        .unwrap_or_else(|| {
+            let width = unsafe { GetSystemMetrics(0) };
+            let height = unsafe { GetSystemMetrics(1) };
+            if width > 0 && height > 0 {
+                format!("{width}x{height}")
+            } else {
+                String::new()
+            }
+        })
 }
 
 /// Имя скриншота с разрешением: `<имя>-<кадр>.png`, а если разрешение экрана
@@ -668,10 +802,15 @@ fn save_frame_named(
     Some(path)
 }
 
-/// Обстановка игрока в момент боя: разрешения экранов, геометрия окна игры,
-/// версия приложения и путь к BFME. Проблемы с кликами и распознаванием почти
-/// всегда привязаны к этим числам, поэтому они пишутся отдельным файлом, даже
-/// если снимков по какой-то причине не осталось.
+/// Обстановка игрока в момент боя: разрешения мониторов (рабочего стола),
+/// геометрия окна игры, версия приложения и путь к BFME. Проблемы с кликами и
+/// распознаванием почти всегда привязаны к этим числам, поэтому они пишутся
+/// отдельным файлом, даже если снимков по какой-то причине не осталось.
+///
+/// Разрешения пишутся «человеческие» — рабочий стол, а не временный режим
+/// дисплея, который полноэкранный BFME мог выставить на время боя: если игра
+/// рисует в 1280×720 на мониторе 1920×1080, в отчёте будет 1920×1080, а
+/// игровой режим виден по gameWindow и размеру кадра на снимках.
 #[cfg(target_os = "windows")]
 fn write_environment_report(
     diagnostics: Option<&Path>,
@@ -681,13 +820,28 @@ fn write_environment_report(
 ) {
     let Some(folder) = diagnostics else { return };
     let metric = |index: i32| unsafe { GetSystemMetrics(index) };
+    let primary = desktop_mode(null()).unwrap_or_else(|| (metric(0).max(1), metric(1).max(1)));
+    let monitors = desktop_monitor_geometry();
+    let (left, top, right, bottom, desktop_count) = if monitors.is_empty() {
+        // Перечисление дисплеев не сработало — старый путь через метрики.
+        let x = metric(76);
+        let y = metric(77);
+        let width = metric(78).max(1);
+        let height = metric(79).max(1);
+        (x, y, x + width, y + height, metric(80).max(1))
+    } else {
+        let (left, top, right, bottom) = monitors.iter().fold((0, 0, 0, 0), |(left, top, right, bottom), ((x, y), (width, height))| {
+            (left.min(*x), top.min(*y), right.max(*x + *width), bottom.max(*y + *height))
+        });
+        (left, top, right, bottom, monitors.len() as i32)
+    };
     let view = find_game_window().and_then(|(window, _)| viewport(window).ok());
     let report = json!({
-        "screen": monitor_resolution_label(),
-        "primaryScreen": { "width": metric(0), "height": metric(1) },
+        "screen": format!("{}x{}", primary.0, primary.1),
+        "primaryScreen": { "width": primary.0, "height": primary.1 },
         "virtualScreen": {
-            "x": metric(76), "y": metric(77), "width": metric(78), "height": metric(79),
-            "monitors": metric(80)
+            "x": left, "y": top, "width": (right - left).max(1), "height": (bottom - top).max(1),
+            "monitors": desktop_count
         },
         "gameWindow": match view {
             Some((x, y, w, h)) => json!({ "x": x, "y": y, "width": w, "height": h }),
@@ -1704,9 +1858,17 @@ fn parse_start_positions(map: &Value) -> BTreeMap<u64, (f64, f64)> {
     result
 }
 
-/// Port of room.assign_start_positions: the fortress owner is clicked first
-/// (slot_number clicks on the main defense point), then every other slot in
-/// ascending order with a single click per point.
+/// Port of room.assign_start_positions. The room places minimap flags strictly
+/// in slot order: each click assigns the NEXT slot (1, 2, 3, …), so every slot
+/// gets exactly one click at its own point, in ascending order.
+///
+/// The fortress owner is NOT always slot 1 — slot 1 always belongs to the
+/// player, who may be attacking while a bot defends the fortress. An earlier
+/// variant clicked the owner first N times (N = slot number) on the main point
+/// to "fill" the earlier slots; on a siege with the owner in slot 2+ that put
+/// the attacker's flag onto the fortress main point as well (the enemy spawned
+/// inside the fortress). A single ascending click per slot places each flag on
+/// its own point, and the owner's own click lands on the main fortress point.
 #[cfg(target_os = "windows")]
 fn assign_start_positions(
     view: (i32, i32, i32, i32),
@@ -1714,20 +1876,8 @@ fn assign_start_positions(
     fortress_owner: Option<u64>,
     log: &AutomationLog,
 ) -> Result<(), String> {
-    let owner = fortress_owner.filter(|slot| positions.contains_key(slot));
-    if let Some(owner) = owner {
-        let (x, y) = positions[&owner];
-        log.write(format!("[room] стартовая позиция: слот {owner} (владелец крепости) → ({x:.4}, {y:.4}) — {owner} клик(ов)"));
-        for _ in 0..owner {
-            click_fraction(view, x, y)?;
-            thread::sleep(START_POS_CLICK_GAP);
-        }
-        for (&slot, &(x, y)) in positions.iter().filter(|(slot, _)| **slot != owner) {
-            log.write(format!("[room] стартовая позиция: слот {slot} → ({x:.4}, {y:.4})"));
-            click_fraction(view, x, y)?;
-            thread::sleep(START_POS_CLICK_GAP);
-        }
-        return Ok(());
+    if let Some(owner) = fortress_owner.filter(|slot| positions.contains_key(slot)) {
+        log.write(format!("[room] стартовая позиция: владелец крепости — слот {owner}"));
     }
     for (&slot, &(x, y)) in positions.iter() {
         log.write(format!("[room] стартовая позиция: слот {slot} → ({x:.4}, {y:.4})"));

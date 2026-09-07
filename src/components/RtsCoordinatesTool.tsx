@@ -33,15 +33,6 @@ const stepHint = (step: CalibrationStep | null, isFortress: boolean) => {
   return `Точка ${step.index + 1}/8 · атакующая позиция`
 }
 
-function shuffled<T>(items: T[]): T[] {
-  const result = [...items]
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const other = Math.floor(Math.random() * (index + 1))
-    ;[result[index], result[other]] = [result[other], result[index]]
-  }
-  return result
-}
-
 /**
  * Editor tool (п.7/п.8): calibrate the 8 minimap start points of a location
  * and test them by launching BFME in a small window with 8 recruit bots.
@@ -152,16 +143,20 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
       const factionIds = activeMod.rts.factionOrder.slice(0, 8)
       const pool = factionIds.length ? factionIds : ['men-of-the-west']
       // п.5/п.8: слоты 1–4 — защитники, слоты 5–8 — атакующие.
-      // п.3: точки всегда расставляются случайно (перетасовка пулов).
-      // п.6: у оплота слот 1 (владелец) всегда на первой (главной) точке
-      // защиты; остальные защитники берут точки из defense[1..4] без повтора.
+      // Точки выставляются ПОСЛЕДОВАТЕЛЬНО, без случайности: защитники
+      // получают точки обороны в порядке калибровки, атакующие — точки атаки
+      // в порядке калибровки. Повторный тест даёт ту же расстановку, и каждую
+      // точку легко сверить с планом на скриншоте комнаты.
+      // п.6: у оплота слот 1 (владелец крепости) всегда на выбранной главной
+      // точке защиты (defense[fortressDefenseIndex]); остальные защитники
+      // берут остальные точки по порядку, без повтора главной.
       const mainIndex = isFortressSite && positions.fortressDefenseIndex != null && positions.fortressDefenseIndex >= 0 && positions.fortressDefenseIndex < positions.defense.length
         ? positions.fortressDefenseIndex
         : null
       const defenseAssign = mainIndex != null
-        ? [positions.defense[mainIndex], ...shuffled(positions.defense.filter((_, index) => index !== mainIndex))]
-        : shuffled(positions.defense)
-      const attackAssign = shuffled(positions.attack)
+        ? [positions.defense[mainIndex], ...positions.defense.filter((_, index) => index !== mainIndex)]
+        : positions.defense
+      const attackAssign = positions.attack
       const startPositions: Record<string, { x: number; y: number }> = {}
       const participants = Array.from({ length: 8 }, (_, slotIndex) => {
         const slot = slotIndex + 1
@@ -228,7 +223,9 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
   return (
     <section className="rts-coordinates-tool">
       <header><div><span>BFME-координаты объекта</span><b>{positionsReady ? '8 точек готовы' : positions ? `неполные: защита ${positions.defense?.length ?? 0}/4, атака ${positions.attack?.length ?? 0}/4` : 'не заданы'}</b></div></header>
-      <p>Спавн-точки миникарты: первые 4 — защитники, вторые 4 — атакующие{isStronghold ? '; первая точка защиты — главная позиция владельца оплота' : ''}.</p>
+      <p>{isStronghold
+        ? 'Спавн-точки миникарты: первые 4 — защитники, вторые 4 — атакующие; одна из точек защиты выбирается главной позицией владельца оплота (ниже). Тест расставляет точки последовательно, в порядке калибровки.'
+        : 'Спавн-точки миникарты: первые 4 — защитники, вторые 4 — атакующие. Тест расставляет точки последовательно, в порядке калибровки.'}</p>
       {positions && <div className="rts-coordinates-summary">
         <div><b>Защита</b>{positions.defense?.map((point, index) => <small key={index}>{index + 1}: {point.x.toFixed(4)} · {point.y.toFixed(4)}</small>)}</div>
         <div><b>Атака</b>{positions.attack?.map((point, index) => <small key={index}>{index + 1}: {point.x.toFixed(4)} · {point.y.toFixed(4)}</small>)}</div>
@@ -244,7 +241,7 @@ export default function RtsCoordinatesTool({ location, activeMod, appSettings }:
             <option value="">Случайно (как обычная локация)</option>
             {positions?.defense?.map((point, index) => <option key={index} value={index}>Точка защиты {index + 1} ({point.x.toFixed(4)} · {point.y.toFixed(4)})</option>)}
           </select>
-          <small>Владелец оплота всегда встаёт на выбранную точку. Без выбора все точки расставляются случайно, как у обычной локации.</small>
+          <small>Владелец оплота всегда встаёт на выбранную точку: в тесте — слот 1, в бою — фактический слот обороняющейся стороны. Тест без выбора раздаёт точки защиты и атаки подряд, в порядке калибровки.</small>
         </label>
       )}
       <footer>

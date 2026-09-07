@@ -226,7 +226,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     })
     return {startPositions,fortressOwnerSlot}
   }
-  const watchBattleResult=async(token:number)=>{
+  const watchBattleResult=async(token:number,launchedAt:number)=>{
     const deadline=Date.now()+5400_000
     while(token===rtsWatchToken.current&&Date.now()<deadline){
       await new Promise((resolve)=>setTimeout(resolve,5000))
@@ -235,6 +235,11 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       if(!current||current.status!=='pending')break
       const result=await readRtsBattleResult(conflict.id).catch(()=>null)
       if(token!==rtsWatchToken.current)return
+      // Файл исхода переживает запуски: после аварийного выхода по Ctrl в нём
+      // остаётся ABORTED прерванного боя. Результат, записанный ДО старта этой
+      // попытки, — не наш: пропускаем и продолжаем ждать настоящий исход
+      // (новый запуск удаляет файл, а эта проверка страхует гонку).
+      if(result?.finishedAt&&Number(result.finishedAt)<=launchedAt)continue
       if(result?.finishedAt){
         logEvent('rts',`результат BFME-сражения «${selectedMapAsset?.mapName??conflict.rtsMapId}»`,result)
         if(result.winningTeam==='good'||result.winningTeam==='evil'){
@@ -279,10 +284,13 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       logEvent('rts',`запуск BFME: карта «${selectedMapAsset?.mapName??conflict.rtsMapId}», слоты ${conflict.rtsAttackerSlots}×${conflict.rtsDefenderSlots}, владелец оплота — слот ${fortressOwnerSlot??'не задан'}`,participants.map((participant)=>`${participant.slot}:${participant.factionId}:${participant.color}:${participant.side}:${participant.handicapPercent}%`))
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)
       if(!report.ok){setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
+      // Момент старта попытки (секунды, как finishedAt в файле исхода): записи,
+      // сделанные раньше, принадлежат прошлым запускам и игнорируются.
+      const launchedAt=Math.floor(Date.now()/1000)
       const token=rtsWatchToken.current
       setRtsWatching(true)
       setRtsMessage(`BFME настроен автоматически, запущена карта «${selectedMapAsset?.mapName??conflict.rtsMapId}». Конфигурация: ${report.battleConfigPath}. После боя исход определится автоматически и игра закроется.`)
-      void watchBattleResult(token)
+      void watchBattleResult(token,launchedAt)
     }catch(error){setRtsMessage(translateText(error instanceof Error?error.message:String(error),appSettings.language??'ru'))}
     finally{setRtsBusy(false)}
   }

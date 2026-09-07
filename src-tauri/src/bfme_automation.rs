@@ -672,11 +672,61 @@ const DISPLAY_DEVICE_ATTACHED_TO_DESKTOP: u32 = 0x1;
 #[cfg(target_os = "windows")]
 const DISPLAY_DEVICE_PRIMARY_DEVICE: u32 = 0x4;
 
-/// Сохранённый режим рабочего стола дисплея (из реестра) либо, при неудаче,
-/// текущий режим. ENUM_REGISTRY_SETTINGS возвращает разрешение, которое
-/// пользователь видит вне игры: полноэкранный BFME может временно переключить
-/// режим дисплея (например, на 1280×720), и GetSystemMetrics/текущий режим в
-/// этот момент покажут игровое, а не реальное разрешение монитора.
+/// Снимок рабочего стола, снятый ДО запуска BFME. Полноэкранная игра может
+/// временно переключить режим дисплея (например, на 1280×720), а режим из
+/// реестра (ENUM_REGISTRY_SETTINGS) на некоторых машинах хранит устаревшую
+/// запись (640×480 при рабочем столе 1920×1080) — поэтому единственное
+/// достоверное «реальное разрешение экрана пользователя» читается в момент
+/// запуска боя, пока текущий режим дисплея ещё равен рабочему столу.
+#[cfg(target_os = "windows")]
+struct DesktopSnapshot {
+    /// Разрешение основного дисплея (рабочий стол) в момент запуска боя.
+    primary: (i32, i32),
+    /// (позиция, размер) каждого подключённого дисплея на рабочем столе.
+    monitors: Vec<((i32, i32), (i32, i32))>,
+}
+
+#[cfg(target_os = "windows")]
+static DESKTOP_AT_LAUNCH: OnceLock<DesktopSnapshot> = OnceLock::new();
+
+#[cfg(target_os = "windows")]
+fn snapshot_desktop_at_launch() {
+    if DESKTOP_AT_LAUNCH.get().is_some() {
+        return;
+    }
+    let metric = |index: i32| unsafe { GetSystemMetrics(index) };
+    let primary = (metric(0).max(1), metric(1).max(1));
+    let mut monitors: Vec<((i32, i32), (i32, i32))> = Vec::new();
+    let mut adapter_index = 0u32;
+    loop {
+        let mut device: DisplayDeviceW = unsafe { zeroed() };
+        device.cb = size_of::<DisplayDeviceW>() as u32;
+        if unsafe { EnumDisplayDevicesW(null(), adapter_index, &mut device, 0) } == 0 {
+            break;
+        }
+        adapter_index += 1;
+        if device.state_flags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP == 0 {
+            continue;
+        }
+        // Игра ещё не запущена — текущий режим равен рабочему столу, реестр
+        // (с его возможной устаревшей записью) не нужен.
+        let mut mode: DevModeW = unsafe { zeroed() };
+        mode.dm_size = size_of::<DevModeW>() as u16;
+        let ok = unsafe { EnumDisplaySettingsW(device.device_name.as_ptr(), ENUM_CURRENT_SETTINGS, &mut mode) } != 0;
+        if ok && mode.dm_pels_width > 0 && mode.dm_pels_height > 0 {
+            monitors.push((
+                (mode.dm_position_x, mode.dm_position_y),
+                (mode.dm_pels_width as i32, mode.dm_pels_height as i32),
+            ));
+        }
+    }
+    let _ = DESKTOP_AT_LAUNCH.set(DesktopSnapshot { primary, monitors });
+}
+
+/// Запасной путь: сохранённый режим рабочего стола дисплея (из реестра) либо,
+/// при неудаче, текущий режим. Используется только когда снимок рабочего
+/// стола не был сделан (вне потока запуска боя); в потоке боя разрешение
+/// берётся из DESKTOP_AT_LAUNCH.
 #[cfg(target_os = "windows")]
 fn desktop_mode(device_name: *const u16) -> Option<(i32, i32)> {
     for mode_num in [ENUM_REGISTRY_SETTINGS, ENUM_CURRENT_SETTINGS] {
@@ -733,6 +783,9 @@ fn desktop_monitor_geometry() -> Vec<((i32, i32), (i32, i32))> {
 /// распознавание, поэтому его полезно видеть рядом с каждым снимком.
 #[cfg(target_os = "windows")]
 fn monitor_resolution_label() -> String {
+    if let Some(snapshot) = DESKTOP_AT_LAUNCH.get() {
+        return format!("{}x{}", snapshot.primary.0, snapshot.primary.1);
+    }
     desktop_mode(null())
         .map(|(width, height)| format!("{width}x{height}"))
         .unwrap_or_else(|| {
@@ -814,6 +867,10 @@ fn save_frame_named(
 /// дисплея, который полноэкранный BFME мог выставить на время боя: если игра
 /// рисует в 1280×720 на мониторе 1920×1080, в отчёте будет 1920×1080, а
 /// игровой режим виден по gameWindow и размеру кадра на снимках.
+///
+/// Источник — снимок рабочего стола, сделанный в момент запуска боя (до
+/// старта BFME): «сохранённый» режим из реестра на некоторых машинах хранит
+/// устаревшую запись (640×480 при рабочем столе 1920×1080).
 #[cfg(target_os = "windows")]
 fn write_environment_report(
     diagnostics: Option<&Path>,
@@ -823,8 +880,15 @@ fn write_environment_report(
 ) {
     let Some(folder) = diagnostics else { return };
     let metric = |index: i32| unsafe { GetSystemMetrics(index) };
-    let primary = desktop_mode(null()).unwrap_or_else(|| (metric(0).max(1), metric(1).max(1)));
-    let monitors = desktop_monitor_geometry();
+    let primary = match DESKTOP_AT_LAUNCH.get() {
+        Some(snapshot) => snapshot.primary,
+        // Вне потока запуска боя (снимка нет) — запасной путь.
+        None => desktop_mode(null()).unwrap_or_else(|| (metric(0).max(1), metric(1).max(1))),
+    };
+    let monitors = match DESKTOP_AT_LAUNCH.get().filter(|snapshot| !snapshot.monitors.is_empty()) {
+        Some(snapshot) => snapshot.monitors.clone(),
+        None => desktop_monitor_geometry(),
+    };
     let (left, top, right, bottom, desktop_count) = if monitors.is_empty() {
         // Перечисление дисплеев не сработало — старый путь через метрики.
         let x = metric(76);
@@ -2352,6 +2416,10 @@ pub enum FlowOutcome {
 
 #[cfg(target_os = "windows")]
 fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory: &Path, log: &AutomationLog) -> Result<FlowOutcome, String> {
+    // Снимок рабочего стола ДО старта BFME: это единственный момент, когда
+    // текущий режим дисплея гарантированно равен рабочему столу (игре не
+    // удалось ещё переключить его, а реестр может хранить устаревшую запись).
+    snapshot_desktop_at_launch();
     // Папка диагностики боя: туда пишутся automation.log и скриншоты.
     let diagnostics = diagnostics_folder_from(config);
     set_diagnostics_folder(diagnostics.clone());

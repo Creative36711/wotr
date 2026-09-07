@@ -232,9 +232,12 @@ struct DevModeW {
 }
 
 /// DISPLAY_DEVICEW для EnumDisplayDevicesW (cb + имя + строка + флаги + id).
+/// Инициализируется через `zeroed()`, поэтому `Default` не выводится: массивы
+/// длиннее 32 элементов (device_string/device_id/device_key — [u16; 128]) его
+/// не реализуют.
 #[cfg(target_os = "windows")]
 #[repr(C)]
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy)]
 struct DisplayDeviceW {
     cb: u32,
     device_name: [u16; 32],

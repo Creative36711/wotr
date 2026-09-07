@@ -57,6 +57,7 @@
 | `sessionLog.ts` | Журнал сессии: `logEvent`, обрезка больших объектов, ключ и папка сессии |
 | `defaultData.ts` | Значения по умолчанию для экономических типов и прочего |
 | `../hex/hexGrid.ts` | Осевая сетка: соседи, расстояние, поиск пути, стоимость движения |
+| `../hex/movementOverlay.ts` | Подсветка проходимости при выделенной армии: категории гекса (`impassable`/`slow`/`standard` по стоимости входа) и недостижимость за оставшиеся ОД (BFS через `findReachable`) |
 
 ### Стор (`src/store/useMapStore.ts`, ~2300 строк)
 
@@ -84,7 +85,7 @@
 
 | Файл | Ответственность |
 | --- | --- |
-| `MapCanvas.tsx` | Отрисовка карты, слоёв, маркеров армий, стрел приказов; правила кликов |
+| `MapCanvas.tsx` | Отрисовка карты, слоёв, маркеров армий, стрел приказов; правила кликов; условия показа слоя подсветки проходимости |
 | `Inspector.tsx` | Панель армии и панель локации (экономика, вербовка, бонусы обеих сторон) |
 | `ConflictModal.tsx` | Окно конфликта: предпросмотр, автобой, сборка конфигурации RTS и запуск боя |
 | `WorldDataEditor.tsx` | Редактор мира для моддера |
@@ -276,6 +277,7 @@ decayFactor = 1 − гексов × decayPerHex − ходов × decayPerTurn  
 | Новый бонус в RTS | `OwnerBattleModifiers` → `collectOwnerModifiers` / `attackerSupplyModifiers` → `rtsComposition` в `ConflictModal.tsx` → `rts_spawn.rs` |
 | Новое действие стора | Интерфейс `MapState` → реализация через `pushHistory` → `clone*` для нового поля |
 | Новое правило клика на карте | `MapCanvas.tsx` + проверка в `verify/cases.tsx` (правила кликов закреплены тестами) |
+| Цвета/условия подсветки проходимости | Классификация — `src/hex/movementOverlay.ts` (чистая функция), условия показа и слой — `MapCanvas.tsx`, цвета — `.movement-terrain-layer` в `src/global.css`; порядок слоёв: сетка (z2) → тактический SVG (z3) → подсветка (z4) → туман (z5) → маркеры и стрелки (z6–7) |
 | Новый шаг моста в BFME | `bfme_automation.rs` + строка в `AutomationLog` (иначе шаг не попадёт в `automation.log`) |
 | Новая настройка для моддера | Поле в `types.ts` → нормализация → действие `update…Settings` в сторе → секция в `WorldDataEditor.tsx` |
 | Новая строка журнала | `logEvent(kind, message, args)`; `kind` — короткая русская метка (`'снабжение'`, `'rts'`, `'действие'`) |
@@ -306,7 +308,7 @@ decayFactor = 1 − гексов × decayPerHex − ходов × decayPerTurn  
 ```powershell
 npm run build                    # check-version → tsc → vite
 npm install --no-save jsdom      # один раз
-node verify/run.mjs              # 31 проверка игровой логики
+node verify/run.mjs              # 68 проверок игровой логики
 node verify/i18n.mjs             # покрытие словаря интерфейса
 node verify/styles.mjs           # каждый контрол прикрыт CSS-правилом
 ```

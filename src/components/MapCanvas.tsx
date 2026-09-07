@@ -18,6 +18,7 @@ import {
   resolveGrid,
   smoothRoutePath,
 } from '../hex/hexGrid'
+import { computeMovementTerrainOverlay } from '../hex/movementOverlay'
 import { useMapStore } from '../store/useMapStore'
 import { getDisplayName, translateText, useI18n } from '../i18n'
 import type { LogicalHex, MapLocation, MapViewMode } from '../types'
@@ -268,6 +269,28 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
       return cell && neighborIds(cell.q, cell.r).some((neighborId) => !reachable.has(neighborId))
     }),
   ), [logicalGrid, reachable])
+
+  /**
+   * Подсветка проходимости (красный/жёлтый/затемнение) при планировании хода.
+   * Показывается в тех же условиях, что и зелёный радиус хода: своя армия,
+   * способная двигаться, тактический вид, фаза планирования или движения.
+   * Пересчитывается только при изменении выделения/состояния — это один проход
+   * по видимым гексам плюс BFS досягаемости, для карты целиком дёшево.
+   */
+  const movementOverlay = useMemo(() => {
+    const army = selectedArmy
+    if (mode !== 'game' || viewMode !== 'tactical' || !army || !originHexId) return null
+    if (army.movementRemaining <= 0 || !selectedCommander || army.engaged) return null
+    if (!canPlayerMoveArmy(campaign, factions, army.factionId)) return null
+    return computeMovementTerrainOverlay(logicalGrid.byId, {
+      originHexId,
+      movementBudget,
+      movingFaction,
+      visibleHexIds: fogEnabled ? visibleHexes : null,
+      stopAt: enemyHexIds,
+    })
+  }, [campaign, enemyHexIds, factions, fogEnabled, logicalGrid, mode, movementBudget, movingFaction, originHexId, selectedArmy, selectedCommander, viewMode, visibleHexes])
+  const movementOverlayVisible = Boolean(movementOverlay && (movementOverlay.impassableIds.length > 0 || movementOverlay.slowIds.length > 0 || movementOverlay.unreachableIds.length > 0))
 
   useEffect(() => {
     if (hexEdit) setHexTool('select')
@@ -820,6 +843,29 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
 
         </svg>
 
+        {movementOverlayVisible && movementOverlay && (
+          <svg className="movement-terrain-layer" viewBox={`0 0 ${WORLD_WIDTH} ${WORLD_HEIGHT}`} aria-hidden="true">
+            <g className="mt-impassable">
+              {movementOverlay.impassableIds.map((id) => {
+                const cell = logicalGrid.byId.get(id)!
+                return <polygon key={id} data-hex={id} points={polygonPoints(cell, grid.config.size * 1.03)} />
+              })}
+            </g>
+            <g className="mt-slow">
+              {movementOverlay.slowIds.map((id) => {
+                const cell = logicalGrid.byId.get(id)!
+                return <polygon key={id} data-hex={id} points={polygonPoints(cell, grid.config.size * 1.03)} />
+              })}
+            </g>
+            <g className="mt-unreachable">
+              {movementOverlay.unreachableIds.map((id) => {
+                const cell = logicalGrid.byId.get(id)!
+                return <polygon key={id} data-hex={id} points={polygonPoints(cell, grid.config.size * 1.03)} />
+              })}
+            </g>
+          </svg>
+        )}
+
         {fogOverlayVisible && <svg className="fog-of-war-layer" viewBox={`0 0 ${WORLD_WIDTH} ${WORLD_HEIGHT}`} aria-hidden="true"><g>{logicalGrid.cells.filter((cell) => !visibleHexes.has(cell.id)).map((cell) => <polygon key={cell.id} points={polygonPoints(cell, grid.config.size * 1.04)} />)}</g></svg>}
 
         {(pendingOrderPaths.length>0||alliedPlanPaths.length>0)&&(
@@ -1036,6 +1082,14 @@ export default function MapCanvas({ focusTarget, mapImageUrl }: MapCanvasProps) 
             <small>Осталось движения: {movementBudget} ОД · доступно гексов: {reachable.size}</small>
           </div>
           {route.length > 1 && <strong>{routeCost} ОД · {turns} {turns === 1 ? 'ход' : turns < 5 ? 'хода' : 'ходов'}</strong>}
+        </div>
+      )}
+
+      {movementOverlayVisible && (
+        <div className="movement-legend" aria-hidden="true">
+          <span className="legend-impassable"><i /><b>Непроходимо</b></span>
+          <span className="legend-slow"><i /><b>Замедляет</b></span>
+          <span className="legend-unreachable"><i /><b>Вне досягаемости</b></span>
         </div>
       )}
 

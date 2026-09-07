@@ -600,6 +600,57 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 .hex-layer { z-index: 3; }
 .pins { z-index: 4; }
+
+/* Подсветка проходимости при выделенной своей армии (тактический вид).
+   Слой рисуется над террейном и сеткой, но под туманом войны и маркерами:
+   туман скрывает всё, включая проходимость, а иконки остаются читаемыми. */
+.movement-terrain-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 5120px;
+  height: 4115px;
+  overflow: visible;
+  pointer-events: none;
+}
+.movement-terrain-layer polygon { stroke-width: 3px; }
+.movement-terrain-layer .mt-impassable polygon {
+  fill: rgba(224, 62, 52, .3);
+  stroke: rgba(240, 116, 102, .5);
+  stroke-dasharray: 8 7;
+}
+.movement-terrain-layer .mt-slow polygon {
+  fill: rgba(226, 181, 64, .24);
+  stroke: rgba(242, 208, 122, .42);
+}
+.movement-terrain-layer .mt-unreachable polygon {
+  fill: rgba(3, 7, 9, .28);
+  stroke: rgba(3, 7, 9, .12);
+}
+
+/* Легенда цветов подсветки — над панелью тактики, пока подсветка активна. */
+.movement-legend {
+  position: absolute;
+  z-index: 12;
+  left: 13px;
+  bottom: 74px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid rgba(70, 83, 69, .9);
+  border-radius: 7px;
+  background: rgba(11, 18, 17, .9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .46);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.movement-legend span { display: inline-flex; align-items: center; gap: 5px; color: #aeb8ac; font-size: 11px; white-space: nowrap; }
+.movement-legend b { color: inherit; font-size: inherit; font-weight: 600; }
+.movement-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.movement-legend .legend-impassable i { background: rgba(224, 62, 52, .85); border: 1px solid rgba(240, 116, 102, .55); }
+.movement-legend .legend-slow i { background: rgba(226, 181, 64, .85); border: 1px solid rgba(242, 208, 122, .55); }
+.movement-legend .legend-unreachable i { background: rgba(3, 7, 9, .75); border: 1px solid rgba(150, 158, 152, .4); }
 .hex-editing.hex-tool-select { cursor: crosshair; }
 .hex-editing.hex-tool-pan { cursor: grab; }
 .hex-editing.hex-tool-pan.is-panning { cursor: grabbing; }

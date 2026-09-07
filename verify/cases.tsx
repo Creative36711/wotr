@@ -27,6 +27,11 @@ import {
 } from '../src/game/sessionLog'
 import { normalizeWorld } from '../src/dataService'
 import { I18nProvider } from '../src/i18n'
+import { areFactionsHostile } from '../src/constants'
+import { calculateVisibleHexes } from '../src/game/fogOfWar'
+import { findReachable, hexDistance, resolveGrid } from '../src/hex/hexGrid'
+import { cellEntryCostKind, classifyEntryCost, computeMovementTerrainOverlay } from '../src/hex/movementOverlay'
+import type { LogicalHex } from '../src/types'
 
 let passed = 0
 const failures: string[] = []
@@ -136,6 +141,171 @@ const pointer = (target: Element, altKey: boolean) =>
     )
   })
 
+console.log('\n— подсветка проходимости: классификация —')
+// Синтетические гексы: только поля, которые читает стоимость входа
+// (cellMovementCost), поэтому ожидания не зависят от карты конкретного мода.
+const mkCell = (id: string, patch: Partial<LogicalHex> = {}): LogicalHex => {
+  const [q, r] = id.split(':').map(Number)
+  return {
+    id, q, r, x: 0, y: 0, terrain: 'plains', moveCost: 1, owner: null, zoneOfControl: null,
+    regionId: null, domainId: null, passable: true, road: false, river: false, ford: false,
+    bridge: false, locationIds: [], nearestLocationId: null, ...patch,
+  }
+}
+check('непроходимый гекс — категория «непроходимо»', cellEntryCostKind(mkCell('0:0', { passable: false }), null) === 'impassable')
+check('запретительная стоимость — категория «непроходимо»', classifyEntryCost(99) === 'impassable' && classifyEntryCost(Number.POSITIVE_INFINITY) === 'impassable')
+check('горы (3 ОД) — категория «замедление»', cellEntryCostKind(mkCell('0:0', { moveCost: 3 }), null) === 'slow')
+check('лес (2 ОД) — категория «замедление»', cellEntryCostKind(mkCell('0:0', { moveCost: 2 }), null) === 'slow')
+check('река без переправы — категория «замедление»', cellEntryCostKind(mkCell('0:0', { river: true }), null) === 'slow')
+check('равнина — категория «обычный»', cellEntryCostKind(mkCell('0:0'), null) === 'standard')
+check('дорога в лесу снижает стоимость до обычной', cellEntryCostKind(mkCell('0:0', { moveCost: 2, road: true }), null) === 'standard')
+
+// Мини-карта в одну линию: 0:0 (равнина) — 1:0 (равнина) — 2:0/3:0 (лес,
+// по 2 ОД) — 4:0 (вода) — 5:0/6:0 (равнина). Бюджет 4 ОД: до 3:0 нужно 5 ОД.
+const miniCells = new Map<string, LogicalHex>([
+  ['0:0', mkCell('0:0')],
+  ['1:0', mkCell('1:0')],
+  ['2:0', mkCell('2:0', { moveCost: 2 })],
+  ['3:0', mkCell('3:0', { moveCost: 2 })],
+  ['4:0', mkCell('4:0', { passable: false })],
+  ['5:0', mkCell('5:0')],
+  ['6:0', mkCell('6:0')],
+])
+const miniOverlay = computeMovementTerrainOverlay(miniCells, {
+  originHexId: '0:0', movementBudget: 4, movingFaction: null, visibleHexIds: null,
+})
+check('непроходимые гексы собираются в красную группу', miniOverlay.impassableIds.join() === '4:0', miniOverlay.impassableIds.join())
+check('замедляющие гексы собираются в жёлтую группу', miniOverlay.slowIds.join() === '2:0,3:0', miniOverlay.slowIds.join())
+check('недостижимые затемняются, непроходимые пропускаются', miniOverlay.unreachableIds.join() === '3:0,5:0,6:0', miniOverlay.unreachableIds.join())
+check('гекс самой армии ни в одну группу не попадает', !miniOverlay.impassableIds.includes('0:0') && !miniOverlay.slowIds.includes('0:0') && !miniOverlay.unreachableIds.includes('0:0'))
+const stopMiniOverlay = computeMovementTerrainOverlay(miniCells, {
+  originHexId: '0:0', movementBudget: 4, movingFaction: null, visibleHexIds: null, stopAt: new Set(['1:0']),
+})
+check('за вражеским гексом досягаемость не раскрывается', stopMiniOverlay.unreachableIds.includes('2:0') && stopMiniOverlay.unreachableIds.includes('3:0') && !stopMiniOverlay.unreachableIds.includes('1:0'), stopMiniOverlay.unreachableIds.join())
+const fogMiniOverlay = computeMovementTerrainOverlay(miniCells, {
+  originHexId: '0:0', movementBudget: 2, movingFaction: null, visibleHexIds: new Set(['1:0', '2:0']),
+})
+check('гексы в тумане не попадают в подсветку', fogMiniOverlay.impassableIds.length === 0 && fogMiniOverlay.slowIds.join() === '2:0' && fogMiniOverlay.unreachableIds.join() === '2:0', `${fogMiniOverlay.impassableIds.join()}/${fogMiniOverlay.slowIds.join()}/${fogMiniOverlay.unreachableIds.join()}`)
+const zeroMiniOverlay = computeMovementTerrainOverlay(miniCells, {
+  originHexId: '0:0', movementBudget: 0, movingFaction: null, visibleHexIds: null,
+})
+check('с нулём очков движения затемнение не рисуется', zeroMiniOverlay.unreachableIds.length === 0 && zeroMiniOverlay.slowIds.join() === '2:0,3:0', zeroMiniOverlay.unreachableIds.join())
+
+console.log('\n— подсветка проходимости на карте —')
+const currentState = useMapStore.getState()
+const originalFog = { ...currentState.campaign.fogOfWar }
+const originalArmies = currentState.armies
+const ownArmy = currentState.armies.find((army) =>
+  army.factionId === currentState.campaign.playerFactionId
+  && Boolean(army.commander) && !army.engaged && army.movementRemaining > 0 && army.unitSlots.length > 0,
+)
+check('найдена своя армия с командиром', Boolean(ownArmy), 'армии нет')
+
+if (ownArmy) {
+  const setFogEnabled = (enabled: boolean) =>
+    act(async () => {
+      const state = useMapStore.getState()
+      useMapStore.setState({ campaign: { ...state.campaign, fogOfWar: { ...state.campaign.fogOfWar, enabled } } })
+    })
+  const polysOf = (group: string) =>
+    [...container.querySelectorAll(`g.${group} polygon`)].map((polygon) => polygon.getAttribute('data-hex') ?? '')
+
+  // Без тумана категории видны по всей карте — проверяем состав групп и их
+  // согласованность с функцией классификации.
+  await setFogEnabled(false)
+  await selectArmyNow(ownArmy.id)
+  const overlaySvg = container.querySelector('svg.movement-terrain-layer')
+  check('при выделении своей армии подсветка активна', Boolean(overlaySvg))
+  const impassableIds = polysOf('mt-impassable')
+  const slowIds = polysOf('mt-slow')
+  const unreachableIds = polysOf('mt-unreachable')
+  check('красных непроходимых гексов больше нуля', impassableIds.length > 0, `найдено ${impassableIds.length}`)
+  check('жёлтых замедляющих гексов больше нуля', slowIds.length > 0, `найдено ${slowIds.length}`)
+  check('затемнённых недостижимых гексов больше нуля', unreachableIds.length > 0, `найдено ${unreachableIds.length}`)
+  check('легенда цветов видна вместе со слоем', Boolean(container.querySelector('.movement-legend')))
+
+  const resolvedState = useMapStore.getState()
+  const resolvedCells = resolveGrid(resolvedState.grid, resolvedState.locations, resolvedState.regions).byId
+  const mismatchedImpassable = impassableIds.filter((id) => cellEntryCostKind(resolvedCells.get(id)!, ownArmy.factionId) !== 'impassable')
+  const mismatchedSlow = slowIds.filter((id) => cellEntryCostKind(resolvedCells.get(id)!, ownArmy.factionId) !== 'slow')
+  const mismatchedUnreachable = unreachableIds.filter((id) => cellEntryCostKind(resolvedCells.get(id)!, ownArmy.factionId) === 'impassable')
+  check('каждый красный гекс действительно непроходим', mismatchedImpassable.length === 0, `не совпали: ${mismatchedImpassable.join(',')}`)
+  check('каждый жёлтый гекс действительно замедляющий', mismatchedSlow.length === 0, `не совпали: ${mismatchedSlow.join(',')}`)
+  check('затемнение не трогает непроходимые гексы', mismatchedUnreachable.length === 0, `не совпали: ${mismatchedUnreachable.join(',')}`)
+  check('гекс выделенной армии не подсвечивается', !impassableIds.includes(ownArmy.hexId) && !slowIds.includes(ownArmy.hexId) && !unreachableIds.includes(ownArmy.hexId), ownArmy.hexId)
+
+  const enemies = useMapStore.getState().armies.filter((army) => areFactionsHostile(useMapStore.getState().factions, army.factionId, ownArmy.factionId))
+  const reachableNow = new Set(findReachable(resolvedCells, ownArmy.hexId, ownArmy.movementRemaining, ownArmy.factionId, new Set(enemies.map((army) => army.hexId))).keys())
+  const wronglyDimmed = unreachableIds.filter((id) => reachableNow.has(id))
+  check('затемнённые гексы недостижимы за оставшиеся ОД', wronglyDimmed.length === 0, `достижимы: ${wronglyDimmed.join(',')}`)
+
+  // Туман: армию переносим на равнину, где в радиусе обзора есть и вода
+  // (красная), и лес (жёлтый), и гекс на границе обзора (затемнение).
+  const locationHexes = new Set(useMapStore.getState().locations.map((location) => location.hex))
+  const armyHexes = new Set(useMapStore.getState().armies.map((army) => army.hexId))
+  let spot: { origin: LogicalHex; waterHexId: string; forestHexId: string; farHexId: string } | null = null
+  for (const candidate of resolvedCells.values()) {
+    if (!candidate.passable || candidate.terrain !== 'plains' || candidate.moveCost !== 1 || candidate.river || candidate.road) continue
+    if (locationHexes.has(candidate.id) || armyHexes.has(candidate.id)) continue
+    let blockedByArmy = false
+    let waterHexId = ''
+    let forestHexId = ''
+    let farHexId = ''
+    for (const other of resolvedCells.values()) {
+      const distance = hexDistance(candidate, other)
+      if (distance === 0 || distance > 2) continue
+      if (armyHexes.has(other.id)) { blockedByArmy = true; break }
+      if (!waterHexId && !other.passable) waterHexId = other.id
+      if (!forestHexId && other.passable && other.terrain === 'forest') forestHexId = other.id
+      if (!farHexId && distance === 2 && other.passable && cellEntryCostKind(other, ownArmy.factionId) === 'standard') farHexId = other.id
+    }
+    if (!blockedByArmy && waterHexId && forestHexId && farHexId) {
+      spot = { origin: candidate, waterHexId, forestHexId, farHexId }
+      break
+    }
+  }
+  check('найдена равнина с водой и лесом в радиусе обзора', Boolean(spot))
+  if (spot) {
+    await act(async () => {
+      const state = useMapStore.getState()
+      useMapStore.setState({
+        armies: state.armies.map((army) => army.id === ownArmy.id
+          ? { ...army, hexId: spot!.origin.id, movementRemaining: 1 }
+          : army),
+      })
+    })
+    await setFogEnabled(true)
+    const foggedState = useMapStore.getState()
+    const visibleNow = calculateVisibleHexes(foggedState.campaign, foggedState.armies, foggedState.locations, foggedState.factions, foggedState.grid, foggedState.regions)
+    const fogImpassableIds = polysOf('mt-impassable')
+    const fogSlowIds = polysOf('mt-slow')
+    const fogUnreachableIds = polysOf('mt-unreachable')
+    check('под туманом подсветка остаётся активной', Boolean(container.querySelector('svg.movement-terrain-layer')))
+    check('вода в поле зрения подсвечена красным', fogImpassableIds.includes(spot.waterHexId), spot.waterHexId)
+    check('лес в поле зрения подсвечен жёлтым', fogSlowIds.includes(spot.forestHexId), spot.forestHexId)
+    check('гекс на границе обзора затемнён', fogUnreachableIds.includes(spot.farHexId), spot.farHexId)
+    const allFogIds = [...fogImpassableIds, ...fogSlowIds, ...fogUnreachableIds]
+    const hiddenHighlighted = allFogIds.filter((id) => !visibleNow.has(id))
+    check('гексы в тумане войны не подсвечиваются', hiddenHighlighted.length === 0, `подсвечено скрытых: ${hiddenHighlighted.length}`)
+    await act(async () => {
+      const state = useMapStore.getState()
+      useMapStore.setState({ armies: originalArmies, campaign: { ...state.campaign, fogOfWar: { ...originalFog } } })
+    })
+  }
+
+  // Чужая армия и снятие выделения подсветку не показывают.
+  const foreignArmy = useMapStore.getState().armies.find((army) => army.factionId !== useMapStore.getState().campaign.playerFactionId && army.unitSlots.length > 0)
+  check('найдена чужая армия', Boolean(foreignArmy))
+  if (foreignArmy) {
+    await selectArmyNow(foreignArmy.id)
+    check('при выделении чужой армии подсветки нет', !container.querySelector('svg.movement-terrain-layer'))
+    check('легенда скрыта для чужой армии', !container.querySelector('.movement-legend'))
+  }
+  await selectArmyNow(null)
+  check('после снятия выделения подсветка исчезает', !container.querySelector('svg.movement-terrain-layer'))
+  check('легенда скрыта после снятия выделения', !container.querySelector('.movement-legend'))
+}
+
 console.log('\n— снабжение армии —')
 // Синтетический мир: своя локация с бонусами экономического типа.
 // Фракция берётся из запущенной кампании: в разных мирах идентификаторы свои.
@@ -192,6 +362,7 @@ for (const pin of ownPins) {
 }
 check('клик по своему объекту при выделенной армии отдаёт приказ', orderedPlain, 'ни один свой объект не принял приказ')
 check('после приказа выделение армии снято', useMapStore.getState().selectedArmyId === null, `selectedArmyId=${useMapStore.getState().selectedArmyId}`)
+check('после приказа подсветка исчезает', !container.querySelector('svg.movement-terrain-layer'), 'слой остался на карте')
 check('приказ записан в журнал', sessionLogEntries().some((entry) => entry.message.startsWith('moveArmy')), 'записи moveArmy нет')
 
 // Alt продолжает работать так же — регрессионная проверка на случай, если

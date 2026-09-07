@@ -141,12 +141,12 @@ class TestMaps(unittest.TestCase):
             }
             res = room.assign_start_positions(slot_positions, fortress_owner=8)
             self.assertTrue(res)
-            # Первый слот 8 с 8 кликами
-            self.assertEqual(calls[0], (8, (0.8, 0.8), 8))
-            # Оставшиеся слоты 1, 2, 5 по 1 клику
-            remaining_calls = calls[1:]
-            self.assertEqual([c[0] for c in remaining_calls], [1, 2, 5])
-            self.assertEqual([c[2] for c in remaining_calls], [1, 1, 1])
+            # Все слоты по возрастанию, ровно по 1 клику: владелец крепости
+            # не обязан быть первым — слот 1 всегда игрок, а крепость может
+            # оборонять бот (владелец в слоте 8 получает свой клик последним).
+            self.assertEqual([c[0] for c in calls], [1, 2, 5, 8])
+            self.assertEqual([c[2] for c in calls], [1, 1, 1, 1])
+            self.assertEqual(calls[3], (8, (0.8, 0.8), 1))
         finally:
             room.assign_start_position = orig_assign
 

@@ -178,28 +178,38 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
 
   const battleLocation=cacheEntityId?locations.find((item)=>item.id===cacheEntityId)??null:null
   const rtsPositions=battleLocation?.rtsPositions??null
-  const isFortressBattle=conflict.battleType==='siege'
-  // Спавн-точки всегда расставляются случайно (п.3); у оплота владелец
-  // всегда занимает первую (главную) позицию защиты (п.6).
+  // «Крепостной» бой определяется не стратегическим типом (у столиц, шахт и
+  // крепостей карты BFME WotR одинаково крепостные), а данными объекта:
+  // у места боя задана главная позиция защиты в BFME-координатах (rtsFortress)
+  // и выбран индекс этой точки. Каир Андрос (осада без крепостной точки) и
+  // прочие обычные карты по-прежнему расставляются как обычная локация.
+  const fortressMainIndex=(()=>{
+    const point=battleLocation?.rtsFortress?.defenderStartPosition
+    if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return null
+    const index=rtsPositions?.fortressDefenseIndex
+    if(index==null||index<0||!rtsPositions?.defense?.length||index>=rtsPositions.defense.length)return null
+    return index
+  })()
+  // Спавн-точки: у крепостного места боя владелец оплота закрепляется за
+  // главной позицией защиты, остальные слоты получают точки из пулов
+  // обороны/атаки по порядку слотов. Главная точка не повторяется.
   const buildStartPositions=(participants:Array<{factionId:string;side:'good'|'evil'|'neutral'}>)=>{
     // Прототип (maps.calculate_slot_positions): пулы перетасовываются случайно;
-    // у оплота владелец закрепляется на defense[0], а остальные защитники
+    // у оплота владелец закрепляется на главной точке, а остальные защитники
     // получают точки из defense[1..] — главная точка не повторяется.
     let defensePool=rtsPositions?.defense?.length?shuffle(rtsPositions.defense):[]
     const attackPool=rtsPositions?.attack?.length?shuffle(rtsPositions.attack):[]
     const startPositions:Record<string,{x:number;y: number}>=
       {}
     let fortressOwnerSlot:number|null=null
-    // Владелец оплота закрепляется за точкой ТОЛЬКО если главная позиция
-    // защиты назначена в BFME-координатах объекта; иначе всё случайно.
-    const mainIndex=isFortressBattle&&rtsPositions?.defense?.length
-      ?rtsPositions.fortressDefenseIndex??null
-      :null
-    if(mainIndex!=null&&mainIndex>=0&&mainIndex<rtsPositions!.defense.length){
+    // Владелец оплота закрепляется за точкой ТОЛЬКО если у объекта задана
+    // главная позиция защиты в BFME-координатах (rtsFortress); иначе всё
+    // случайно, как у обычной локации.
+    if(fortressMainIndex!=null){
       const ownerIndex=participants.findIndex((participant)=>participant.factionId===fortressDefenderFactionId)
       if(ownerIndex>=0){
         fortressOwnerSlot=ownerIndex+1
-        const main=rtsPositions!.defense[mainIndex]
+        const main=rtsPositions!.defense[fortressMainIndex]
         startPositions[ownerIndex+1]={...main}
         defensePool=defensePool.filter((point)=>point!==main)
       }
@@ -216,7 +226,7 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
     })
     return {startPositions,fortressOwnerSlot}
   }
-  const watchBattleResult=async(token:number)=>{
+  const watchBattleResult=async(token:number,launchedAt:number)=>{
     const deadline=Date.now()+5400_000
     while(token===rtsWatchToken.current&&Date.now()<deadline){
       await new Promise((resolve)=>setTimeout(resolve,5000))
@@ -225,6 +235,11 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       if(!current||current.status!=='pending')break
       const result=await readRtsBattleResult(conflict.id).catch(()=>null)
       if(token!==rtsWatchToken.current)return
+      // Файл исхода переживает запуски: после аварийного выхода по Ctrl в нём
+      // остаётся ABORTED прерванного боя. Результат, записанный ДО старта этой
+      // попытки, — не наш: пропускаем и продолжаем ждать настоящий исход
+      // (новый запуск удаляет файл, а эта проверка страхует гонку).
+      if(result?.finishedAt&&Number(result.finishedAt)<=launchedAt)continue
       if(result?.finishedAt){
         logEvent('rts',`результат BFME-сражения «${selectedMapAsset?.mapName??conflict.rtsMapId}»`,result)
         if(result.winningTeam==='good'||result.winningTeam==='evil'){
@@ -269,10 +284,13 @@ export default function ConflictModal({ activeMod, appSettings }: { activeMod:Mo
       logEvent('rts',`запуск BFME: карта «${selectedMapAsset?.mapName??conflict.rtsMapId}», слоты ${conflict.rtsAttackerSlots}×${conflict.rtsDefenderSlots}, владелец оплота — слот ${fortressOwnerSlot??'не задан'}`,participants.map((participant)=>`${participant.slot}:${participant.factionId}:${participant.color}:${participant.side}:${participant.handicapPercent}%`))
       const report=await prepareAndStartRtsBattle(activeMod.id,appSettings.rtsExecutablePath,'location-cache',cacheEntityId,battleConfig)
       if(!report.ok){setRtsMessage(translateText(report.errors.join('\n'),appSettings.language??'ru'));return}
+      // Момент старта попытки (секунды, как finishedAt в файле исхода): записи,
+      // сделанные раньше, принадлежат прошлым запускам и игнорируются.
+      const launchedAt=Math.floor(Date.now()/1000)
       const token=rtsWatchToken.current
       setRtsWatching(true)
       setRtsMessage(`BFME настроен автоматически, запущена карта «${selectedMapAsset?.mapName??conflict.rtsMapId}». Конфигурация: ${report.battleConfigPath}. После боя исход определится автоматически и игра закроется.`)
-      void watchBattleResult(token)
+      void watchBattleResult(token,launchedAt)
     }catch(error){setRtsMessage(translateText(error instanceof Error?error.message:String(error),appSettings.language??'ru'))}
     finally{setRtsBusy(false)}
   }

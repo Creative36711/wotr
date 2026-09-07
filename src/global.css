@@ -600,6 +600,57 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 .hex-layer { z-index: 3; }
 .pins { z-index: 4; }
+
+/* Подсветка проходимости при выделенной своей армии (тактический вид).
+   Слой рисуется над террейном и сеткой, но под туманом войны и маркерами:
+   туман скрывает всё, включая проходимость, а иконки остаются читаемыми. */
+.movement-terrain-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 5120px;
+  height: 4115px;
+  overflow: visible;
+  pointer-events: none;
+}
+.movement-terrain-layer polygon { stroke-width: 3px; }
+.movement-terrain-layer .mt-impassable polygon {
+  fill: rgba(224, 62, 52, .3);
+  stroke: rgba(240, 116, 102, .5);
+  stroke-dasharray: 8 7;
+}
+.movement-terrain-layer .mt-slow polygon {
+  fill: rgba(226, 181, 64, .24);
+  stroke: rgba(242, 208, 122, .42);
+}
+.movement-terrain-layer .mt-unreachable polygon {
+  fill: rgba(3, 7, 9, .28);
+  stroke: rgba(3, 7, 9, .12);
+}
+
+/* Легенда цветов подсветки — над панелью тактики, пока подсветка активна. */
+.movement-legend {
+  position: absolute;
+  z-index: 12;
+  left: 13px;
+  bottom: 74px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid rgba(70, 83, 69, .9);
+  border-radius: 7px;
+  background: rgba(11, 18, 17, .9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .46);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.movement-legend span { display: inline-flex; align-items: center; gap: 5px; color: #aeb8ac; font-size: 11px; white-space: nowrap; }
+.movement-legend b { color: inherit; font-size: inherit; font-weight: 600; }
+.movement-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.movement-legend .legend-impassable i { background: rgba(224, 62, 52, .85); border: 1px solid rgba(240, 116, 102, .55); }
+.movement-legend .legend-slow i { background: rgba(226, 181, 64, .85); border: 1px solid rgba(242, 208, 122, .55); }
+.movement-legend .legend-unreachable i { background: rgba(3, 7, 9, .75); border: 1px solid rgba(150, 158, 152, .4); }
 .hex-editing.hex-tool-select { cursor: crosshair; }
 .hex-editing.hex-tool-pan { cursor: grab; }
 .hex-editing.hex-tool-pan.is-panning { cursor: grabbing; }
@@ -885,6 +936,7 @@ input[type='checkbox'], input[type='radio'] { width: 13px; height: 13px; flex: n
 /* BFME-native army slots */
 .army-leader-card { display:grid; grid-template-columns:52px 1fr; gap:10px; margin:10px 0 2px; padding:9px; border:1px solid #3a4036; border-radius:6px; background:#101815; }
 .leader-portrait { width:50px; height:58px; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--portrait-color) 60%,#303a3d); border-radius:5px; background-image:linear-gradient(rgba(8,13,16,.2),rgba(8,13,16,.58)),url('/assets/ui/hero-placeholder.jpg'); background-size:cover; background-position:center top; color:#eadfc7; font-family:Cinzel,serif; font-size:16px; text-shadow:0 1px 5px #000; }
+.leader-portrait[data-kind="captain"] { background-image:linear-gradient(rgba(8,13,16,.2),rgba(8,13,16,.58)),url('/assets/ui/captain-placeholder.jpg'); }
 .army-leader-card small { display:block; color:#6f7b7c; font-size:10px; text-transform:uppercase; letter-spacing:.07em; }
 .army-leader-card b { display:block; margin-top:3px; color:#d5d1c2; font-size:13px; }
 .army-leader-card p { margin:4px 0 0; color:#7b8581; font-size:10px; line-height:1.4; }
@@ -978,6 +1030,7 @@ input[type='checkbox'], input[type='radio'] { width: 13px; height: 13px; flex: n
 .battle-loss-portrait { grid-row:1 / 3; width:26px; height:34px; display:block; border:1px solid #414d52; border-radius:3px; background-size:cover; background-position:center top; }
 .battle-loss-portrait.hero { background-image:url('/assets/ui/hero-placeholder.jpg'); }
 .battle-loss-portrait.unit { background-image:url('/assets/ui/unit-placeholder.jpg'); }
+.battle-loss-portrait.captain { background-image:url('/assets/ui/captain-placeholder.jpg'); }
 .battle-loss-columns section > div > small { grid-column:2 / -1; }
 .faction-card-row { grid-template-columns:105px minmax(0,1fr); align-items:center; }
 .faction-card-row .inline-check { grid-column:1 / -1; width:100%; padding:5px 6px; border:1px solid #303b40; border-radius:4px; background:#0a1115; }

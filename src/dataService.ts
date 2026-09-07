@@ -802,8 +802,11 @@ function refreshCampaignRts(campaign: CampaignState, armies: Army[], locations: 
     conflict.rtsLocationId = owner?.id ?? null
     conflict.rtsMapSource = 'location'
     conflict.rtsMapId = owner?.rtsMapCache?.mapPath ?? ''
-    const position = direct?.rtsFortress?.defenderStartPosition
-    conflict.rtsDefenderStartPosition = conflict.battleType === 'siege' && Number.isFinite(position?.x) && Number.isFinite(position?.y)
+    // Точка защитника крепости — свойство карты BFME места боя (rtsLocation),
+    // а не стратегического типа: крепостные карты есть и у столиц (Минас
+    // Тирит), и у шахт (Эребор). Пин ставится только если точка задана.
+    const position = owner?.rtsFortress?.defenderStartPosition
+    conflict.rtsDefenderStartPosition = Number.isFinite(position?.x) && Number.isFinite(position?.y)
       ? { x: Number(position!.x), y: Number(position!.y) }
       : null
     updateConflictRtsCompatibility(conflict, armies, locations)

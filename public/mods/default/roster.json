@@ -2955,7 +2955,7 @@
       "portrait": "",
       "unlockType": "starting",
       "requiredTurn": 1,
-      "requiredLocationId": "rhudaur",
+      "requiredLocationId": "map-object-mt9cljvs",
       "summonCostGold": 0,
       "buildCost": 1200,
       "commandPoints": 50,

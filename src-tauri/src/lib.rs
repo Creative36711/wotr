@@ -171,7 +171,13 @@ fn prepare_and_start_rts_battle(app:AppHandle,mod_id:String,executable_path:Stri
  let (mut deployment,mut errors)=plan_mod_rts_deployment(&app,&mod_id,game_dir,&cache_scope,&entity_id,cache_expected,&language);
  let temp=data_root(&app)?.join("temp");fs::create_dir_all(&temp).map_err(|error|error.to_string())?;
  let conflict_id=battle_config.get("conflictId").and_then(Value::as_str).unwrap_or("last").to_string();
- let battle_result_path_value=battle_result_path(&temp,&conflict_id).to_string_lossy().to_string();
+ let battle_result_file=battle_result_path(&temp,&conflict_id);
+ // Файл исхода переживает запуски: после аварийного выхода по Ctrl в нём
+ // остаётся ABORTED прерванного боя, и watcher интерфейса принял бы его за
+ // исход новой попытки (остановился бы, не дождавшись настоящего боя).
+ // Каждый запуск начинается с чистого листа.
+ let _ = std::fs::remove_file(&battle_result_file);
+ let battle_result_path_value=battle_result_file.to_string_lossy().to_string();
  if let Some(object)=battle_config.as_object_mut(){
   object.insert("_battleResultPath".into(),json!(battle_result_path_value));
  }

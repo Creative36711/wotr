@@ -21,7 +21,7 @@
 .captain-limit-note.reached { border-color:#654039; background:#211513; color:#be776c; }
 .captain-editor-grid { grid-template-columns:repeat(2,minmax(420px,1fr)); gap:12px; }
 .captain-editor-card { grid-template-columns:82px minmax(0,1fr); gap:12px; padding:12px; }
-.captain-editor-card .hero-portrait-editor .fake-portrait { width:80px; height:104px; background-size:cover; background-position:center top; }
+.captain-editor-card .hero-portrait-editor .fake-portrait { width:80px; height:104px; background-size:cover; background-position:center top; background-image:linear-gradient(rgba(8,13,16,.18),rgba(8,13,16,.58)),url('/assets/ui/captain-placeholder.jpg'); }
 .captain-editor-card .hero-main-fields { grid-template-columns:1fr; }
 .captain-editor-card .hero-main-fields select:disabled { opacity:.72; }
 .captain-name-pool { grid-column:1 / -1; display:flex; flex-direction:column; gap:4px; margin-top:6px; }

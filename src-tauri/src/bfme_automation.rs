@@ -292,6 +292,11 @@ extern "system" {
     fn BringWindowToTop(window: Hwnd) -> i32;
     fn SetActiveWindow(window: Hwnd) -> Hwnd;
     fn SetFocus(window: Hwnd) -> Hwnd;
+    fn PrintWindow(window: Hwnd, dc: Handle, flags: u32) -> i32;
+    fn GetWindowLongPtrW(window: Hwnd, index: i32) -> isize;
+    fn SetWindowLongPtrW(window: Hwnd, index: i32, value: isize) -> isize;
+    fn SetLayeredWindowAttributes(window: Hwnd, key: u32, alpha: u8, flags: u32) -> i32;
+    fn SetWindowPos(window: Hwnd, after: isize, x: i32, y: i32, cx: i32, cy: i32, flags: u32) -> i32;
 }
 
 #[cfg(target_os = "windows")]
@@ -369,6 +374,8 @@ extern "system" {
 #[cfg(target_os = "windows")]
 const INPUT_MOUSE: u32 = 0;
 #[cfg(target_os = "windows")]
+const INPUT_KEYBOARD: u32 = 1;
+#[cfg(target_os = "windows")]
 const MOUSE_MOVE: u32 = 0x0001;
 #[cfg(target_os = "windows")]
 const MOUSE_LEFT_DOWN: u32 = 0x0002;
@@ -402,6 +409,36 @@ const SEE_MASK_NOCLOSEPROCESS: u32 = 0x0000_0040;
 const SEE_MASK_FLAG_NO_UI: u32 = 0x0000_0400;
 #[cfg(target_os = "windows")]
 const SW_RESTORE: i32 = 9;
+#[cfg(target_os = "windows")]
+const GWL_EXSTYLE: i32 = -16;
+#[cfg(target_os = "windows")]
+const WS_EX_TRANSPARENT: isize = 0x0000_0020;
+#[cfg(target_os = "windows")]
+const WS_EX_LAYERED: isize = 0x0008_0000;
+#[cfg(target_os = "windows")]
+const WS_EX_NOACTIVATE: isize = 0x0800_0000;
+#[cfg(target_os = "windows")]
+const WS_EX_TOPMOST: isize = 0x0000_0008;
+#[cfg(target_os = "windows")]
+const LWA_ALPHA: u32 = 2;
+#[cfg(target_os = "windows")]
+const HWND_TOPMOST: isize = -1;
+#[cfg(target_os = "windows")]
+const SWP_NOSIZE: u32 = 0x0000_0001;
+#[cfg(target_os = "windows")]
+const SWP_NOMOVE: u32 = 0x0000_0002;
+#[cfg(target_os = "windows")]
+const SWP_NOACTIVATE: u32 = 0x0000_0010;
+#[cfg(target_os = "windows")]
+const PW_CLIENTONLY: u32 = 0x0000_0001;
+#[cfg(target_os = "windows")]
+const PW_RENDERFULLCONTENT: u32 = 0x0000_0002;
+#[cfg(target_os = "windows")]
+const VK_MENU: u32 = 0x12;
+#[cfg(target_os = "windows")]
+const VK_RETURN: u32 = 0x0D;
+#[cfg(target_os = "windows")]
+const KEYEVENTF_KEYUP: u32 = 0x0002;
 #[cfg(target_os = "windows")]
 const KEY_READ: u32 = 0x0002_0019;
 #[cfg(target_os = "windows")]
@@ -921,6 +958,7 @@ fn write_environment_report(
         "modId": config.get("modId").cloned().unwrap_or(Value::Null),
         "language": config.get("language").cloned().unwrap_or(Value::Null),
         "windowed": config.get("launch").and_then(|value| value.get("windowed")).cloned().unwrap_or(Value::Null),
+        "masked": config.get("launch").and_then(|value| value.get("masked")).cloned().unwrap_or(Value::Null),
         "writtenAtUnix": std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|elapsed| elapsed.as_secs())
@@ -1026,7 +1064,9 @@ fn write_analysis_report(
     }
 }
 
-/// Снимок текущего окна игры в папку диагностики.
+/// Снимок текущего окна игры в папку диагностики. Кадр берётся из окна
+/// (PrintWindow), а не с экрана: маска загрузочного экрана перекрывает
+/// рабочий стол на весь период настройки боя и не должна попадать в снимок.
 #[cfg(target_os = "windows")]
 fn save_screenshot(folder: Option<&Path>, name: &str, log: &AutomationLog) {
     let Some(folder) = folder else {
@@ -1037,17 +1077,13 @@ fn save_screenshot(folder: Option<&Path>, name: &str, log: &AutomationLog) {
         log.write(format!("[diag] {name}: окно игры не найдено"));
         return;
     };
-    let Ok(view) = viewport(window) else {
-        log.write(format!("[diag] {name}: не удалось получить размеры окна"));
-        return;
-    };
-    match capture_viewport(view) {
+    match capture_window_frame(window) {
         Ok(frame) => {
             if save_frame_png(folder, name, &frame, log).is_none() {
                 log.write(format!("[diag] {name}: не удалось закодировать PNG"));
             }
         }
-        Err(error) => log.write(format!("[diag] {name}: захват экрана не удался: {error}")),
+        Err(error) => log.write(format!("[diag] {name}: захват окна не удался: {error}")),
     }
 }
 
@@ -1186,6 +1222,56 @@ fn main_menu_visible(window: Hwnd) -> bool {
     menu_marker_match(window, &marker)
         .map(|ratio| ratio >= MENU_MARKER_MATCH)
         .unwrap_or(false)
+}
+
+/// Стили окна-маски загрузочного экрана. Окно визуально непрозрачное
+/// (игрок видит заставку), но: WS_EX_TRANSPARENT + WS_EX_LAYERED — сквозное
+/// для мыши (клики SendInput проходят в окно игры), WS_EX_NOACTIVATE — не
+/// крадёт фокус у игры, WS_EX_TOPMOST — лежит поверх развернувшейся игры.
+/// Вызывается перед каждым показом: фреймворк мог сбросить стили.
+#[cfg(target_os = "windows")]
+pub fn apply_mask_window_styles(hwnd: isize) -> Result<(), String> {
+    let window = hwnd as Handle;
+    unsafe {
+        let style = GetWindowLongPtrW(window, GWL_EXSTYLE);
+        SetWindowLongPtrW(
+            window,
+            GWL_EXSTYLE,
+            style | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
+        );
+        // Слоёное окно без заданных атрибутов не отрисовывается вовсе —
+        // включаем полную непрозрачность содержимого.
+        if SetLayeredWindowAttributes(window, 0, 255, LWA_ALPHA) == 0 {
+            return Err(format!("SetLayeredWindowAttributes failed: {}", last_error()));
+        }
+        if SetWindowPos(window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE) == 0 {
+            return Err(format!("SetWindowPos failed: {}", last_error()));
+        }
+    }
+    Ok(())
+}
+
+/// Поиск окна-маски по уникальному заголовку и применение стилей сквозного
+/// окна. Заголовок — технический идентификатор: локализатор интерфейса его
+/// не переводит.
+#[cfg(target_os = "windows")]
+pub fn apply_mask_window_styles_by_title(title: &str) -> Result<(), String> {
+    let value = wide(title);
+    let window = unsafe { FindWindowW(null(), value.as_ptr()) };
+    if window.is_null() {
+        return Err(format!("Окно маски «{title}» не найдено"));
+    }
+    apply_mask_window_styles(window as isize)
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn apply_mask_window_styles(_hwnd: isize) -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn apply_mask_window_styles_by_title(_title: &str) -> Result<(), String> {
+    Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -1619,30 +1705,111 @@ fn capture_viewport(view: (i32, i32, i32, i32)) -> Result<RgbFrame, String> {
     })
 }
 
+/// Кадр клиентской области окна игры через PrintWindow: содержимое берётся
+/// из поверхности самого окна, поэтому перекрывающие окна — в первую очередь
+/// топмостовое окно-маска загрузочного экрана — в кадр не попадают.
+/// PW_RENDERFULLCONTENT обязателен: без него DirectX-окно печатается чёрным.
+/// Используется на этапе автоматизации (пока видна маска); монитор боя после
+/// старта продолжает снимать экран — игра тогда fullscreen и ничем не
+/// перекрыта, а PrintWindow для эксклюзивного fullscreen ненадёжен.
+#[cfg(target_os = "windows")]
+fn capture_window_frame(window: Hwnd) -> Result<RgbFrame, String> {
+    unsafe {
+        let mut rect = Rect::default();
+        if GetClientRect(window, &mut rect) == 0 {
+            return Err(format!("GetClientRect failed: {}", last_error()));
+        }
+        let width = rect.right - rect.left;
+        let height = rect.bottom - rect.top;
+        if width <= 0 || height <= 0 {
+            return Err("Invalid window capture size".into());
+        }
+        let screen_dc = GetDC(null_mut());
+        if screen_dc.is_null() {
+            return Err(format!("GetDC failed: {}", last_error()));
+        }
+        let memory_dc = CreateCompatibleDC(screen_dc);
+        if memory_dc.is_null() {
+            ReleaseDC(null_mut(), screen_dc);
+            return Err(format!("CreateCompatibleDC failed: {}", last_error()));
+        }
+        let bitmap = CreateCompatibleBitmap(screen_dc, width, height);
+        if bitmap.is_null() {
+            DeleteDC(memory_dc);
+            ReleaseDC(null_mut(), screen_dc);
+            return Err(format!("CreateCompatibleBitmap failed: {}", last_error()));
+        }
+        let old = SelectObject(memory_dc, bitmap);
+        let printed = PrintWindow(window, memory_dc, PW_CLIENTONLY | PW_RENDERFULLCONTENT);
+        if printed == 0 {
+            SelectObject(memory_dc, old);
+            DeleteObject(bitmap);
+            DeleteDC(memory_dc);
+            ReleaseDC(null_mut(), screen_dc);
+            return Err(format!("PrintWindow failed: {}", last_error()));
+        }
+        let mut info = BitmapInfoHeader {
+            size: size_of::<BitmapInfoHeader>() as u32,
+            width,
+            height: -height,
+            planes: 1,
+            bit_count: 32,
+            ..Default::default()
+        };
+        let mut bgra = vec![0u8; (width as usize) * (height as usize) * 4];
+        let lines = GetDIBits(
+            memory_dc,
+            bitmap,
+            0,
+            height as u32,
+            bgra.as_mut_ptr() as *mut c_void,
+            &mut info,
+            DIB_RGB_COLORS,
+        );
+        SelectObject(memory_dc, old);
+        DeleteObject(bitmap);
+        DeleteDC(memory_dc);
+        ReleaseDC(null_mut(), screen_dc);
+        if lines == 0 {
+            return Err(format!("GetDIBits failed: {}", last_error()));
+        }
+        let mut rgb = Vec::with_capacity((width as usize) * (height as usize) * 3);
+        for pixel in bgra.chunks_exact(4) {
+            rgb.extend_from_slice(&[pixel[2], pixel[1], pixel[0]]);
+        }
+        Ok(RgbFrame {
+            width: width as usize,
+            height: height as usize,
+            data: rgb,
+        })
+    }
+}
+
 #[cfg(target_os = "windows")]
 fn menu_marker_match(window: Hwnd, marker: &MenuMarker) -> Result<f64, String> {
-    let (left, top, width, height) = viewport(window)?;
-    let box_size = ((marker.size_fraction * f64::from(width.min(height))) as i32).max(4);
-    let center_x = left + (marker.fx * f64::from(width)) as i32;
-    let center_y = top + (marker.fy * f64::from(height)) as i32;
-    let current = capture_screen_region_rgb(
-        center_x - box_size / 2,
-        center_y - box_size / 2,
-        box_size,
-        box_size,
-    )?;
+    // Маркер сравнивается с кадром ОКНА игры, а не с экраном: маска
+    // загрузочного экрана перекрывает рабочий стол, но не окно игры.
+    let frame = capture_window_frame(window)?;
+    let width = frame.width as i32;
+    let height = frame.height as i32;
+    let box_size = ((marker.size_fraction * width.min(height) as f64) as i32).max(4);
+    let center_x = (marker.fx * width as f64) as i32;
+    let center_y = (marker.fy * height as f64) as i32;
+    let left = (center_x - box_size / 2).clamp(0, (width - box_size).max(0));
+    let top = (center_y - box_size / 2).clamp(0, (height - box_size).max(0));
     let mut close = 0usize;
     let total = (box_size as usize) * (box_size as usize);
     for y in 0..box_size as usize {
         let source_y =
             ((y as f64 * (marker.height - 1) as f64) / (box_size as f64 - 1.0)).round() as usize;
+        let pixel_y = top as usize + y;
         for x in 0..box_size as usize {
             let source_x =
                 ((x as f64 * (marker.width - 1) as f64) / (box_size as f64 - 1.0)).round() as usize;
             let source = (source_y * marker.width + source_x) * 3;
-            let target = (y * box_size as usize + x) * 3;
+            let target = (pixel_y * frame.width + left as usize + x) * 3;
             if (0..3).all(|channel| {
-                (i16::from(current[target + channel]) - i16::from(marker.pixels[source + channel]))
+                (i16::from(frame.data[target + channel]) - i16::from(marker.pixels[source + channel]))
                     .abs()
                     <= MENU_MARKER_TOLERANCE
             }) {
@@ -1707,6 +1874,37 @@ fn mouse_input(flags: u32, dx: i32, dy: i32, data: i32) -> Input {
             },
         },
     }
+}
+
+#[cfg(target_os = "windows")]
+fn keyboard_input(virtual_key: u16, scan: u16, flags: u32) -> Input {
+    Input {
+        input_type: INPUT_KEYBOARD,
+        data: InputUnion {
+            keyboard: KeyboardInput {
+                vk: virtual_key,
+                scan,
+                flags,
+                time: 0,
+                extra_info: INJECT_MAGIC,
+            },
+        },
+    }
+}
+
+/// Alt+Enter. Бой стартует в оконном режиме (под маской загрузочного экрана),
+/// поэтому сразу после клика «Начать игру» мост сам переводит игру в полный
+/// экран и возвращает управление игроку.
+#[cfg(target_os = "windows")]
+fn send_alt_enter() -> Result<(), String> {
+    send(keyboard_input(VK_MENU as u16, 0x38, 0))?;
+    thread::sleep(Duration::from_millis(40));
+    send(keyboard_input(VK_RETURN as u16, 0x1C, 0))?;
+    thread::sleep(Duration::from_millis(80));
+    send(keyboard_input(VK_RETURN as u16, 0x1C, KEYEVENTF_KEYUP))?;
+    thread::sleep(Duration::from_millis(40));
+    send(keyboard_input(VK_MENU as u16, 0x38, KEYEVENTF_KEYUP))?;
+    Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -2348,6 +2546,14 @@ fn spawn_game_process(executable: &Path, windowed: bool, temp_directory: &Path, 
     run_elevated_helper(&job_path, &result_path).map(|_| ())
 }
 
+/// Текущее разрешение рабочего стола в формате Options.ini («ШИРИНА ВЫСОТА»).
+/// Вызывается до старта игры, когда режим дисплея гарантированно равен
+/// рабочему столу.
+#[cfg(target_os = "windows")]
+fn desktop_resolution_string() -> String {
+    unsafe { format!("{} {}", GetSystemMetrics(0).max(640), GetSystemMetrics(1).max(480)) }
+}
+
 #[cfg(target_os = "windows")]
 fn launch_game(executable: &Path, windowed: bool, resolution: Option<&str>, temp_directory: &Path, log: &AutomationLog) -> Result<ResolutionRestore, String> {
     let mut restore = ResolutionRestore::none();
@@ -2441,27 +2647,49 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         }
         let _busy = BusyGuard;
         let _input_lock = InputLockGuard::acquire()?;
+        write_battle_progress(config, temp_directory, "spawn_generation", 5);
         let pref_result = update_network_pref(executable, config)?;
         log.write(format!(
             "[prefs] NetworkPref.ini prepared in {} profile folder(s)",
             pref_result.paths.len()
         ));
+        write_battle_progress(config, temp_directory, "network_prefs", 10);
+        // Маска загрузочного экрана: бой стартует в ОКОННОМ режиме на весь
+        // рабочий стол, чтобы топмостовое окно-маска гарантированно перекрывало
+        // игру всё время автоматизации; в полный экран игру переводит
+        // send_alt_enter сразу после клика «Начать игру». Без маски — как раньше.
+        let masked = config
+            .get("launch")
+            .and_then(|value| value.get("masked"))
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let windowed = config
             .get("launch")
             .and_then(|value| value.get("windowed"))
             .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let resolution = config
+            .unwrap_or(false)
+            || masked;
+        let mut resolution = config
             .get("launch")
             .and_then(|value| value.get("resolution"))
             .and_then(Value::as_str);
-        log.write(if windowed { "[launch] starting BFME (windowed)" } else { "[launch] starting BFME" });
+        let desktop_resolution = desktop_resolution_string();
+        if masked && resolution.is_none() {
+            // Оконный бой разворачивается на весь рабочий стол: под маской это
+            // выглядит как обычный запуск, а геометрия комнаты не меняется —
+            // все клики идут в долях клиентской области.
+            resolution = Some(desktop_resolution.as_str());
+        }
+        log.write(if windowed { "[launch] starting BFME (windowed under loading mask)" } else { "[launch] starting BFME" });
+        write_battle_progress(config, temp_directory, "game_launch", 15);
         let mut restore = launch_game(executable, windowed, resolution, temp_directory, log)?;
 
         log.write("[wait] waiting for the game.dat window (up to 120s)");
+        write_battle_progress(config, temp_directory, "waiting_window", 25);
         let (window, discovery) = wait_for_game_window(Duration::from_secs(120))?;
         log.write(format!("[window] found via {discovery}"));
         activate_window(window);
+        write_battle_progress(config, temp_directory, "waiting_menu", 40);
         wait_for_menu_ready(window, log, language)?;
         let view = viewport(window)?;
         // Размер клиентской области в журнале: по нему видно, в каком
@@ -2474,6 +2702,7 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         thread::sleep(MENU_SETTLE);
 
         log.write("[nav] Network -> Local Network (с повтором при холодном старте)");
+        write_battle_progress(config, temp_directory, "menu_navigation", 55);
         goto_lan_with_retry(window, view, log)?;
         log.write("[nav] Create Game");
         click_fraction(view, 0.8337, 0.4611)?;
@@ -2499,6 +2728,7 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
             .and_then(Value::as_u64)
             .unwrap_or(1) as usize;
 
+        write_battle_progress(config, temp_directory, "room_setup", 70);
         log.write(format!(
             "[room] configuring {} RTS slots{}",
             participants.len(),
@@ -2577,6 +2807,7 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         }
 
         // Стартовые позиции на миникарте: защиты/атаки пул + владелец крепости.
+        write_battle_progress(config, temp_directory, "positions", 85);
         if let Some(map) = config.get("map") {
             let positions = parse_start_positions(map);
             if !positions.is_empty() {
@@ -2604,9 +2835,19 @@ fn launch_and_configure_inner(executable: &Path, config: &Value, temp_directory:
         ));
         write_environment_report(diagnostics.as_deref(), executable, config, log);
         save_screenshot(diagnostics.as_deref(), "room-before-start.png", log);
+        write_battle_progress(config, temp_directory, "starting", 95);
         log.write("[room] clicking Start Game");
         click_fraction(view, 0.8836, 0.9542)?;
+        if masked {
+            // Комната начала отсчёт — время переводить игру в fullscreen: маска
+            // скроется через мгновение, и игрок получит игру на весь экран.
+            thread::sleep(Duration::from_millis(1500));
+            if let Err(error) = send_alt_enter() {
+                log.write(format!("[launch] Alt+Enter не прошёл: {error} — игра остаётся оконной"));
+            }
+        }
         thread::sleep(START_COUNTDOWN);
+        write_battle_progress(config, temp_directory, "ready", 100);
         log.write("[done] battle launched");
         return Ok(FlowOutcome::BattleLaunched);
     }
@@ -2918,6 +3159,61 @@ fn battle_result_path_from(config: &Value, fallback: &Path) -> PathBuf {
         .and_then(Value::as_str)
         .map(PathBuf::from)
         .unwrap_or_else(|| fallback.to_path_buf())
+}
+
+#[cfg(target_os = "windows")]
+fn battle_progress_path_from(config: &Value, fallback: &Path) -> PathBuf {
+    config
+        .get("_battleProgressPath")
+        .and_then(Value::as_str)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| fallback.to_path_buf())
+}
+
+/// Русская и английская подписи шага запуска боя. Технические имена совпадают
+/// с таблицей BATTLE_LOADING_STEPS в src/battleLoading.ts: интерфейс узнаёт
+/// известный шаг и переводит подпись своим словарём, метка из файла —
+/// запасная и для читаемости automation-диагностики.
+#[cfg(target_os = "windows")]
+fn progress_label(step: &str) -> (&'static str, &'static str) {
+    match step {
+        "spawn_generation" => ("Генерация армий…", "Generating armies…"),
+        "network_prefs" => ("Запись настроек…", "Writing settings…"),
+        "game_launch" => ("Запуск игры…", "Launching game…"),
+        "waiting_window" => ("Ожидание окна игры…", "Waiting for game window…"),
+        "waiting_menu" => ("Ожидание главного меню…", "Waiting for main menu…"),
+        "menu_navigation" => ("Навигация по меню…", "Navigating menus…"),
+        "room_setup" => ("Настройка комнаты…", "Setting up room…"),
+        "positions" => ("Назначение позиций…", "Assigning positions…"),
+        "starting" => ("Запуск боя…", "Starting battle…"),
+        "ready" => ("Бой начинается!", "Battle starting!"),
+        _ => (step, step),
+    }
+}
+
+/// Отметка прогресса запуска боя: атомарно перезаписывает JSON-файл, который
+/// интерфейс опрашивает во время автоматизации (загрузочный экран). Файл
+/// удаляется перед каждым запуском, поэтому содержимое всегда относится
+/// к текущей попытке.
+#[cfg(target_os = "windows")]
+fn write_battle_progress(config: &Value, fallback: &Path, step: &str, percent: u64) {
+    let path = battle_progress_path_from(config, fallback);
+    let (label_ru, label_en) = progress_label(step);
+    let at = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|value| value.as_secs())
+        .unwrap_or(0);
+    let payload = json!({
+        "step": step,
+        "percent": percent,
+        "label": label_ru,
+        "labelEn": label_en,
+        "at": at,
+    });
+    let temp = path.with_extension("json.tmp");
+    if std::fs::write(&temp, serde_json::to_vec(&payload).unwrap_or_default()).is_ok() {
+        let _ = std::fs::rename(&temp, &path);
+    }
 }
 
 // ---------------------------------------------------------------------------

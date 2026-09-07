@@ -1237,7 +1237,10 @@ function DocumentLocalizer({ language }: { language: AppLanguage }) {
     // Заголовок не зависит от режима — просто название игры.
     const title = translateText('Война за Кольцо', language)
     document.title = title
-    if ('__TAURI_INTERNALS__' in window) {
+    if ('__TAURI_INTERNALS__' in window && !window.location.hash.includes('battle-mask')) {
+      // Окно-маска загрузочного экрана исключение: его заголовок («WotR Battle
+      // Mask») — технический идентификатор, по которому Rust находит HWND для
+      // стилей сквозного окна. Переводить его нельзя.
       void import('@tauri-apps/api/window')
         .then(({ getCurrentWindow }) => getCurrentWindow().setTitle(title))
         .catch(() => { /* Title stays as configured when the API is unavailable. */ })

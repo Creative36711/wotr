@@ -886,6 +886,13 @@ export async function launchRtsGame(executablePath:string){if(!isTauriRuntime())
 export async function configureAndStartRtsBattle(executablePath:string,battleConfig:unknown){if(!isTauriRuntime())throw new Error('Автоматизация BFME доступна только в desktop-версии Tauri');await invoke('configure_and_start_rts_battle',{executablePath,battleConfig})}
 export interface RtsBattleResult { status:'COMPLETED'|'SURRENDER'|'UNKNOWN'; winningTeam:'good'|'evil'|null; winningSlot:number|null; detail?:string; elapsedSec?:number; finishedAt?:number }
 export async function readRtsBattleResult(conflictId:string):Promise<RtsBattleResult|null>{if(!isTauriRuntime())return null;return invoke<RtsBattleResult|null>('read_rts_battle_result',{conflictId})}
+export interface RtsBattleProgress { step:string; label:string; percent:number }
+/** Прогресс автоматизации боя, который мост пишет в temp/rts_progress.json. */
+export async function readRtsBattleProgress():Promise<RtsBattleProgress|null>{if(!isTauriRuntime())return null;return invoke<RtsBattleProgress|null>('read_rts_progress')}
+/** Окно-маска загрузочного экрана: показать или спрятать (только desktop). */
+export async function setBattleMaskWindow(visible:boolean){if(!isTauriRuntime())return;await invoke('set_battle_mask_window',{visible})}
+/** Состояние загрузочного экрана всем окнам: окно-маска его зеркалит. */
+export async function emitBattleLoadingState(state:unknown){if(!isTauriRuntime())return;const {emit}=await import('@tauri-apps/api/event');await emit('battle-loading-state',state)}
 export async function startRtsCalibration(modId:string,executablePath:string,entityId:string,options:{isFortress?:boolean;attach?:boolean;resolution?:string;expectedSize?:number}):Promise<unknown>{if(!isTauriRuntime())throw new Error('Калибровка доступна только в desktop-версии Tauri');return invoke('start_rts_calibration',{modId,executablePath,cacheScope:'location-cache',entityId,options})}
 export async function stopRtsCalibration(){if(!isTauriRuntime())return;await invoke('stop_rts_calibration')}
 export async function readRtsCalibrationStatus():Promise<unknown>{if(!isTauriRuntime())return null;return invoke<unknown>('read_rts_calibration_status')}

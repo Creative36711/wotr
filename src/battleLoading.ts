@@ -42,6 +42,8 @@ export interface BattleLoadingState {
   percent: number
   /** Полоса неопределённости (бегущая полоска) вместо процента. */
   indeterminate: boolean
+  /** Язык интерфейса; заполняется только в состоянии для окна-маски. */
+  language?: string
 }
 
 /**
@@ -167,6 +169,26 @@ export function applyBattleLoadingProgress(progress: BattleLoadingProgress | nul
     indeterminate: false,
   })
   if (entry?.step === 'ready' || percent >= 100) scheduleHide(READY_HIDE_MS)
+}
+
+/**
+ * Состояние, пришедшее событием `battle-loading-state` из основного окна:
+ * окно-маска не имеет общего стора, поэтому зеркалит этот снимок.
+ */
+export function applyExternalBattleLoadingState(payload: unknown) {
+  const value = (payload ?? {}) as Partial<BattleLoadingState>
+  publish({
+    visible: Boolean(value.visible),
+    mode: value.mode === 'result' ? 'result' : 'setup',
+    title: String(value.title ?? ''),
+    nameTranslations: value.nameTranslations && typeof value.nameTranslations === 'object' ? { ...value.nameTranslations } : {},
+    image: String(value.image ?? ''),
+    step: String(value.step ?? ''),
+    label: String(value.label ?? BATTLE_LOADING_PREPARE_LABEL),
+    percent: Number(value.percent) || 0,
+    indeterminate: Boolean(value.indeterminate),
+    language: typeof value.language === 'string' && value.language ? value.language : undefined,
+  })
 }
 
 /**

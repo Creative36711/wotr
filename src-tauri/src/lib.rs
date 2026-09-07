@@ -1,7 +1,7 @@
 use std::{fs, fs::OpenOptions, io::Write, path::{Path, PathBuf}, process::Command, time::{SystemTime, UNIX_EPOCH}};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::{json, Value};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
 mod bfme_automation;
 mod match_detector;
@@ -177,9 +177,15 @@ fn prepare_and_start_rts_battle(app:AppHandle,mod_id:String,executable_path:Stri
  // исход новой попытки (остановился бы, не дождавшись настоящего боя).
  // Каждый запуск начинается с чистого листа.
  let _ = std::fs::remove_file(&battle_result_file);
+ // Прогресс запуска — тоже «одна попытка — один файл»: шаги прошлой попытки
+ // не должны выдавать себя за прогресс новой.
+ let battle_progress_file=temp.join("rts_progress.json");
+ let _ = std::fs::remove_file(&battle_progress_file);
  let battle_result_path_value=battle_result_file.to_string_lossy().to_string();
+ let battle_progress_path_value=battle_progress_file.to_string_lossy().to_string();
  if let Some(object)=battle_config.as_object_mut(){
   object.insert("_battleResultPath".into(),json!(battle_result_path_value));
+  object.insert("_battleProgressPath".into(),json!(battle_progress_path_value));
  }
  let config_path=temp.join("current_battle.json");atomic_write(&config_path,serde_json::to_string_pretty(&battle_config).map_err(|error|error.to_string())?.as_bytes())?;
  let spawn_path=temp.join("__wotr_generated_presets.big");match rts_spawn::generate(&spawn_path,&battle_config).and_then(|report|plan_rts_deployment(&spawn_path,&game_dir.join("__wotr_generated_presets.big"),report.get("size").and_then(Value::as_u64).unwrap_or(0),true,&language)){Ok(item)=>deployment.push(item),Err(error)=>errors.push(error)}
@@ -418,6 +424,60 @@ fn inject_diagnostics_folder(app:&AppHandle,battle_config:&mut Value){
     Ok(folder.to_string_lossy().to_string())
 }
 
+/// Скрытое окно-маска загрузочного экрана боя. Создаётся один раз при старте
+/// приложения, показывается на время автоматизации боя и скрывается, когда бой
+/// начался (или результат обработан). Содержимое — тот же фронтенд с флагом
+/// `#battle-mask`, который рендерит только BattleLoadingScreen.
+fn create_battle_mask_window(app:&AppHandle){
+    match tauri::WebviewWindowBuilder::new(app,"battle-mask",tauri::WebviewUrl::App("index.html#battle-mask".into()))
+        .title("WotR Battle Mask")
+        .visible(false)
+        .decorations(false)
+        .resizable(false)
+        .maximizable(false)
+        .minimizable(false)
+        .closable(false)
+        .skip_taskbar(true)
+        .focused(false)
+        .always_on_top(true)
+        .fullscreen(true)
+        .build()
+    {
+        Ok(_window)=>{}
+        Err(error)=>eprintln!("[mask] окно загрузочного экрана не создано: {error}"),
+    }
+}
+
+/// Показать/спрятать окно-маску. Перед показом заново навешиваются стили
+/// сквозного окна: WS_EX_TRANSPARENT|WS_EX_LAYERED — клики проходят к игре,
+/// WS_EX_NOACTIVATE — маска не крадёт фокус, WS_EX_TOPMOST — лежит поверх
+/// развернувшейся игры.
+#[tauri::command] fn set_battle_mask_window(app:AppHandle,visible:bool)->Result<(),String>{
+    let Some(window)=app.get_webview_window("battle-mask") else {return Ok(())};
+    if visible{
+        #[cfg(target_os="windows")]
+        {
+            // HWND ищем по уникальному заголовку окна (FindWindowW): заголовок
+            // маски — технический идентификатор, локализатором не переводится.
+            bfme_automation::apply_mask_window_styles_by_title("WotR Battle Mask")?;
+            window.set_fullscreen(true).map_err(|error|error.to_string())?;
+        }
+        window.show().map_err(|error|error.to_string())?;
+    }else{
+        window.hide().map_err(|error|error.to_string())?;
+    }
+    Ok(())
+}
+
+/// Прогресс запуска боя, который мост пишет в temp/rts_progress.json на каждой
+/// фазе автоматизации. Файл удаляется перед каждым запуском, поэтому любое
+/// содержимое относится к текущей попытке.
+#[tauri::command] fn read_rts_progress(app:AppHandle)->Result<Option<Value>,String>{
+    let path=data_root(&app)?.join("temp").join("rts_progress.json");
+    let text=match fs::read_to_string(path){Ok(text)=>text,Err(_)=>return Ok(None)};
+    Ok(serde_json::from_str(&text).ok())
+}
+
 pub fn run_rts_helper_if_requested()->bool{bfme_automation::run_helper_if_requested()}
 
-#[cfg_attr(mobile,tauri::mobile_entry_point)] pub fn run(){tauri::Builder::default().plugin(tauri_plugin_dialog::init()).setup(|app|{let _=initialize_mods(app.handle());Ok(())}).invoke_handler(tauri::generate_handler![read_app_settings,write_app_settings,read_mod_file,write_mod_file,write_rts_asset,import_rts_asset,pick_and_import_rts_asset,discover_rts_executable,validate_rts_executable,pick_rts_executable,delete_rts_asset,list_rts_map_caches,prepare_rts_battle,prepare_and_start_rts_battle,launch_rts_game,configure_and_start_rts_battle,start_rts_calibration,stop_rts_calibration,read_rts_calibration_status,read_rts_battle_result,rts_game_running,read_mod_map,write_mod_map,reset_mod_map,list_mods,create_mod,delete_mod,open_mods_folder,portable_data_directory,begin_diagnostics_session,write_diagnostics_file,open_diagnostics_folder,open_application_folder,exit_application]).run(tauri::generate_context!()).expect("error while running War of the Ring")}
+#[cfg_attr(mobile,tauri::mobile_entry_point)] pub fn run(){tauri::Builder::default().plugin(tauri_plugin_dialog::init()).setup(|app|{let _=initialize_mods(app.handle());create_battle_mask_window(app.handle());Ok(())}).invoke_handler(tauri::generate_handler![read_app_settings,write_app_settings,read_mod_file,write_mod_file,write_rts_asset,import_rts_asset,pick_and_import_rts_asset,discover_rts_executable,validate_rts_executable,pick_rts_executable,delete_rts_asset,list_rts_map_caches,prepare_rts_battle,prepare_and_start_rts_battle,launch_rts_game,configure_and_start_rts_battle,start_rts_calibration,stop_rts_calibration,read_rts_calibration_status,read_rts_battle_result,rts_game_running,read_mod_map,write_mod_map,reset_mod_map,list_mods,create_mod,delete_mod,open_mods_folder,portable_data_directory,begin_diagnostics_session,write_diagnostics_file,open_diagnostics_folder,open_application_folder,exit_application,set_battle_mask_window,read_rts_progress]).run(tauri::generate_context!()).expect("error while running War of the Ring")}

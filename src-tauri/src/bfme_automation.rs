@@ -3175,19 +3175,21 @@ fn battle_progress_path_from(config: &Value, fallback: &Path) -> PathBuf {
 /// известный шаг и переводит подпись своим словарём, метка из файла —
 /// запасная и для читаемости automation-диагностики.
 #[cfg(target_os = "windows")]
-fn progress_label(step: &str) -> (&'static str, &'static str) {
+fn progress_label(step: &str) -> (String, String) {
     match step {
-        "spawn_generation" => ("Генерация армий…", "Generating armies…"),
-        "network_prefs" => ("Запись настроек…", "Writing settings…"),
-        "game_launch" => ("Запуск игры…", "Launching game…"),
-        "waiting_window" => ("Ожидание окна игры…", "Waiting for game window…"),
-        "waiting_menu" => ("Ожидание главного меню…", "Waiting for main menu…"),
-        "menu_navigation" => ("Навигация по меню…", "Navigating menus…"),
-        "room_setup" => ("Настройка комнаты…", "Setting up room…"),
-        "positions" => ("Назначение позиций…", "Assigning positions…"),
-        "starting" => ("Запуск боя…", "Starting battle…"),
-        "ready" => ("Бой начинается!", "Battle starting!"),
-        _ => (step, step),
+        "spawn_generation" => ("Генерация армий…".to_string(), "Generating armies…".to_string()),
+        "network_prefs" => ("Запись настроек…".to_string(), "Writing settings…".to_string()),
+        "game_launch" => ("Запуск игры…".to_string(), "Launching game…".to_string()),
+        "waiting_window" => ("Ожидание окна игры…".to_string(), "Waiting for game window…".to_string()),
+        "waiting_menu" => ("Ожидание главного меню…".to_string(), "Waiting for main menu…".to_string()),
+        "menu_navigation" => ("Навигация по меню…".to_string(), "Navigating menus…".to_string()),
+        "room_setup" => ("Настройка комнаты…".to_string(), "Setting up room…".to_string()),
+        "positions" => ("Назначение позиций…".to_string(), "Assigning positions…".to_string()),
+        "starting" => ("Запуск боя…".to_string(), "Starting battle…".to_string()),
+        "ready" => ("Бой начинается!".to_string(), "Battle starting!".to_string()),
+        // Неизвестный шаг: сырой идентификатор в обеих локали (интерфейс его
+        // переведёт по BATTLE_LOADING_STEPS, метка — для automation-диагностики).
+        _ => (step.to_string(), step.to_string()),
     }
 }
 

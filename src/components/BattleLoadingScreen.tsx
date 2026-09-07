@@ -5,6 +5,9 @@ import {
   battleLoadingStore,
 } from '../battleLoading'
 import type { BattleLoadingProgress } from '../battleLoading'
+// dataService и так статически входит в бандл — динамический импорт здесь
+// только плодил предупреждение INEFFECTIVE_DYNAMIC_IMPORT без выгоды.
+import { emitBattleLoadingState, readRtsBattleProgress, setBattleMaskWindow } from '../dataService'
 import { getCurrentLanguage, getDisplayName, translateText, useI18n } from '../i18n'
 
 // Заглушка места боя — та же, что и в карточках локаций интерфейса.
@@ -67,14 +70,10 @@ export default function BattleLoadingScreen({ maskWindow = false }: { maskWindow
     if (maskWindow || !desktop) return
     return battleLoadingStore.subscribe(() => {
       const snapshot = battleLoadingStore.getSnapshot()
-      void import('../dataService')
-        .then(({ emitBattleLoadingState, setBattleMaskWindow }) => {
-          if (snapshot.visible) void emitBattleLoadingState({ ...snapshot, language: getCurrentLanguage() })
-          // Отказ окна-маски (не создано и т.п.) не роняет интерфейс:
-          // остаётся оверлей основного окна.
-          setBattleMaskWindow(snapshot.visible).catch(() => {})
-        })
-        .catch(() => { /* Без моста маской остаётся оверлей основного окна. */ })
+      if (snapshot.visible) void emitBattleLoadingState({ ...snapshot, language: getCurrentLanguage() })
+      // Отказ окна-маски (не создано и т.п.) не роняет интерфейс:
+      // остаётся оверлей основного окна.
+      setBattleMaskWindow(snapshot.visible).catch(() => {})
     })
   }, [maskWindow, desktop])
 
@@ -85,8 +84,7 @@ export default function BattleLoadingScreen({ maskWindow = false }: { maskWindow
     if (maskWindow || !desktop) return
     const timer = setInterval(() => {
       if (!battleLoadingStore.getSnapshot().visible) return
-      void import('../dataService')
-        .then(({ readRtsBattleProgress }) => readRtsBattleProgress())
+      readRtsBattleProgress()
         .then((progress) => { if (progress) applyBattleLoadingProgress(progress) })
         .catch(() => { /* Файла ещё нет — остаётся текущий шаг. */ })
     }, 800)
